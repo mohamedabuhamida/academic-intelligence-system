@@ -1,11 +1,15 @@
-FROM node:18-alpine
+FROM node:20-bookworm-slim
 
 WORKDIR /app
 
+# Copy package files first (for caching)
 COPY package*.json ./
-RUN npm install
 
+RUN npm install --include=optional
+
+# Copy project files
 COPY . .
 
-# In development, we use 'npm run dev' to allow hot-reloading
+EXPOSE 3000
+
 CMD ["npm", "run", "dev"]

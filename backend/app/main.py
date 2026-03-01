@@ -21,4 +21,4 @@ app.add_middleware(
 
 @app.get("/")
 def read_root():
-    return {"status": "Academic AI Backend is Online"}
+    return {"status": "Academic AI Backend is Online "}

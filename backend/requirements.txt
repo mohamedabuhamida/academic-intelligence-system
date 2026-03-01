@@ -1,0 +1,11 @@
+fastapi==0.134.0
+uvicorn==0.41.0
+supabase
+python-dotenv
+pydantic
+openai
+langchain
+langgraph
+# Add your ML libraries if needed
+scikit-learn
+pandas

@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: academic-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/code  # This maps your local backend folder to /code in the container
+    env_file:
+      - .env
+    networks:
+      - academic-network
+
+  frontend:
+    build: ./frontend
+    container_name: academic-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    env_file:
+      - .env
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - academic-network
+
+networks:
+  academic-network:
+    driver: bridge

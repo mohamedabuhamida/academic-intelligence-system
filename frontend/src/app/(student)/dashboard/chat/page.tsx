@@ -1,6 +1,7 @@
 // app/dashboard/chat/page.tsx
 "use client";
 
+import { createClient } from "@/lib/supabase/client";
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import {

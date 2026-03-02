@@ -79,31 +79,35 @@ export default function ChatPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          question: input,
+          question,
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
+      const answerText =
+        data?.answer ??
+        data?.message ??
+        (response.ok
+          ? "Received a response in an unexpected format."
+          : "Unable to get a response from the server.");
 
-      if (data.status === "success") {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            type: "ai",
-            content: data.answer,
-            timestamp: new Date().toLocaleTimeString("ar-SA", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            sources: data.sources || [],
-          },
-        ]);
-      }
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          type: "ai",
+          content: String(answerText),
+          timestamp: new Date().toLocaleTimeString("ar-SA", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          sources: Array.isArray(data?.sources) ? data.sources : [],
+        },
+      ]);
     } catch (error) {
       console.error("Error sending message:", error);
       const errorMessage: Message = {
-        id: messages.length + 2,
+        id: Date.now() + 2,
         type: "ai",
         content: "عذراً، حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.",
         timestamp: new Date().toLocaleTimeString("ar-SA", {
@@ -194,7 +198,7 @@ export default function ChatPage() {
       {/* Chat Messages */}
       <motion.div
         variants={fadeInScale}
-        className="flex-1 min-h-0 overflow-y-auto bg-red-200 space-y-6 pr-4 mb-4 scrollbar-thin scrollbar-thumb-[#DAC0A3]/20 scrollbar-track-transparent"
+        className="flex-1 min-h-[320px] overflow-y-auto bg-red-200 space-y-6 pr-4 mb-4 scrollbar-thin scrollbar-thumb-[#DAC0A3]/20 scrollbar-track-transparent"
       >
         {messages.map((message, index) => (
           <motion.div

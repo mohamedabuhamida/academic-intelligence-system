@@ -118,7 +118,6 @@ export default function ChatPage() {
 
   console.log(messages);
 
-
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -151,7 +150,7 @@ export default function ChatPage() {
       variants={staggerContainer}
       initial="initial"
       animate="animate"
-      className="h-[calc(100vh-180px)] flex flex-col"
+      className="flex flex-col h-full min-h-0"
       dir="rtl"
     >
       {/* Chat Header */}

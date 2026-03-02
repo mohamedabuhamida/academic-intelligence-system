@@ -105,7 +105,8 @@ def get_rag_chain():
     )
 
     embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+        model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+        model_kwargs={"device": "cpu", "low_cpu_mem_usage": False},
     )
 
     supabase = create_client(

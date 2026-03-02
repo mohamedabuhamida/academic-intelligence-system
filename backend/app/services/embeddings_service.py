@@ -1,3 +1,5 @@
+import re
+
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_text_splitters import MarkdownHeaderTextSplitter
 from app.core.config import get_embedding_model, get_supabase
@@ -28,10 +30,37 @@ def insert_embedding(document_id: str, content: str):
         }
 
 
+def normalize_markdown_for_rag(content: str) -> str:
+    # Remove frequent PDF/page artifacts that hurt retrieval quality.
+    content = re.sub(r"^\|\s*P\s*a\s*g\s*e\s*\d+\s*$", "", content, flags=re.MULTILINE | re.IGNORECASE)
+    content = re.sub(r"^\|\s*Page\s*\d+\s*$", "", content, flags=re.MULTILINE | re.IGNORECASE)
+    content = re.sub(
+        r"^(Delta University for Science\s*&\s*Technology|Faculty of Artificial Intelligence)\s*$",
+        "",
+        content,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+
+    # Convert basic HTML table tags to plain text separators.
+    content = re.sub(r"</?(table|tbody|thead|tr)>", "\n", content, flags=re.IGNORECASE)
+    content = re.sub(r"</?(td|th)[^>]*>", " | ", content, flags=re.IGNORECASE)
+
+    # Remove other HTML tags (e.g. <u>...</u>).
+    content = re.sub(r"<[^>]+>", " ", content)
+
+    # Normalize excessive separators and blank lines.
+    content = re.sub(r"\s*\|\s*\|\s*", " | ", content)
+    content = re.sub(r"[ \t]+", " ", content)
+    content = re.sub(r"\n{3,}", "\n\n", content)
+
+    return content.strip()
+
+
 def ingest_markdown(file, document_id: str):
     try:
         # Read markdown file content
         content = file.file.read().decode("utf-8")
+        content = normalize_markdown_for_rag(content)
 
         # 1) Split by markdown headers
         header_splitter = MarkdownHeaderTextSplitter(

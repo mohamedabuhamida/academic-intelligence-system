@@ -17,7 +17,6 @@ import {
 import {
   fadeInScale,
   staggerContainer,
-  listItemVariants,
 } from "@/components/animations";
 
 interface Message {
@@ -155,7 +154,7 @@ export default function ChatPage() {
       variants={staggerContainer}
       initial="initial"
       animate="animate"
-      className="flex flex-col h-full min-h-0"
+      className="flex flex-col h-[calc(100vh-10rem)] min-h-[620px]"
       dir="rtl"
     >
       {/* Chat Header */}
@@ -198,12 +197,14 @@ export default function ChatPage() {
       {/* Chat Messages */}
       <motion.div
         variants={fadeInScale}
-        className="flex-1 min-h-[320px] z-10"
+        className="flex-1 min-h-0 overflow-y-auto space-y-6 pr-4 mb-4 z-10"
       >
         {messages.map((message, index) => (
           <motion.div
             key={message.id}
-            variants={listItemVariants}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
             className={`flex ${message.type === "user" ? "justify-start" : "justify-end"}`}
           >
             <div
@@ -243,7 +244,7 @@ export default function ChatPage() {
                   </div>
 
                   {/* Sources */}
-                  {message.sources && (
+                  {message.sources && message.sources.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-[#DAC0A3]/20">
                       <p className="text-xs font-medium text-[#102C57]/60 mb-2">
                         المصادر:

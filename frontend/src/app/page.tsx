@@ -1,29 +1,37 @@
 // app/page.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { ArrowRight, Brain, Sparkles, Target, BookOpen, TrendingUp, Shield } from 'lucide-react';
+import { motion } from "framer-motion";
+import Link from "next/link";
+import {
+  ArrowRight,
+  Brain,
+  Sparkles,
+  Target,
+  BookOpen,
+  TrendingUp,
+  Shield,
+} from "lucide-react";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 30 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
+  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
 };
 
 const staggerContainer = {
   animate: {
     transition: {
-      staggerChildren: 0.1
-    }
-  }
+      staggerChildren: 0.1,
+    },
+  },
 };
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#F8F0E5]">
       {/* Header */}
-      <motion.header 
+      <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
@@ -31,18 +39,20 @@ export default function LandingPage() {
       >
         <div className="max-w-7xl mx-auto px-6 py-4">
           <nav className="flex items-center justify-between">
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.02 }}
               className="flex items-center gap-2"
             >
               <div className="w-8 h-8 rounded-xl bg-[#102C57] flex items-center justify-center">
                 <Brain className="w-5 h-5 text-[#F8F0E5]" />
               </div>
-              <span className="text-xl font-semibold text-[#102C57]">Aether<span className="text-[#DAC0A3]">Academy</span></span>
+              <span className="text-xl font-semibold text-[#102C57]">
+                Aether<span className="text-[#DAC0A3]">Academy</span>
+              </span>
             </motion.div>
-            
+
             <div className="hidden md:flex items-center gap-8">
-              {['Features', 'Solutions', 'Pricing'].map((item) => (
+              {["Features", "Solutions", "Pricing"].map((item) => (
                 <motion.a
                   key={item}
                   href="#"
@@ -55,21 +65,19 @@ export default function LandingPage() {
             </div>
 
             <div className="flex items-center gap-4">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              <Link
+                href="/login"
                 className="px-5 py-2 text-sm font-medium text-[#102C57] hover:text-[#102C57]/80 transition-colors"
               >
                 Sign In
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              </Link>
+              <Link
+                href="/login"
                 className="px-5 py-2 bg-[#102C57] text-[#F8F0E5] rounded-xl text-sm font-medium flex items-center gap-2 shadow-lg shadow-[#102C57]/20"
               >
                 Get Started
                 <ArrowRight className="w-4 h-4" />
-              </motion.button>
+              </Link>
             </div>
           </nav>
         </div>
@@ -78,7 +86,7 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="pt-32 pb-20 px-6">
         <div className="max-w-7xl mx-auto">
-          <motion.div 
+          <motion.div
             initial="initial"
             animate="animate"
             variants={staggerContainer}
@@ -91,7 +99,7 @@ export default function LandingPage() {
               </span>
             </motion.div>
 
-            <motion.h1 
+            <motion.h1
               variants={fadeInUp}
               className="text-6xl md:text-7xl font-bold text-[#102C57] mb-6 leading-tight"
             >
@@ -99,19 +107,23 @@ export default function LandingPage() {
               <span className="text-[#DAC0A3] block">Learning Journey</span>
             </motion.h1>
 
-            <motion.p 
+            <motion.p
               variants={fadeInUp}
               className="text-xl text-[#102C57]/70 mb-12 max-w-2xl mx-auto"
             >
-              Experience the future of education with AI-powered analytics, personalized study plans, and intelligent insights.
+              Experience the future of education with AI-powered analytics,
+              personalized study plans, and intelligent insights.
             </motion.p>
 
-            <motion.div 
+            <motion.div
               variants={fadeInUp}
               className="flex flex-col sm:flex-row items-center justify-center gap-4"
             >
               <motion.button
-                whileHover={{ scale: 1.02, boxShadow: "0 20px 30px -10px rgba(16,44,87,0.3)" }}
+                whileHover={{
+                  scale: 1.02,
+                  boxShadow: "0 20px 30px -10px rgba(16,44,87,0.3)",
+                }}
                 whileTap={{ scale: 0.98 }}
                 className="px-8 py-4 bg-[#102C57] text-[#F8F0E5] rounded-2xl text-lg font-semibold flex items-center gap-2 group w-full sm:w-auto justify-center"
               >
@@ -137,8 +149,8 @@ export default function LandingPage() {
           >
             <div className="absolute inset-0 bg-gradient-to-t from-[#F8F0E5] via-transparent to-transparent z-10" />
             <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-[#DAC0A3]/20">
-              <img 
-                src="/api/placeholder/1200/600" 
+              <img
+                src="/api/placeholder/1200/600"
                 alt="Dashboard Preview"
                 className="w-full h-auto"
               />
@@ -152,17 +164,23 @@ export default function LandingPage() {
       {/* Features Grid */}
       <section className="py-20 px-6 bg-[#EADBC8]">
         <div className="max-w-7xl mx-auto">
-          <motion.div 
+          <motion.div
             initial="initial"
             whileInView="animate"
             viewport={{ once: true }}
             variants={staggerContainer}
             className="text-center mb-16"
           >
-            <motion.h2 variants={fadeInUp} className="text-4xl font-bold text-[#102C57] mb-4">
+            <motion.h2
+              variants={fadeInUp}
+              className="text-4xl font-bold text-[#102C57] mb-4"
+            >
               Intelligence That Adapts to You
             </motion.h2>
-            <motion.p variants={fadeInUp} className="text-xl text-[#102C57]/60 max-w-2xl mx-auto">
+            <motion.p
+              variants={fadeInUp}
+              className="text-xl text-[#102C57]/60 max-w-2xl mx-auto"
+            >
               Powered by advanced AI to understand your learning patterns
             </motion.p>
           </motion.div>
@@ -172,18 +190,21 @@ export default function LandingPage() {
               {
                 icon: <Brain className="w-8 h-8" />,
                 title: "AI Study Assistant",
-                description: "24/7 intelligent support for your academic questions"
+                description:
+                  "24/7 intelligent support for your academic questions",
               },
               {
                 icon: <Target className="w-8 h-8" />,
                 title: "Smart Planning",
-                description: "Personalized study schedules that adapt to your progress"
+                description:
+                  "Personalized study schedules that adapt to your progress",
               },
               {
                 icon: <TrendingUp className="w-8 h-8" />,
                 title: "Predictive Analytics",
-                description: "Forecast your academic performance with precision"
-              }
+                description:
+                  "Forecast your academic performance with precision",
+              },
             ].map((feature, index) => (
               <motion.div
                 key={index}
@@ -199,7 +220,9 @@ export default function LandingPage() {
                   <div className="w-16 h-16 rounded-2xl bg-[#102C57] text-[#F8F0E5] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                     {feature.icon}
                   </div>
-                  <h3 className="text-2xl font-semibold text-[#102C57] mb-3">{feature.title}</h3>
+                  <h3 className="text-2xl font-semibold text-[#102C57] mb-3">
+                    {feature.title}
+                  </h3>
                   <p className="text-[#102C57]/70">{feature.description}</p>
                 </div>
               </motion.div>
@@ -213,10 +236,26 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             {[
-              { value: "98%", label: "Accuracy Rate", icon: <Shield className="w-6 h-6" /> },
-              { value: "50K+", label: "Active Students", icon: <BookOpen className="w-6 h-6" /> },
-              { value: "24/7", label: "AI Support", icon: <Brain className="w-6 h-6" /> },
-              { value: "15min", label: "Avg. Response", icon: <Sparkles className="w-6 h-6" /> }
+              {
+                value: "98%",
+                label: "Accuracy Rate",
+                icon: <Shield className="w-6 h-6" />,
+              },
+              {
+                value: "50K+",
+                label: "Active Students",
+                icon: <BookOpen className="w-6 h-6" />,
+              },
+              {
+                value: "24/7",
+                label: "AI Support",
+                icon: <Brain className="w-6 h-6" />,
+              },
+              {
+                value: "15min",
+                label: "Avg. Response",
+                icon: <Sparkles className="w-6 h-6" />,
+              },
             ].map((stat, index) => (
               <motion.div
                 key={index}
@@ -229,7 +268,9 @@ export default function LandingPage() {
                 <div className="w-12 h-12 rounded-xl bg-[#102C57]/10 text-[#102C57] flex items-center justify-center mx-auto mb-4">
                   {stat.icon}
                 </div>
-                <div className="text-3xl font-bold text-[#102C57] mb-2">{stat.value}</div>
+                <div className="text-3xl font-bold text-[#102C57] mb-2">
+                  {stat.value}
+                </div>
                 <div className="text-[#102C57]/60">{stat.label}</div>
               </motion.div>
             ))}
@@ -239,7 +280,7 @@ export default function LandingPage() {
 
       {/* CTA Section */}
       <section className="py-20 px-6 bg-[#102C57]">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -249,7 +290,8 @@ export default function LandingPage() {
             Ready to Transform Your Academic Journey?
           </h2>
           <p className="text-xl text-[#F8F0E5]/80 mb-10">
-            Join thousands of students who have already elevated their learning experience
+            Join thousands of students who have already elevated their learning
+            experience
           </p>
           <motion.button
             whileHover={{ scale: 1.02 }}
@@ -270,10 +312,12 @@ export default function LandingPage() {
               <div className="w-8 h-8 rounded-xl bg-[#DAC0A3] flex items-center justify-center">
                 <Brain className="w-5 h-5 text-[#102C57]" />
               </div>
-              <span className="text-xl font-semibold text-[#F8F0E5]">AetherAcademy</span>
+              <span className="text-xl font-semibold text-[#F8F0E5]">
+                AetherAcademy
+              </span>
             </div>
             <div className="flex gap-8">
-              {['Terms', 'Privacy', 'Contact'].map((item) => (
+              {["Terms", "Privacy", "Contact"].map((item) => (
                 <motion.a
                   key={item}
                   href="#"

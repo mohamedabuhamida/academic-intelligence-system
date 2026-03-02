@@ -186,7 +186,7 @@ export default function ChatPage() {
               <div className="space-y-2">
                 <div className={`rounded-2xl p-4 ${
                   message.type === 'ai' 
-                    ? 'bg-white border border-[#DAC0A3]/20' 
+                    ? 'bg-white border border-[#DAC0A3]/20 text-[#102C57]' 
                     : 'bg-[#102C57] text-[#F8F0E5]'
                 }`}>
                   <div className="text-sm leading-relaxed whitespace-pre-line" style={{ direction: 'rtl' }}>

@@ -1,5 +1,6 @@
 from fastapi import UploadFile, File, Form
-from app.services.embeddings_service import ingest_pdf
+from fastapi import UploadFile, File, Form
+from app.services.embeddings_service import ingest_markdown
 
 from fastapi import APIRouter
 from app.models.embedding_models import EmbeddingInsertRequest
@@ -14,9 +15,11 @@ def insert_embedding_endpoint(request: EmbeddingInsertRequest):
         content=request.content
     )
 
-@router.post("/api/embeddings/upload")
-def upload_pdf(
+
+
+@router.post("/api/embeddings/upload-md")
+def upload_md(
     document_id: str = Form(...),
     file: UploadFile = File(...)
 ):
-    return ingest_pdf(file, document_id)
+    return ingest_markdown(file, document_id)

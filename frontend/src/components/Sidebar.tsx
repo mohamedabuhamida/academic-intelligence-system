@@ -79,10 +79,10 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
           onClick={onToggle}
           className={`w-6 h-6 rounded-full bg-[#102C57]/10 hover:bg-[#102C57]/20 flex items-center justify-center transition-colors `}
         >
-          {isExpanded ? (
-            <ChevronRight className="w-4 h-4 text-[#102C57]" />
+          {isExpanded ? (<ChevronLeft className="w-4 h-4 text-[#102C57]" />
+          
           ) : (
-            <ChevronLeft className="w-4 h-4 text-[#102C57]" />
+              <ChevronRight className="w-4 h-4 text-[#102C57]" />
           )}
         </motion.button>
       </div>

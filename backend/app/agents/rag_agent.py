@@ -104,5 +104,25 @@ def get_rag_chain():
 
 
 def ask_academic_mentor(query: str, user_id: str) -> str:
-    rag_chain = get_rag_chain()
-    return rag_chain.invoke(query)
+    try:
+        rag_chain = get_rag_chain()
+
+        # 🧠 Retrieve long-term memory
+        memory_context = retrieve_memory(user_id, query)
+
+        # Inject memory into prompt
+        final_input = {
+            "question": query,
+            "context": f"User previous memories:\n{memory_context}"
+        }
+
+        response = rag_chain.invoke(final_input)
+
+        # 💾 Store memory after response
+        store_memory(user_id, "user", query)
+        store_memory(user_id, "ai", response)
+
+        return response
+
+    except Exception as e:
+        return "حدث خطأ أثناء معالجة الطلب."

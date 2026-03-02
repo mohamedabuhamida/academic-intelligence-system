@@ -126,7 +126,7 @@ def get_rag_chain():
         vector_store = SupabaseVectorStoreCompat(
             client=supabase,
             embedding=embeddings,
-            table_name="documents",
+            table_name="document_chunks",
             query_name="match_documents",
         )
 

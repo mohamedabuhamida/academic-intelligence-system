@@ -1,111 +1,118 @@
-"use client";
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { motion } from 'framer-motion';
+import { getDashboardData } from '@/lib/supabase/queries';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { UpcomingDeadlines } from '@/components/dashboard/UpcomingDeadlines';
+import { RecentGrades } from '@/components/dashboard/RecentGrades';
+import { CourseProgress } from '@/components/dashboard/CourseProgress';
+import { RiskAnalysis } from '@/components/dashboard/RiskAnalysis';
+import { SemesterPlanner } from '@/components/dashboard/SemesterPlanner';
+import { pageTransition } from '@/lib/animations';
 
-import { motion } from "framer-motion";
-import Link from "next/link";
+export default async function DashboardPage() {
+  const supabase = createServerComponentClient({ cookies });
+  
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (!session) {
+    return null;
+  }
 
-const stats = [
-  { title: "Current GPA", value: "3.45", color: "from-green-500 to-emerald-600" },
-  { title: "Completed Credits", value: "96", color: "from-blue-500 to-indigo-600" },
-  { title: "Remaining Credits", value: "46", color: "from-purple-500 to-violet-600" },
-  { title: "Risk Level", value: "Low", color: "from-orange-500 to-red-500" },
-];
+  const dashboardData = await getDashboardData(session.user.id);
 
-export default function DashboardPage() {
   return (
-    <div className="space-y-8">
-      
-      {/* Header Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <h1 className="text-3xl font-bold tracking-tight">
-          Academic Dashboard
+    <motion.div
+      variants={pageTransition}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      className="space-y-6"
+    >
+      {/* Welcome Section */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-[#F8F0E5]">
+          Welcome back, {dashboardData.profile?.full_name?.split(' ')[0] || 'Scholar'}
         </h1>
-        <p className="text-gray-400 mt-2">
-          AI-powered insights for your academic journey.
+        <p className="text-[#EADBC8] mt-2">
+          Here's your academic overview for the current semester
         </p>
-      </motion.div>
+      </div>
 
       {/* Stats Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <motion.div
-            key={stat.title}
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            whileHover={{ scale: 1.05 }}
-            className="relative p-6 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-xl overflow-hidden"
-          >
-            <div
-              className={`absolute inset-0 opacity-20 bg-gradient-to-br ${stat.color}`}
-            />
-            <h3 className="text-sm text-gray-400">{stat.title}</h3>
-            <p className="text-2xl font-bold mt-2">{stat.value}</p>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* AI System Status */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.3 }}
-        className="p-6 rounded-2xl bg-gradient-to-br from-blue-600/20 to-purple-600/20 border border-white/10 backdrop-blur-lg"
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold">AI System Status</h2>
-            <p className="text-gray-400 text-sm mt-1">
-              RAG Engine Operational
-            </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <GlassCard className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[#EADBC8] text-sm">Current GPA</p>
+              <p className="text-3xl font-bold text-[#F8F0E5] mt-2">
+                {dashboardData.gpaHistory[0]?.gpa.toFixed(2) || '3.75'}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-[#DAC0A3]/20 rounded-xl flex items-center justify-center">
+              <span className="text-2xl text-[#DAC0A3]">🎓</span>
+            </div>
           </div>
+        </GlassCard>
 
-          <motion.div
-            animate={{
-              boxShadow: [
-                "0 0 10px #22c55e",
-                "0 0 20px #22c55e",
-                "0 0 10px #22c55e",
-              ],
-            }}
-            transition={{ repeat: Infinity, duration: 2 }}
-            className="w-4 h-4 bg-green-500 rounded-full"
-          />
-        </div>
-      </motion.div>
+        <GlassCard className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[#EADBC8] text-sm">Courses This Term</p>
+              <p className="text-3xl font-bold text-[#F8F0E5] mt-2">
+                {dashboardData.currentCourses.length}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-[#DAC0A3]/20 rounded-xl flex items-center justify-center">
+              <span className="text-2xl text-[#DAC0A3]">📚</span>
+            </div>
+          </div>
+        </GlassCard>
 
-      {/* Quick Actions */}
-      <div className="grid md:grid-cols-3 gap-6">
-        <Link href="/dashboard/chat">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-lg cursor-pointer"
-          >
-            💬 Chat with AI Mentor
-          </motion.div>
-        </Link>
+        <GlassCard className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[#EADBC8] text-sm">Credits Completed</p>
+              <p className="text-3xl font-bold text-[#F8F0E5] mt-2">
+                {dashboardData.profile?.total_required_hours || 45}/120
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-[#DAC0A3]/20 rounded-xl flex items-center justify-center">
+              <span className="text-2xl text-[#DAC0A3]">⚡</span>
+            </div>
+          </div>
+        </GlassCard>
 
-        <Link href="/dashboard/planner">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-lg cursor-pointer"
-          >
-            📅 Plan Next Semester
-          </motion.div>
-        </Link>
-
-        <Link href="/dashboard/gpa">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-lg cursor-pointer"
-          >
-            📊 Analyze GPA
-          </motion.div>
-        </Link>
+        <GlassCard className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[#EADBC8] text-sm">Risk Level</p>
+              <p className="text-3xl font-bold text-[#F8F0E5] mt-2">
+                {dashboardData.riskAnalysis[0]?.risk_level || 'Low'}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-[#DAC0A3]/20 rounded-xl flex items-center justify-center">
+              <span className="text-2xl text-[#DAC0A3]">📊</span>
+            </div>
+          </div>
+        </GlassCard>
       </div>
-    </div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - 2 columns wide */}
+        <div className="lg:col-span-2 space-y-6">
+          <SemesterPlanner plans={dashboardData.semesterPlans} />
+          <CourseProgress courses={dashboardData.currentCourses} />
+        </div>
+
+        {/* Right Column - 1 column wide */}
+        <div className="space-y-6">
+          <UpcomingDeadlines deadlines={dashboardData.upcomingDeadlines} />
+          <RecentGrades grades={dashboardData.recentGrades} />
+          <RiskAnalysis risks={dashboardData.riskAnalysis} />
+        </div>
+      </div>
+    </motion.div>
   );
 }

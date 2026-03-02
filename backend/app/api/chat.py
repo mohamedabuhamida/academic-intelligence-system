@@ -6,7 +6,7 @@ router = APIRouter()
 
 @router.post("/api/ask")
 def ask_chat(request: ChatRequest):
-    response = ask_question(request.question)
+    response = ask_question(request.question, request.user_id)
     return {
         "status": "success",
         "answer": response

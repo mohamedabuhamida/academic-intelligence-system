@@ -44,7 +44,7 @@ export default function DashboardLayout({
           isSidebarExpanded ? 'ml-[280px]' : 'ml-[88px]'
         }`}
       >
-        <Header />
+        <Header isSidebarExpanded={isSidebarExpanded} />
 
         {/* Page Content with Transition */}
         <main className="p-8 pt-24">

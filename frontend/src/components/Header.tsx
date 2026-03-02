@@ -42,7 +42,7 @@ export default function Header() {
       variants={headerVariants}
       initial="initial"
       animate="animate"
-      className="fixed top-0 right-0 left-[88px] z-40 bg-white/70 backdrop-blur-xl border-b border-[#DAC0A3]/20 px-8 py-4 w-full"
+      className="fixed top-0 right-0 left-32 z-40 bg-white/70 backdrop-blur-xl border-b border-[#DAC0A3]/20 px-8 py-4 w-full"
       style={{ 
         left: 'var(--sidebar-width)',
       }}

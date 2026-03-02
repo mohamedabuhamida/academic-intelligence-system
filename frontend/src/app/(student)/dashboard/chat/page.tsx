@@ -17,7 +17,7 @@ export default function ChatPage() {
   const sendMessage = async () => {
     if (!question.trim()) return;
 
-    const userMessage = { role: "user", content: question };
+    const userMessage: ChatMessage = { role: "user", content: question };
     setMessages((prev) => [...prev, userMessage]);
     setQuestion("");
     setLoading(true);
@@ -33,14 +33,18 @@ export default function ChatPage() {
 
       const data = await res.json();
 
-      const aiMessage = { role: "assistant", content: data.answer };
+      const aiMessage: ChatMessage = {
+        role: "assistant",
+        content: String(data?.answer ?? ""),
+      };
 
       setMessages((prev) => [...prev, aiMessage]);
     } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "⚠️ Error contacting AI service." },
-      ]);
+      const errorMessage: ChatMessage = {
+        role: "assistant",
+        content: "⚠️ Error contacting AI service.",
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     }
 
     setLoading(false);

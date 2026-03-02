@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-app = FastAPI()
+from pydantic import BaseModel
+# استيراد المساعد الأكاديمي اللي عملناه
+from app.agents.rag_agent import ask_academic_mentor
+
+app = FastAPI(title="Academic AI Mentor API")
 
 origins = [
     "http://localhost",
@@ -8,7 +12,6 @@ origins = [
     "http://127.0.0.1:3000",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
-  
 ]
 
 app.add_middleware(
@@ -19,6 +22,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 1. تعريف شكل البيانات اللي الفرونت إند هيبعتها
+class ChatRequest(BaseModel):
+    question: str
+
 @app.get("/")
 def read_root():
-    return {"status": "Academic AI Backend is Online "}
+    return {"status": "Academic AI Backend is Online 🚀"}
+
+# 2. المسار الجديد اللي الفرونت إند هيكلمنا عليه
+@app.post("/api/ask")
+def ask_question(request: ChatRequest):
+    # هناخد السؤال ونبعته للـ Agent بتاعنا
+    response = ask_academic_mentor(request.question)
+    
+    # هنرجع الإجابة في شكل JSON
+    return {
+        "status": "success",
+        "question": request.question,
+        "answer": response
+    }

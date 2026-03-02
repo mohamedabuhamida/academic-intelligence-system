@@ -24,7 +24,7 @@ export default function DashboardLayout({
   if (!mounted) return null;
 
   return (
-    <div className="h-screen bg-[#F8F0E5]">
+    <div className="h-screen flex flex-col bg-[#F8F0E5]">
       {/* Background Pattern */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 -left-4 w-96 h-96 bg-[#DAC0A3]/20 rounded-full mix-blend-multiply filter blur-3xl animate-blob" />

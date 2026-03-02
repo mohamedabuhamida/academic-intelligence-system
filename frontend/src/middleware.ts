@@ -1,30 +1,35 @@
-import { createServerClient } from "@supabase/ssr";
-import { NextResponse ,NextRequest } from "next/server";
+// middleware.ts
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export async function middleware(req:NextRequest) {
-  const res = NextResponse.next();
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next()
+  const supabase = createMiddlewareClient({ req, res })
+  
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get: (name) => req.cookies.get(name)?.value,
-        set: () => {},
-        remove: () => {},
-      },
-    }
-  );
+  // Define protected routes
+  const isProtectedRoute = req.nextUrl.pathname.startsWith('/dashboard')
+  const isAuthRoute = req.nextUrl.pathname.startsWith('/auth')
 
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user && req.nextUrl.pathname.startsWith("/dashboard")) {
-    return NextResponse.redirect(new URL("/login", req.url));
+  // Redirect to signin if accessing protected route without session
+  if (isProtectedRoute && !session) {
+    const redirectUrl = new URL('/auth/signin', req.url)
+    return NextResponse.redirect(redirectUrl)
   }
 
-  return res;
+  // Redirect to dashboard if accessing auth routes with session
+  if (isAuthRoute && session) {
+    const redirectUrl = new URL('/dashboard', req.url)
+    return NextResponse.redirect(redirectUrl)
+  }
+
+  return res
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
-};
+  matcher: ['/dashboard/:path*', '/auth/:path*']
+}

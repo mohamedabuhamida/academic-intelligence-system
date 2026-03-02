@@ -7,7 +7,11 @@ import { usePathname } from "next/navigation";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
 
@@ -17,9 +21,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "GPA", href: "/dashboard/gpa" },
   ];
 
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
   return (
     <div className="flex h-screen bg-[#0f172a] text-white overflow-hidden">
-      
       {/* Sidebar */}
       <motion.div
         animate={{ width: collapsed ? 80 : 250 }}
@@ -33,9 +45,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           >
             AI Mentor
           </motion.h1>
-          <button onClick={() => setCollapsed(!collapsed)}>
-            ☰
-          </button>
+          <button onClick={() => setCollapsed(!collapsed)}>☰</button>
         </div>
 
         <nav className="mt-6 space-y-2 px-2">
@@ -58,7 +68,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        
         {/* Header */}
         <motion.div
           initial={{ y: -50, opacity: 0 }}
@@ -66,12 +75,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           transition={{ duration: 0.6 }}
           className="h-16 flex items-center justify-between px-6 border-b border-white/10 bg-white/5 backdrop-blur-lg"
         >
-          <h2 className="text-xl font-semibold">
-            {pathname.split("/").pop()}
-          </h2>
-          <div className="text-sm text-gray-400">
-            Welcome back 👋
-          </div>
+          <h2 className="text-xl font-semibold">{pathname.split("/").pop()}</h2>
+          <div className="text-sm text-gray-400">Welcome back 👋</div>
         </motion.div>
 
         {/* Page Content with Animation */}

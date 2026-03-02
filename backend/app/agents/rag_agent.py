@@ -103,6 +103,6 @@ def get_rag_chain():
     return _RAG_CHAIN
 
 
-def ask_academic_mentor(query: str) -> str:
+def ask_academic_mentor(query: str, user_id: str) -> str:
     rag_chain = get_rag_chain()
     return rag_chain.invoke(query)

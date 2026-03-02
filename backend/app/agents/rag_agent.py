@@ -7,7 +7,7 @@ from langchain_community.vectorstores import SupabaseVectorStore
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
-
+from app.services.memory_service import store_memory, retrieve_memory
 from app.core.config import get_supabase, get_embedding_model, get_llm
 
 logger = logging.getLogger(__name__)

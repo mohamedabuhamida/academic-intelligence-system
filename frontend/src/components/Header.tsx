@@ -3,7 +3,7 @@
 
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { 
   Search, 
   Bell, 

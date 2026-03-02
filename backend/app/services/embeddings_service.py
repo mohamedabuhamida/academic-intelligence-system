@@ -30,15 +30,29 @@ def insert_embedding(document_id: str, content: str):
 
 def ingest_markdown(file, document_id: str):
     try:
-        # قراءة محتوى الملف مباشرة
+        # Read markdown file content
         content = file.file.read().decode("utf-8")
 
-        # تقسيم النص إلى chunks
-        text_splitter = MarkdownHeaderTextSplitter(
-            chunk_size=800,
-            chunk_overlap=150
+        # 1) Split by markdown headers
+        header_splitter = MarkdownHeaderTextSplitter(
+            headers_to_split_on=[
+                ("#", "h1"),
+                ("##", "h2"),
+                ("###", "h3"),
+            ]
         )
-        chunks = text_splitter.split_text(content)
+        header_docs = header_splitter.split_text(content)
+
+        # 2) Split each section into fixed-size chunks
+        chunk_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=800,
+            chunk_overlap=150,
+        )
+        chunks = (
+            chunk_splitter.split_documents(header_docs)
+            if header_docs
+            else chunk_splitter.create_documents([content])
+        )
 
         embeddings_model = get_embedding_model()
         supabase = get_supabase()
@@ -46,13 +60,14 @@ def ingest_markdown(file, document_id: str):
         inserted = 0
 
         for chunk in chunks:
-            vector = embeddings_model.embed_query(chunk)
+            chunk_text = chunk.page_content
+            vector = embeddings_model.embed_query(chunk_text)
 
             supabase.table("document_chunks").insert({
                 "document_id": document_id,
-                "content": chunk,
+                "content": chunk_text,
                 "embedding": vector,
-                "metadata": {}
+                "metadata": chunk.metadata or {}
             }).execute()
 
             inserted += 1

@@ -12,7 +12,6 @@ import {
   ThumbsUp,
   ThumbsDown,
   BookOpen,
-  ChevronRight,
   Loader2,
 } from "lucide-react";
 import {
@@ -276,19 +275,25 @@ export default function ChatPage() {
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => {
-            setMessages([
-              {
-                id: 1,
-                type: "ai",
-                content:
-                  "مرحباً! أنا مساعدك الدراسي الذكي. كيف يمكنني مساعدتك في دراستك اليوم؟",
-                timestamp: new Date().toLocaleTimeString("ar-SA", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }),
-              },
-            ]);
+          onClick={async () => {
+            const {
+              data: { user },
+            } = await supabase.auth.getUser();
+
+            if (!user) {
+              setConversationId(null);
+              setMessages([welcomeMessage()]);
+              return;
+            }
+
+            const { data: newConv } = await supabase
+              .from("conversations")
+              .insert([{ user_id: user.id, title: "New Chat" }])
+              .select("id")
+              .single();
+
+            setConversationId((newConv?.id as string) ?? null);
+            setMessages([welcomeMessage()]);
           }}
           className="flex items-center gap-2 px-4 py-2 bg-[#102C57]/5 rounded-xl text-[#102C57] text-sm font-medium border border-[#DAC0A3]/20"
         >
@@ -463,7 +468,7 @@ export default function ChatPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleSendMessage}
-              disabled={isLoading || !input.trim()}
+              disabled={isLoading || !input.trim() || !conversationId}
               className="px-4 py-2 bg-[#102C57] text-[#F8F0E5] rounded-xl text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send className="w-4 h-4" />

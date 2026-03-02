@@ -17,7 +17,11 @@ import {
 } from 'lucide-react';
 import { headerVariants } from './animations';
 
-export default function Header() {
+interface HeaderProps {
+  isSidebarExpanded: boolean;
+}
+
+export default function Header({ isSidebarExpanded }: HeaderProps) {
   const [user, setUser] = useState<any>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -42,10 +46,9 @@ export default function Header() {
       variants={headerVariants}
       initial="initial"
       animate="animate"
-      className="fixed top-0 right-0 left-32 z-40 bg-white/70 backdrop-blur-xl border-b border-[#DAC0A3]/20 px-8 py-4 w-full"
-      style={{ 
-        left: 'var(--sidebar-width)',
-      }}
+      className={`fixed top-0 right-0 z-40 bg-white/70 backdrop-blur-xl border-b border-[#DAC0A3]/20 px-8 py-4 transition-all duration-300 ${
+        isSidebarExpanded ? "left-[280px]" : "left-[88px]"
+      }`}
     >
       <div className="flex items-center justify-between">
         {/* Search Bar */}

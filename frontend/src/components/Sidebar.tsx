@@ -77,7 +77,7 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
             !isExpanded && 'hidden'
           }`}
         >
-          <ChevronLeft className="w-4 h-4 text-[#102C57]" />
+          {/* <ChevronLeft className="w-4 h-4 text-[#102C57]" /> */}
         </motion.button>
       </div>
 

@@ -1,17 +1,37 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { motion } from 'framer-motion';
-import { getDashboardData } from '@/lib/supabase/queries';
-import { GlassCard } from '@/components/ui/GlassCard';
-import { UpcomingDeadlines } from '@/components/dashboard/UpcomingDeadlines';
-import { RecentGrades } from '@/components/dashboard/RecentGrades';
-import { CourseProgress } from '@/components/dashboard/CourseProgress';
-import { RiskAnalysis } from '@/components/dashboard/RiskAnalysis';
-import { SemesterPlanner } from '@/components/dashboard/SemesterPlanner';
-import { pageTransition } from '@/lib/animations';
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import { motion } from "framer-motion";
+import { getDashboardData } from "@/lib/supabase/queries";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { UpcomingDeadlines } from "@/components/dashboard/UpcomingDeadlines";
+import { RecentGrades } from "@/components/dashboard/RecentGrades";
+import { CourseProgress } from "@/components/dashboard/CourseProgress";
+import { RiskAnalysis } from "@/components/dashboard/RiskAnalysis";
+import { SemesterPlanner } from "@/components/dashboard/SemesterPlanner";
+import { pageTransition } from "@/lib/animations";
 
 export default async function DashboardPage() {
-  const supabase = createServerComponentClient({ cookies });
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch {
+            // setAll can be ignored in Server Components if middleware refreshes sessions
+          }
+        },
+      },
+    }
+  );
   
   const { data: { session } } = await supabase.auth.getSession();
   

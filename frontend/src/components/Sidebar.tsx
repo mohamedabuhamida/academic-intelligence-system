@@ -1,9 +1,9 @@
 // app/components/Sidebar.tsx
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Brain,
   MessageSquare,
@@ -16,9 +16,9 @@ import {
   BookOpen,
   Award,
   Sparkles,
-  HelpCircle
-} from 'lucide-react';
-import { sidebarVariants } from './animations';
+  HelpCircle,
+} from "lucide-react";
+import { sidebarVariants } from "./animations";
 
 interface SidebarProps {
   isExpanded: boolean;
@@ -26,17 +26,17 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { icon: Brain, label: 'Overview', href: '/dashboard' },
-  { icon: MessageSquare, label: 'AI Chat', href: '/dashboard/chat' },
-  { icon: Calendar, label: 'Study Planner', href: '/dashboard/planner' },
-  { icon: TrendingUp, label: 'GPA Calculator', href: '/dashboard/gpa' },
-  { icon: BookOpen, label: 'Courses', href: '/dashboard/courses' },
-  { icon: Award, label: 'Achievements', href: '/dashboard/achievements' },
+  { icon: Brain, label: "Overview", href: "/dashboard" },
+  { icon: MessageSquare, label: "AI Chat", href: "/dashboard/chat" },
+  { icon: Calendar, label: "Study Planner", href: "/dashboard/planner" },
+  { icon: TrendingUp, label: "GPA Calculator", href: "/dashboard/gpa" },
+  { icon: BookOpen, label: "Courses", href: "/dashboard/courses" },
+  { icon: Award, label: "Achievements", href: "/dashboard/achievements" },
 ];
 
 const bottomItems = [
-  { icon: HelpCircle, label: 'Help & Support', href: '/dashboard/support' },
-  { icon: Settings, label: 'Settings', href: '/dashboard/settings' },
+  { icon: HelpCircle, label: "Help & Support", href: "/dashboard/support" },
+  { icon: Settings, label: "Settings", href: "/dashboard/settings" },
 ];
 
 export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
@@ -44,15 +44,17 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
 
   return (
     <motion.aside
-      initial={isExpanded ? 'expanded' : 'collapsed'}
-      animate={isExpanded ? 'expanded' : 'collapsed'}
+      initial={isExpanded ? "expanded" : "collapsed"}
+      animate={isExpanded ? "expanded" : "collapsed"}
       variants={sidebarVariants}
       className="fixed left-0 top-0 h-screen bg-white/80 backdrop-blur-xl border-r border-[#DAC0A3]/20 shadow-xl z-50 flex flex-col"
     >
       {/* Logo Area */}
-      <div className={`p-6 flex items-center ${isExpanded ? 'justify-between' : 'justify-center'}`}>
+      <div
+        className={`p-6 flex items-center ${isExpanded ? "justify-between" : "justify-center"}`}
+      >
         {isExpanded ? (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="flex items-center gap-2"
@@ -60,7 +62,9 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
             <div className="w-8 h-8 rounded-xl bg-[#102C57] flex items-center justify-center">
               <Brain className="w-5 h-5 text-[#F8F0E5]" />
             </div>
-            <span className="text-xl font-semibold text-[#102C57]">Aether<span className="text-[#DAC0A3]">Academy</span></span>
+            <span className="text-xl font-semibold text-[#102C57]">
+              Aether<span className="text-[#DAC0A3]">Academy</span>
+            </span>
           </motion.div>
         ) : (
           <div className="w-8 h-8 rounded-xl bg-[#102C57] flex items-center justify-center">
@@ -75,16 +79,20 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
           onClick={onToggle}
           className={`w-6 h-6 rounded-full bg-[#102C57]/10 hover:bg-[#102C57]/20 flex items-center justify-center transition-colors `}
         >
-          <ChevronLeft className="w-4 h-4 text-[#102C57]" />
+          {isExpanded ? (
+            <ChevronRight className="w-4 h-4 text-[#102C57]" />
+          ) : (
+            <ChevronLeft className="w-4 h-4 text-[#102C57]" />
+          )}
         </motion.button>
       </div>
 
       {/* AI Status Indicator */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         className={`mx-4 mb-6 p-3 rounded-2xl bg-gradient-to-r from-[#102C57]/5 to-[#DAC0A3]/5 border border-[#DAC0A3]/20 backdrop-blur-sm ${
-          !isExpanded && 'flex justify-center'
+          !isExpanded && "flex justify-center"
         }`}
       >
         {isExpanded ? (
@@ -125,23 +133,27 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
                 whileHover={{ x: 4 }}
                 whileTap={{ scale: 0.98 }}
                 className={`relative flex items-center gap-3 px-3 py-3 mb-1 rounded-xl transition-all cursor-pointer group ${
-                  isActive 
-                    ? 'bg-[#102C57] text-[#F8F0E5] shadow-lg shadow-[#102C57]/20' 
-                    : 'text-[#102C57]/60 hover:bg-[#102C57]/5 hover:text-[#102C57]'
+                  isActive
+                    ? "bg-[#102C57] text-[#F8F0E5] shadow-lg shadow-[#102C57]/20"
+                    : "text-[#102C57]/60 hover:bg-[#102C57]/5 hover:text-[#102C57]"
                 }`}
               >
                 {isActive && (
                   <motion.div
                     layoutId="activeNav"
                     className="absolute inset-0 bg-[#102C57] rounded-xl"
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   />
                 )}
-                <item.icon className={`w-5 h-5 relative z-10 ${!isExpanded && 'mx-auto'}`} />
+                <item.icon
+                  className={`w-5 h-5 relative z-10 ${!isExpanded && "mx-auto"}`}
+                />
                 {isExpanded && (
-                  <span className="text-sm font-medium relative z-10">{item.label}</span>
+                  <span className="text-sm font-medium relative z-10">
+                    {item.label}
+                  </span>
                 )}
-                
+
                 {/* Tooltip for collapsed state */}
                 {!isExpanded && (
                   <div className="absolute left-full ml-2 px-2 py-1 bg-[#102C57] text-[#F8F0E5] text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap">
@@ -163,11 +175,11 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
               whileTap={{ scale: 0.98 }}
               className="relative flex items-center gap-3 px-3 py-3 mb-1 rounded-xl text-[#102C57]/60 hover:bg-[#102C57]/5 hover:text-[#102C57] transition-all cursor-pointer group"
             >
-              <item.icon className={`w-5 h-5 ${!isExpanded && 'mx-auto'}`} />
+              <item.icon className={`w-5 h-5 ${!isExpanded && "mx-auto"}`} />
               {isExpanded && (
                 <span className="text-sm font-medium">{item.label}</span>
               )}
-              
+
               {/* Tooltip for collapsed state */}
               {!isExpanded && (
                 <div className="absolute left-full ml-2 px-2 py-1 bg-[#102C57] text-[#F8F0E5] text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap">
@@ -184,11 +196,9 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
           whileTap={{ scale: 0.98 }}
           className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[#102C57]/40 hover:bg-red-500/5 hover:text-red-500 transition-all cursor-pointer group mt-2"
         >
-          <LogOut className={`w-5 h-5 ${!isExpanded && 'mx-auto'}`} />
-          {isExpanded && (
-            <span className="text-sm font-medium">Logout</span>
-          )}
-          
+          <LogOut className={`w-5 h-5 ${!isExpanded && "mx-auto"}`} />
+          {isExpanded && <span className="text-sm font-medium">Logout</span>}
+
           {/* Tooltip for collapsed state */}
           {!isExpanded && (
             <div className="absolute left-full ml-2 px-2 py-1 bg-red-500 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap">

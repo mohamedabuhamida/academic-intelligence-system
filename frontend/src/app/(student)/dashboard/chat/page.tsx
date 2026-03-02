@@ -198,7 +198,7 @@ export default function ChatPage() {
       {/* Chat Messages */}
       <motion.div
         variants={fadeInScale}
-        className="flex-1 min-h-[320px] "
+        className="flex-1 min-h-[320px] z-10"
       >
         {messages.map((message, index) => (
           <motion.div

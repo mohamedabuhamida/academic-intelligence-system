@@ -1,4 +1,5 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters import MarkdownHeaderTextSplitter
 from app.core.config import get_embedding_model, get_supabase
 
 
@@ -33,7 +34,7 @@ def ingest_markdown(file, document_id: str):
         content = file.file.read().decode("utf-8")
 
         # تقسيم النص إلى chunks
-        text_splitter = RecursiveCharacterTextSplitter(
+        text_splitter = MarkdownHeaderTextSplitter(
             chunk_size=800,
             chunk_overlap=150
         )

@@ -15,16 +15,30 @@ logger = logging.getLogger(__name__)
 _RAG_CHAIN = None
 _RAG_CHAIN_LOCK = threading.Lock()
 
-PROMPT_TEMPLATE = """You are the academic assistant for the Faculty of AI at Delta University.
-Answer only from the retrieved regulation context.
-If the answer is not in the context, say you do not have enough information in the current regulation.
+PROMPT_TEMPLATE = """
+You are the academic assistant for the Faculty of AI at Delta University.
 
-Retrieved context:
-{context}
+You must follow these strict rules:
+1) Use the Academic Regulation context as the primary source of truth.
+2) Use User Memory only to personalize the answer.
+3) If the answer is not found in the regulation context, say:
+   "I do not have enough information in the current regulation."
 
-Student question: {question}
+----------------------------------------
+Relevant User Memory:
+{memory_context}
 
-Accurate answer:"""
+----------------------------------------
+Retrieved Academic Regulation Context:
+{regulation_context}
+
+----------------------------------------
+Student Question:
+{question}
+
+----------------------------------------
+Accurate Answer:
+"""
 
 
 def format_docs(docs):

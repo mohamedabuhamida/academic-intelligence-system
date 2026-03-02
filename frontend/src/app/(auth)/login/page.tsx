@@ -1,13 +1,11 @@
 // app/auth/signin/page.tsx
 'use client';
 
-import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Brain, Mail, Lock, ArrowRight, Sparkles, Github, Chrome } from 'lucide-react';
-
+import { createClient } from '@/lib/supabase/client';
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },

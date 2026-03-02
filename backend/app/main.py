@@ -30,13 +30,10 @@ class ChatRequest(BaseModel):
 def read_root():
     return {"status": "Academic AI Backend is Online 🚀"}
 
-# 2. المسار الجديد اللي الفرونت إند هيكلمنا عليه
 @app.post("/api/ask")
 def ask_question(request: ChatRequest):
-    # هناخد السؤال ونبعته للـ Agent بتاعنا
     response = ask_academic_mentor(request.question)
     
-    # هنرجع الإجابة في شكل JSON
     return {
         "status": "success",
         "question": request.question,

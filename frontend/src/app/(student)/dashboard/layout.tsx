@@ -1,25 +1,31 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import DashboardShell from "./DashboardShell";
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { DashboardLayoutClient } from '@/components/layout/DashboardLayoutClient';
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
+  const supabase = createServerComponentClient({ cookies });
+  
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (!session) {
+    redirect('/auth/login');
   }
 
+  // Get user profile
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', session.user.id)
+    .single();
+
   return (
-    <DashboardShell user={user}>
+    <DashboardLayoutClient user={session.user} profile={profile}>
       {children}
-    </DashboardShell>
+    </DashboardLayoutClient>
   );
 }

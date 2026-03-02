@@ -1,19 +1,15 @@
+# app/agents/rag_agent.py
+
 import logging
-import threading
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Tuple, Optional, Dict
 
 from langchain_core.documents import Document
 from langchain_community.vectorstores import SupabaseVectorStore
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
+
 from app.services.memory_service import store_memory, retrieve_memory
 from app.core.config import get_supabase, get_embedding_model, get_llm
 
 logger = logging.getLogger(__name__)
-
-_RAG_CHAIN = None
-_RAG_CHAIN_LOCK = threading.Lock()
 
 PROMPT_TEMPLATE = """
 You are the academic assistant for the Faculty of AI at Delta University.
@@ -41,7 +37,7 @@ Accurate Answer:
 """
 
 
-def format_docs(docs):
+def format_docs(docs: List[Document]) -> str:
     return "\n\n---\n\n".join(doc.page_content for doc in docs)
 
 
@@ -50,7 +46,7 @@ class SupabaseVectorStoreCompat(SupabaseVectorStore):
         self,
         query: List[float],
         k: int,
-        filter: Optional[Dict[str, Any]] = None,
+        filter: Optional[Dict] = None,
         postgrest_filter: Optional[str] = None,
         score_threshold: Optional[float] = None,
     ) -> List[Tuple[Document, float]]:
@@ -78,65 +74,60 @@ class SupabaseVectorStoreCompat(SupabaseVectorStore):
         ]
 
 
-def get_rag_chain():
-    global _RAG_CHAIN
-    if _RAG_CHAIN is not None:
-        return _RAG_CHAIN
+def get_rag_components():
+    llm = get_llm()
+    embeddings = get_embedding_model()
+    supabase = get_supabase()
 
-    with _RAG_CHAIN_LOCK:
-        if _RAG_CHAIN is not None:
-            return _RAG_CHAIN
+    vector_store = SupabaseVectorStoreCompat(
+        client=supabase,
+        embedding=embeddings,
+        table_name="document_chunks",
+        query_name="match_documents",
+    )
 
-        logger.info("Initializing RAG chain...")
+    retriever = vector_store.as_retriever(
+        search_type="similarity",
+        search_kwargs={"k": 5},
+    )
 
-        llm = get_llm()
-        embeddings = get_embedding_model()
-        supabase = get_supabase()
-
-        vector_store = SupabaseVectorStoreCompat(
-            client=supabase,
-            embedding=embeddings,
-            table_name="document_chunks",  # ✅ مهم جدًا
-            query_name="match_documents",
-        )
-
-        retriever = vector_store.as_retriever(
-            search_type="similarity",
-            search_kwargs={"k": 5},
-        )
-
-        prompt = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-
-        _RAG_CHAIN = (
-            {"context": retriever | format_docs, "question": RunnablePassthrough()}
-            | prompt
-            | llm
-            | StrOutputParser()
-        )
-
-    return _RAG_CHAIN
+    return retriever, llm
 
 
 def ask_academic_mentor(query: str, user_id: str) -> str:
     try:
-        rag_chain = get_rag_chain()
+        retriever, llm = get_rag_components()
 
-        # 🧠 Retrieve long-term memory
+        # 1️⃣ Retrieve regulation context
+        docs = retriever.invoke(query)
+        regulation_context = format_docs(docs)
+
+        # 2️⃣ Retrieve semantic long-term memory
         memory_context = retrieve_memory(user_id, query)
 
-        # Inject memory into prompt
-        final_input = {
-            "question": query,
-            "context": f"User previous memories:\n{memory_context}"
-        }
+        # 3️⃣ Build final prompt
+        final_prompt = PROMPT_TEMPLATE.format(
+            memory_context=memory_context,
+            regulation_context=regulation_context,
+            question=query
+        )
 
-        response = rag_chain.invoke(final_input)
+        # 4️⃣ LLM call
+        response = llm.invoke(final_prompt)
 
-        # 💾 Store memory after response
+        # Gemini returns content differently
+        response_text = (
+            response.content
+            if hasattr(response, "content")
+            else str(response)
+        )
+
+        # 5️⃣ Store memory
         store_memory(user_id, "user", query)
-        store_memory(user_id, "ai", response)
+        store_memory(user_id, "ai", response_text)
 
-        return response
+        return response_text
 
-    except Exception as e:
+    except Exception:
+        logger.exception("Academic mentor failed")
         return "حدث خطأ أثناء معالجة الطلب."

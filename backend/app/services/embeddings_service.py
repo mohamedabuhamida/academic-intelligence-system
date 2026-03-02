@@ -4,6 +4,34 @@ from app.core.config import get_embedding_model, get_supabase
 import tempfile
 import os
 
+from app.core.config import get_embedding_model, get_supabase
+
+def insert_embedding(document_id: str, content: str):
+    try:
+        embeddings_model = get_embedding_model()
+        supabase = get_supabase()
+
+        # Generate embedding
+        vector = embeddings_model.embed_query(content)
+
+        # Insert into database
+        supabase.table("document_chunks").insert({
+            "document_id": document_id,
+            "content": content,
+            "embedding": vector
+        }).execute()
+
+        return {
+            "status": "success",
+            "dimension": len(vector)
+        }
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
 
 def ingest_pdf(file, document_id: str):
     try:

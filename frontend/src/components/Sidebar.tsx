@@ -51,41 +51,44 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
     >
       {/* Logo Area */}
       <div
-        className={`p-6 flex items-center ${isExpanded ? "justify-between" : "justify-center"}`}
-      >
-        {isExpanded ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-center gap-2"
-          >
-            <div className="w-8 h-8 rounded-xl bg-[#102C57] flex items-center justify-center">
-              <Brain className="w-5 h-5 text-[#F8F0E5]" />
-            </div>
-            <span className="text-xl font-semibold text-[#102C57]">
-              Aether<span className="text-[#DAC0A3]">Academy</span>
-            </span>
-          </motion.div>
-        ) : (
-          <div className="w-8 h-8 rounded-xl bg-[#102C57] flex items-center justify-center">
-            <Brain className="w-5 h-5 text-[#F8F0E5]" />
-          </div>
-        )}
+  className={`p-6 flex items-center ${
+    isExpanded ? "justify-between" : "justify-center"
+  }`}
+>
+  <div className="flex items-center gap-2">
+    {/* Logo Icon */}
+    <div className="w-8 h-8 rounded-xl bg-[#102C57] flex items-center justify-center">
+      <Brain className="w-5 h-5 text-[#F8F0E5]" />
+    </div>
 
-        {/* Toggle Button */}
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={onToggle}
-          className={`w-6 h-6 m-2 rounded-full bg-[#102C57]/10 hover:bg-[#102C57]/20 flex items-center justify-center transition-colors `}
-        >
-          {isExpanded ? (
-            <ChevronLeft className="w-4 h-4 text-[#102C57]" />
-          ) : (
-            <ChevronRight className="w-4 h-4 text-[#102C57]" />
-          )}
-        </motion.button>
-      </div>
+    {/* Logo Text */}
+    <motion.span
+      initial={false}
+      animate={{
+        opacity: isExpanded ? 1 : 0,
+        width: isExpanded ? "auto" : 0,
+      }}
+      transition={{ duration: 0.2 }}
+      className="text-xl font-semibold text-[#102C57] overflow-hidden whitespace-nowrap"
+    >
+      Aether<span className="text-[#DAC0A3]">Academy</span>
+    </motion.span>
+  </div>
+
+  {/* Toggle Button */}
+  <motion.button
+    whileHover={{ scale: 1.1 }}
+    whileTap={{ scale: 0.9 }}
+    onClick={onToggle}
+    className="w-6 h-6 m-2 rounded-full bg-[#102C57]/10 hover:bg-[#102C57]/20 flex items-center justify-center transition-colors"
+  >
+    {isExpanded ? (
+      <ChevronLeft className="w-4 h-4 text-[#102C57]" />
+    ) : (
+      <ChevronRight className="w-4 h-4 text-[#102C57]" />
+    )}
+  </motion.button>
+</div>
 
       {/* AI Status Indicator */}
       <motion.div

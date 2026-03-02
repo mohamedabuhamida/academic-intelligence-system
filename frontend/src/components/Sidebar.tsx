@@ -71,7 +71,7 @@ export default function Sidebar({ isExpanded, onToggle }: SidebarProps) {
       transition={{ duration: 0.2 }}
       className="text-xl font-semibold text-[#102C57] overflow-hidden whitespace-nowrap"
     >
-      Aether<span className="text-[#DAC0A3]">Academy</span>
+      Aether<span className="text-[#DAC0A3]">{" "}Academy</span>
     </motion.span>
   </div>
 

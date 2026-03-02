@@ -21,7 +21,7 @@ import {
 } from "@/components/animations";
 
 interface Message {
-  id: number;
+  id: string;
   type: "ai" | "user";
   content: string;
   timestamp: string;
@@ -29,18 +29,9 @@ interface Message {
 }
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      type: "ai",
-      content:
-        "مرحباً! أنا مساعدك الدراسي الذكي. كيف يمكنني مساعدتك في دراستك اليوم؟",
-      timestamp: new Date().toLocaleTimeString("ar-SA", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    },
-  ]);
+  const supabase = createClient();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -53,25 +44,123 @@ export default function ChatPage() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = async () => {
-    if (!input.trim() || isLoading) return;
-    const question = input.trim();
+  const welcomeMessage = (): Message => ({
+    id: `welcome-${Date.now()}`,
+    type: "ai",
+    content:
+      "مرحباً! أنا مساعدك الدراسي الذكي. كيف يمكنني مساعدتك في دراستك اليوم؟",
+    timestamp: new Date().toLocaleTimeString("ar-SA", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  });
 
-    const userMessage: Message = {
-      id: Date.now(),
-      type: "user",
-      content: question,
-      timestamp: new Date().toLocaleTimeString("ar-SA", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+  useEffect(() => {
+    const initConversation = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setMessages([welcomeMessage()]);
+        return;
+      }
+
+      const { data: conv } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      let convId = conv?.id as string | undefined;
+
+      if (!convId) {
+        const { data: newConv } = await supabase
+          .from("conversations")
+          .insert([{ user_id: user.id, title: "New Chat" }])
+          .select("id")
+          .single();
+
+        convId = newConv?.id as string | undefined;
+      }
+
+      if (!convId) {
+        setMessages([welcomeMessage()]);
+        return;
+      }
+
+      setConversationId(convId);
+
+      const { data: msgs } = await supabase
+        .from("messages")
+        .select("id, role, content, created_at")
+        .eq("conversation_id", convId)
+        .order("created_at", { ascending: true });
+
+      if (msgs && msgs.length > 0) {
+        setMessages(
+          msgs.map((msg: any) => ({
+            id: String(msg.id),
+            type: msg.role === "user" ? "user" : "ai",
+            content: String(msg.content ?? ""),
+            timestamp: new Date(msg.created_at).toLocaleTimeString("ar-SA", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          }))
+        );
+      } else {
+        setMessages([welcomeMessage()]);
+      }
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    initConversation();
+  }, []);
+
+  const handleSendMessage = async () => {
+    if (!input.trim() || isLoading || !conversationId) return;
+    const question = input.trim();
     setInput("");
     setIsLoading(true);
 
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      const { data: userMsg } = await supabase
+        .from("messages")
+        .insert([
+          {
+            conversation_id: conversationId,
+            role: "user",
+            content: question,
+          },
+        ])
+        .select("id, created_at")
+        .single();
+
+      if (userMsg) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: String(userMsg.id),
+            type: "user",
+            content: question,
+            timestamp: new Date(userMsg.created_at).toLocaleTimeString("ar-SA", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          },
+        ]);
+      }
+
       const response = await fetch("http://127.0.0.1:8000/api/ask", {
         method: "POST",
         headers: {
@@ -80,34 +169,49 @@ export default function ChatPage() {
         },
         body: JSON.stringify({
           question,
+          user_id: user.id,
         }),
       });
 
       const data = await response.json().catch(() => ({}));
-      const answerText =
+      const answer =
         data?.answer ??
         data?.message ??
         (response.ok
           ? "Received a response in an unexpected format."
           : "Unable to get a response from the server.");
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          type: "ai",
-          content: String(answerText),
-          timestamp: new Date().toLocaleTimeString("ar-SA", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          sources: Array.isArray(data?.sources) ? data.sources : [],
-        },
-      ]);
+      const { data: aiMsg } = await supabase
+        .from("messages")
+        .insert([
+          {
+            conversation_id: conversationId,
+            role: "ai",
+            content: String(answer),
+          },
+        ])
+        .select("id, created_at")
+        .single();
+
+      if (aiMsg) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: String(aiMsg.id),
+            type: "ai",
+            content: String(answer),
+            timestamp: new Date(aiMsg.created_at).toLocaleTimeString("ar-SA", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            sources: Array.isArray(data?.sources) ? data.sources : [],
+          },
+        ]);
+      }
     } catch (error) {
       console.error("Error sending message:", error);
       const errorMessage: Message = {
-        id: Date.now() + 2,
+        id: `error-${Date.now()}`,
         type: "ai",
         content: "عذراً، حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.",
         timestamp: new Date().toLocaleTimeString("ar-SA", {
@@ -120,8 +224,6 @@ export default function ChatPage() {
       setIsLoading(false);
     }
   };
-
-  console.log(messages);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {

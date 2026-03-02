@@ -55,11 +55,12 @@ export default function ChatPage() {
 
   const handleSendMessage = async () => {
     if (!input.trim() || isLoading) return;
+    const question = input.trim();
 
     const userMessage: Message = {
-      id: messages.length + 1,
+      id: Date.now(),
       type: "user",
-      content: input,
+      content: question,
       timestamp: new Date().toLocaleTimeString("ar-SA", {
         hour: "2-digit",
         minute: "2-digit",

@@ -154,7 +154,6 @@ export default function ChatPage() {
     <motion.div
       variants={staggerContainer}
       initial="initial"
-      animate="animate"
       className="flex flex-col h-full min-h-0"
       dir="rtl"
     >

@@ -1,6 +1,6 @@
 import logging
 import os
-from functools import lru_cache
+import threading
 from typing import Any, Dict, List, Optional, Tuple
 
 from dotenv import load_dotenv
@@ -17,6 +17,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
+_RAG_CHAIN = None
+_RAG_CHAIN_LOCK = threading.Lock()
 
 PROMPT_TEMPLATE = """You are the academic assistant for the Faculty of AI at Delta University.
 Answer only from the retrieved regulation context.
@@ -94,46 +96,55 @@ class SupabaseVectorStoreCompat(SupabaseVectorStore):
         return match_result
 
 
-@lru_cache(maxsize=1)
 def get_rag_chain():
-    logger.info("Initializing RAG components...")
+    global _RAG_CHAIN
+    if _RAG_CHAIN is not None:
+        return _RAG_CHAIN
 
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
-        temperature=0,
-        google_api_key=_required_env("GOOGLE_API_KEY"),
-    )
+    with _RAG_CHAIN_LOCK:
+        if _RAG_CHAIN is not None:
+            return _RAG_CHAIN
 
-    embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
-        model_kwargs={"device": "cpu", "low_cpu_mem_usage": False},
-    )
+        logger.info("Initializing RAG components...")
 
-    supabase = create_client(
-        _required_env("NEXT_PUBLIC_SUPABASE_URL"),
-        _required_env("SUPABASE_SERVICE_ROLE_KEY"),
-    )
+        llm = ChatGoogleGenerativeAI(
+            model="gemini-2.5-flash",
+            temperature=0,
+            google_api_key=_required_env("GOOGLE_API_KEY"),
+        )
 
-    vector_store = SupabaseVectorStoreCompat(
-        client=supabase,
-        embedding=embeddings,
-        table_name="documents",
-        query_name="match_documents",
-    )
+        embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+            model_kwargs={"device": "cpu"},
+        )
 
-    retriever = vector_store.as_retriever(
-        search_type="similarity",
-        search_kwargs={"k": 5},
-    )
+        supabase = create_client(
+            _required_env("NEXT_PUBLIC_SUPABASE_URL"),
+            _required_env("SUPABASE_SERVICE_ROLE_KEY"),
+        )
 
-    prompt = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
+        vector_store = SupabaseVectorStoreCompat(
+            client=supabase,
+            embedding=embeddings,
+            table_name="documents",
+            query_name="match_documents",
+        )
 
-    return (
-        {"context": retriever | format_docs, "question": RunnablePassthrough()}
-        | prompt
-        | llm
-        | StrOutputParser()
-    )
+        retriever = vector_store.as_retriever(
+            search_type="similarity",
+            search_kwargs={"k": 5},
+        )
+
+        prompt = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
+
+        _RAG_CHAIN = (
+            {"context": retriever | format_docs, "question": RunnablePassthrough()}
+            | prompt
+            | llm
+            | StrOutputParser()
+        )
+
+    return _RAG_CHAIN
 
 
 def ask_academic_mentor(query: str) -> str:

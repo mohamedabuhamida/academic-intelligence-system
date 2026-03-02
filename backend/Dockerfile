@@ -18,5 +18,5 @@ COPY . .
 # Expose the port FastAPI runs on
 EXPOSE 8000
 
-# Command to run the app with hot-reload enabled for development
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Run without --reload in container to avoid worker startup issues
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

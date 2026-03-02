@@ -1,95 +1,155 @@
-import os
 import logging
+import os
+from functools import lru_cache
+from typing import Any, Dict, List, Optional, Tuple
+
 from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_core.documents import Document
 from langchain_community.vectorstores import SupabaseVectorStore
-from supabase.client import create_client
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
-from langchain_core.output_parsers import StrOutputParser
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_huggingface import HuggingFaceEmbeddings
+from supabase.client import create_client
 
-# إعداد الـ Logging عشان يطبعلك الأخطاء بشياكة لو حصلت
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# 1. تحميل الإعدادات
 load_dotenv()
 
-# 2. إعداد الموديل العبقري (Gemini 2.5 Flash)
-llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash", 
-    temperature=0, # صفر يعني الدقة 100% وبدون تأليف
-    google_api_key=os.getenv("GOOGLE_API_KEY")
-)
+PROMPT_TEMPLATE = """You are the academic assistant for the Faculty of AI at Delta University.
+Answer only from the retrieved regulation context.
+If the answer is not in the context, say you do not have enough information in the current regulation.
 
-# 3. إعداد الـ Embeddings (الموديل المحلي اللي شغال زي الفل)
-embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2")
+Retrieved context:
+{context}
 
-# 4. الاتصال بـ Supabase
-supabase = create_client(
-    os.getenv("NEXT_PUBLIC_SUPABASE_URL"), 
-    os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-)
+Student question: {question}
 
-# 5. تجهيز محرك البحث الخارق (بندور بالتشابه ونشترط درجة دقة معينة)
-vector_store = SupabaseVectorStore(
-    client=supabase,
-    embedding=embeddings,
-    table_name="documents",
-    query_name="match_documents"
-)
+Accurate answer:"""
 
-# كود احترافي: بنجيب أحسن 5 قطع، بس لازم نسبة التشابه تكون معقولة
-retriever = vector_store.as_retriever(
-    search_type="similarity",
-    search_kwargs={"k": 5}
-)
 
-# دالة لتنظيف وتنسيق النصوص المستخرجة قبل ما تروح لـ Gemini
 def format_docs(docs):
     return "\n\n---\n\n".join(doc.page_content for doc in docs)
 
-# 6. تصميم الـ Prompt (قوي وصارم)
-template = """أنت "المساعد الأكاديمي الذكي" الخاص بكلية الذكاء الاصطناعي بجامعة الدلتا.
-مهمتك هي إرشاد الطلاب والإجابة على استفساراتهم بناءً على لائحة الكلية الرسمية المرفقة أدناه فقط.
 
-قواعد صارمة:
-1. استخدم المعلومات الموجودة في "النصوص المستخرجة" فقط.
-2. إذا كان السؤال خارج نطاق الكلية أو غير موجود في النصوص، قل: "عذراً، لا أملك تفاصيل دقيقة حول هذا الاستفسار في لائحة الكلية الحالية."
-3. لا تقم بتأليف أو تخمين أي إجابات من خارج النصوص.
-4. اجعل إجابتك منظمة، واضحة، واستخدم النقاط (Bullet points) إذا لزم الأمر.
+def _required_env(name: str) -> str:
+    value = os.getenv(name)
+    if not value:
+        raise RuntimeError(f"Missing required environment variable: {name}")
+    return value
 
-النصوص المستخرجة من اللائحة:
-{context}
 
-سؤال الطالب: {question}
+class SupabaseVectorStoreCompat(SupabaseVectorStore):
+    """Compatibility layer for postgrest>=2 RPC builders.
 
-الإجابة المعتمدة:"""
+    langchain_community currently expects query_builder.params, but new
+    postgrest builders expose fluent methods like .limit().
+    """
 
-prompt = ChatPromptTemplate.from_template(template)
+    def similarity_search_by_vector_with_relevance_scores(
+        self,
+        query: List[float],
+        k: int,
+        filter: Optional[Dict[str, Any]] = None,
+        postgrest_filter: Optional[str] = None,
+        score_threshold: Optional[float] = None,
+    ) -> List[Tuple[Document, float]]:
+        match_documents_params = self.match_args(query, filter)
+        query_builder = self._client.rpc(self.query_name, match_documents_params)
 
-# 7. بناء الـ Chain المتطورة
-rag_chain = (
-    {"context": retriever | format_docs, "question": RunnablePassthrough()}
-    | prompt
-    | llm
-    | StrOutputParser()
-)
+        # New postgrest clients no longer expose `params`; use fluent API.
+        if hasattr(query_builder, "params"):
+            if postgrest_filter:
+                query_builder.params = query_builder.params.set(
+                    "and", f"({postgrest_filter})"
+                )
+            query_builder.params = query_builder.params.set("limit", k)
+        else:
+            if postgrest_filter:
+                query_builder = query_builder.filter("and", "eq", f"({postgrest_filter})")
+            query_builder = query_builder.limit(k)
 
-# 8. الدالة النهائية اللي هنستدعيها من الـ API (محمية بـ Try/Except)
+        res = query_builder.execute()
+        match_result = [
+            (
+                Document(
+                    metadata=search.get("metadata", {}),
+                    page_content=search.get("content", ""),
+                ),
+                search.get("similarity", 0.0),
+            )
+            for search in res.data
+            if search.get("content")
+        ]
+
+        if score_threshold is not None:
+            match_result = [
+                (doc, similarity)
+                for doc, similarity in match_result
+                if similarity >= score_threshold
+            ]
+
+        return match_result
+
+
+@lru_cache(maxsize=1)
+def get_rag_chain():
+    logger.info("Initializing RAG components...")
+
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash",
+        temperature=0,
+        google_api_key=_required_env("GOOGLE_API_KEY"),
+    )
+
+    embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+    )
+
+    supabase = create_client(
+        _required_env("NEXT_PUBLIC_SUPABASE_URL"),
+        _required_env("SUPABASE_SERVICE_ROLE_KEY"),
+    )
+
+    vector_store = SupabaseVectorStoreCompat(
+        client=supabase,
+        embedding=embeddings,
+        table_name="documents",
+        query_name="match_documents",
+    )
+
+    retriever = vector_store.as_retriever(
+        search_type="similarity",
+        search_kwargs={"k": 5},
+    )
+
+    prompt = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
+
+    return (
+        {"context": retriever | format_docs, "question": RunnablePassthrough()}
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
+
+
 def ask_academic_mentor(query: str) -> str:
     try:
-        logger.info(f"Processing query: {query}")
-        response = rag_chain.invoke(query)
-        return response
-    except Exception as e:
-        logger.error(f"Error processing query: {str(e)}")
-        return "عذراً، حدث خطأ فني أثناء البحث في اللائحة. يرجى المحاولة مرة أخرى لاحقاً."
+        logger.info("Processing query: %s", query)
+        rag_chain = get_rag_chain()
+        return rag_chain.invoke(query)
+    except Exception:
+        logger.exception("Error processing query")
+        return (
+            "Sorry, a technical error happened while searching the regulation. "
+            "Please try again shortly."
+        )
 
-# اختبار سريع
+
 if __name__ == "__main__":
-    test_query =" ما هي النسبة المئوية المناظرة وعدد النقاط لتقدير جيد جدا المرتفع (B+) حسب اللائحة؟"
+    test_query = "What are the requirements for course registration?"
     answer = ask_academic_mentor(test_query)
-    print(f"\nسؤال الطالب: {test_query}")
-    print(f"\n🤖 المساعد الأكاديمي:\n{answer}")
+    print(f"\nStudent question: {test_query}")
+    print(f"\nAcademic assistant:\n{answer}")

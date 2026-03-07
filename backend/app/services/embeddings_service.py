@@ -1,5 +1,5 @@
 import re
-
+import requests
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_text_splitters import MarkdownHeaderTextSplitter
 from app.core.config import get_embedding_model, get_supabase
@@ -7,10 +7,14 @@ from app.core.config import get_embedding_model, get_supabase
 
 def insert_embedding(document_id: str, content: str):
     try:
-        embeddings_model = get_embedding_model()
+        embed = get_embedding_model()  # Returns a callable
         supabase = get_supabase()
 
-        vector = embeddings_model.embed_query(content)
+        # Call the embedding function directly
+        vector = embed(content)
+        # HF API returns list of embeddings; extract first one if single text
+        if isinstance(vector, list) and len(vector) > 0 and isinstance(vector[0], list):
+            vector = vector[0]
 
         supabase.table("document_chunks").insert({
             "document_id": document_id,
@@ -83,14 +87,19 @@ def ingest_markdown(file, document_id: str):
             else chunk_splitter.create_documents([content])
         )
 
-        embeddings_model = get_embedding_model()
+        embed = get_embedding_model()  # Returns a callable
         supabase = get_supabase()
 
         inserted = 0
 
         for chunk in chunks:
             chunk_text = chunk.page_content
-            vector = embeddings_model.embed_query(chunk_text)
+            
+            # Call the embedding function directly
+            vector = embed(chunk_text)
+            # HF API returns list of embeddings; extract first one if single text
+            if isinstance(vector, list) and len(vector) > 0 and isinstance(vector[0], list):
+                vector = vector[0]
 
             supabase.table("document_chunks").insert({
                 "document_id": document_id,

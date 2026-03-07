@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from supabase.client import create_client
 from langchain_huggingface import HuggingFaceEndpointEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
+from huggingface_hub import InferenceClient
 
 load_dotenv()
 

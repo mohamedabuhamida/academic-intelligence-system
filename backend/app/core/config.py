@@ -1,7 +1,7 @@
 import os
+import requests
 from dotenv import load_dotenv
 from supabase.client import create_client
-from langchain_huggingface import HuggingFaceEndpointEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 load_dotenv()
@@ -34,19 +34,33 @@ def get_supabase():
 
 
 # =========================
-# 🔹 Embedding Model (Singleton) - Hugging Face API
+# 🔹 Embedding Model (Singleton) - HF Inference API
 # =========================
 
-_embedding_model = None
+EMBEDDING_API_URL = "https://router.huggingface.co/hf-inference/models/sentence-transformers/paraphrase-multilingual-mpnet-base-v2/pipeline/feature-extraction"
 
 def get_embedding_model():
-    global _embedding_model
-    if _embedding_model is None:
-        _embedding_model = HuggingFaceEndpointEmbeddings(
-            model="https://router.huggingface.co/hf-inference/models/sentence-transformers/paraphrase-multilingual-mpnet-base-v2/pipeline/sentence-similarity",
-            huggingfacehub_api_token=get_env("HF_TOKEN"),
-        )
-    return _embedding_model
+    """
+    Returns a callable that generates embeddings via HF Inference API.
+    Usage: embeddings = get_embedding_model()(["text1", "text2"])
+    """
+    hf_token = get_env("HF_TOKEN")
+    headers = {"Authorization": f"Bearer {hf_token}"}
+    
+    def embed_texts(texts):
+        """
+        Generate embeddings for a list of texts.
+        Returns list of embedding vectors.
+        """
+        if isinstance(texts, str):
+            texts = [texts]
+        
+        payload = {"inputs": texts}
+        response = requests.post(EMBEDDING_API_URL, headers=headers, json=payload)
+        response.raise_for_status()
+        return response.json()
+    
+    return embed_texts
 
 
 # =========================

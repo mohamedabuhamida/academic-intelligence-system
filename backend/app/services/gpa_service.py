@@ -12,3 +12,15 @@ def get_current_gpa(user_id):
         .execute()
 
     return result.data
+
+
+def calculate_cgpa(user_id):
+
+    supabase = get_supabase()
+
+    query = supabase.rpc(
+        "calculate_cgpa",
+        {"user_id_input": user_id}
+    ).execute()
+
+    return query.data

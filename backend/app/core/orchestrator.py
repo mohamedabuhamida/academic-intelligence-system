@@ -8,7 +8,7 @@ def run_ai_orchestrator(query: str, user_id: str):
     q = query.lower()
 
     if "gpa" in q:
-        result = ask_gpa_agent(user_id)
+        result = ask_gpa_agent(question=query, user_id=user_id)
         print("GPA Agent:", result)
         return result
 

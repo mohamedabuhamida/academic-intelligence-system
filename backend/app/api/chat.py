@@ -1,12 +1,18 @@
 from fastapi import APIRouter
 from app.models.chat_models import ChatRequest
-from app.services.rag_service import ask_question
+from app.core.orchestrator import run_ai_orchestrator
 
 router = APIRouter()
 
+
 @router.post("/api/ask")
 def ask_chat(request: ChatRequest):
-    response = ask_question(request.question, request.user_id)
+
+    response = run_ai_orchestrator(
+        query=request.question,
+        user_id=request.user_id
+    )
+
     return {
         "status": "success",
         "answer": response

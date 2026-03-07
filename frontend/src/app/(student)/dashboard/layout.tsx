@@ -33,10 +33,10 @@ export default function DashboardLayout({
       </div>
 
       {/* Sidebar */}
-      {/* <Sidebar 
+      <Sidebar 
         isExpanded={isSidebarExpanded} 
         onToggle={() => setIsSidebarExpanded(!isSidebarExpanded)} 
-      /> */}
+      />
 
       {/* Main Content */}
       <div 
@@ -44,7 +44,7 @@ export default function DashboardLayout({
           isSidebarExpanded ? 'ml-[280px]' : 'ml-[88px]'
         }`}
       >
-        <Header isSidebarExpanded={isSidebarExpanded} />
+        {/* <Header isSidebarExpanded={isSidebarExpanded} /> */}
 
         {/* Page Content with Transition */}
         <main className="p-8 pt-24">

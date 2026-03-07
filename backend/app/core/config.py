@@ -43,7 +43,7 @@ def get_embedding_model():
     global _embedding_model
     if _embedding_model is None:
         _embedding_model = HuggingFaceEndpointEmbeddings(
-            model="https://api-inference.huggingface.co/models/sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+            model="https://router.huggingface.co/models/sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
             huggingfacehub_api_token=get_env("HF_TOKEN"),
         )
     return _embedding_model

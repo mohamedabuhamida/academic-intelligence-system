@@ -26,11 +26,11 @@ export default function DashboardLayout({
   return (
     <div className="h-screen flex flex-col bg-[#F8F0E5]">
       {/* Background Pattern */}
-      {/* <div className="fixed inset-0 overflow-hidden pointer-events-none">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 -left-4 w-96 h-96 bg-[#DAC0A3]/20 rounded-full mix-blend-multiply filter blur-3xl animate-blob" />
-        <div className="absolute top-0 -right-4 w-96 h-96 bg-[#102C57]/10 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000" />
-        <div className="absolute -bottom-8 left-20 w-96 h-96 bg-[#EADBC8]/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000" />
-      </div> */}
+        {/* <div className="absolute top-0 -right-4 w-96 h-96 bg-[#102C57]/10 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000" />
+        <div className="absolute -bottom-8 left-20 w-96 h-96 bg-[#EADBC8]/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000" /> */}
+      </div>
 
       {/* Sidebar */}
       <Sidebar 

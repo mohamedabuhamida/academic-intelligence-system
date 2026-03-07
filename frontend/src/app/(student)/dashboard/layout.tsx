@@ -33,10 +33,10 @@ export default function DashboardLayout({
       </div>
 
       {/* Sidebar */}
-      <Sidebar 
+      {/* <Sidebar 
         isExpanded={isSidebarExpanded} 
         onToggle={() => setIsSidebarExpanded(!isSidebarExpanded)} 
-      />
+      /> */}
 
       {/* Main Content */}
       <div 

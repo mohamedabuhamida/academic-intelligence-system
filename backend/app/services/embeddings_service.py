@@ -7,14 +7,10 @@ from app.core.config import get_embedding_model, get_supabase
 
 def insert_embedding(document_id: str, content: str):
     try:
-        embed = get_embedding_model()  # Returns a callable
+        embed = get_embedding_model()
         supabase = get_supabase()
 
-        # Call the embedding function directly
-        vector = embed(content)
-        # HF API returns list of embeddings; extract first one if single text
-        if isinstance(vector, list) and len(vector) > 0 and isinstance(vector[0], list):
-            vector = vector[0]
+        vector = embed.embed_query(content)
 
         supabase.table("document_chunks").insert({
             "document_id": document_id,
@@ -87,7 +83,7 @@ def ingest_markdown(file, document_id: str):
             else chunk_splitter.create_documents([content])
         )
 
-        embed = get_embedding_model()  # Returns a callable
+        embed = get_embedding_model()
         supabase = get_supabase()
 
         inserted = 0
@@ -95,11 +91,7 @@ def ingest_markdown(file, document_id: str):
         for chunk in chunks:
             chunk_text = chunk.page_content
             
-            # Call the embedding function directly
-            vector = embed(chunk_text)
-            # HF API returns list of embeddings; extract first one if single text
-            if isinstance(vector, list) and len(vector) > 0 and isinstance(vector[0], list):
-                vector = vector[0]
+            vector = embed.embed_query(chunk_text)
 
             supabase.table("document_chunks").insert({
                 "document_id": document_id,

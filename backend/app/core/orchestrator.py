@@ -5,11 +5,13 @@ from app.agents.gpa_agent import ask_gpa_agent
 
 def run_ai_orchestrator(query: str, user_id: str):
 
-    query_lower = query.lower()
+    q = query.lower()
 
-    # GPA questions
-    if "gpa" in query_lower or "cgpa" in query_lower or "معدل" in query_lower:
-        return ask_gpa_agent(query, user_id)
+    if "gpa" in q:
+        result = ask_gpa_agent(user_id)
+        print("GPA Agent:", result)
+        return result
 
-    # regulation questions
-    return ask_academic_mentor(query, user_id)
+    result = ask_academic_mentor(query, user_id)
+    print("RAG Agent:", result)
+    return result

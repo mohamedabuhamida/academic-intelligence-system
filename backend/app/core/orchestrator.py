@@ -9,7 +9,7 @@ def run_ai_orchestrator(query: str, user_id: str):
 
     # GPA questions
     if "gpa" in query_lower or "cgpa" in query_lower or "معدل" in query_lower:
-        return ask_gpa_agent(user_id)
+        return ask_gpa_agent(query, user_id)
 
     # regulation questions
     return ask_academic_mentor(query, user_id)

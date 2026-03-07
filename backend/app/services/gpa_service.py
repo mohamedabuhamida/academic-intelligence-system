@@ -14,16 +14,19 @@ def get_current_gpa(user_id):
     return result.data
 
 
-def calculate_cgpa(user_id):
+def get_cgpa(user_id):
 
     supabase = get_supabase()
 
-    query = supabase.rpc(
-        "calculate_cgpa",
-        {"user_id_input": user_id}
-    ).execute()
+    result = (
+        supabase.table("student_cgpa")
+        .select("*")
+        .eq("user_id", user_id)
+        .single()
+        .execute()
+    )
 
-    return query.data
+    return result.data
 
 def get_semester_gpa(user_id):
 

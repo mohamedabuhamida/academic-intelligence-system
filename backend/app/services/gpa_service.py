@@ -24,3 +24,18 @@ def calculate_cgpa(user_id):
     ).execute()
 
     return query.data
+
+def get_semester_gpa(user_id):
+
+    supabase = get_supabase()
+
+    result = (
+        supabase.table("gpa_history")
+        .select("*")
+        .eq("user_id", user_id)
+        .order("recorded_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+
+    return result.data

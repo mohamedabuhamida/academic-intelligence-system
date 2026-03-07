@@ -3,7 +3,6 @@ from dotenv import load_dotenv
 from supabase.client import create_client
 from langchain_huggingface import HuggingFaceEndpointEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
-from huggingface_hub import InferenceClient
 
 load_dotenv()
 
@@ -44,7 +43,7 @@ def get_embedding_model():
     global _embedding_model
     if _embedding_model is None:
         _embedding_model = HuggingFaceEndpointEmbeddings(
-            model="https://router.huggingface.co/models/sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+            model="https://router.huggingface.co/hf-inference/models/sentence-transformers/paraphrase-multilingual-mpnet-base-v2/pipeline/sentence-similarity",
             huggingfacehub_api_token=get_env("HF_TOKEN"),
         )
     return _embedding_model

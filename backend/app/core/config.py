@@ -3,6 +3,7 @@ import requests
 from dotenv import load_dotenv
 from supabase.client import create_client
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.embeddings import Embeddings
 
 load_dotenv()
 
@@ -39,28 +40,55 @@ def get_supabase():
 
 EMBEDDING_API_URL = "https://router.huggingface.co/hf-inference/models/sentence-transformers/paraphrase-multilingual-mpnet-base-v2/pipeline/feature-extraction"
 
-def get_embedding_model():
-    """
-    Returns a callable that generates embeddings via HF Inference API.
-    Usage: embeddings = get_embedding_model()(["text1", "text2"])
-    """
-    hf_token = get_env("HF_TOKEN")
-    headers = {"Authorization": f"Bearer {hf_token}"}
-    
-    def embed_texts(texts):
-        """
-        Generate embeddings for a list of texts.
-        Returns list of embedding vectors.
-        """
-        if isinstance(texts, str):
-            texts = [texts]
-        
+class HFInferenceEmbeddings(Embeddings):
+    def __init__(self, api_url: str, token: str):
+        self.api_url = api_url
+        self.headers = {"Authorization": f"Bearer {token}"}
+
+    def _request_embeddings(self, texts):
         payload = {"inputs": texts}
-        response = requests.post(EMBEDDING_API_URL, headers=headers, json=payload)
+        response = requests.post(
+            self.api_url,
+            headers=self.headers,
+            json=payload,
+            timeout=60,
+        )
         response.raise_for_status()
-        return response.json()
-    
-    return embed_texts
+        data = response.json()
+
+        if not data:
+            return []
+
+        if isinstance(data[0], (int, float)):
+            return [data]
+
+        return data
+
+    def embed_documents(self, texts):
+        if not texts:
+            return []
+        return self._request_embeddings(texts)
+
+    def embed_query(self, text):
+        vectors = self._request_embeddings([text])
+        return vectors[0] if vectors else []
+
+    def __call__(self, texts):
+        if isinstance(texts, str):
+            return self.embed_query(texts)
+        return self.embed_documents(texts)
+
+
+_embedding_model = None
+
+def get_embedding_model():
+    global _embedding_model
+    if _embedding_model is None:
+        _embedding_model = HFInferenceEmbeddings(
+            api_url=EMBEDDING_API_URL,
+            token=get_env("HF_TOKEN"),
+        )
+    return _embedding_model
 
 
 # =========================

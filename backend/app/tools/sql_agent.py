@@ -17,3 +17,10 @@ sql_agent = initialize_agent(
     agent="zero-shot-react-description",
     verbose=True
 )
+
+
+def ask_database(question: str):
+
+    response = sql_agent.run(question)
+
+    return response

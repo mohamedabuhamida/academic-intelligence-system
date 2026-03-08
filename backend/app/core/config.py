@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from supabase.client import create_client
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.embeddings import Embeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 load_dotenv()
 

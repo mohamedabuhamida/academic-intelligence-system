@@ -70,7 +70,7 @@ def _extract_text_from_agent_result(result) -> str:
     return str(result)
 
 
-def ask_database(question: str):
+async def ask_database(question: str):
     try:
         agent = get_sql_agent()
     except Exception as exc:

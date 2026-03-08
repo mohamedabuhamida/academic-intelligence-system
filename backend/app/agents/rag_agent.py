@@ -94,7 +94,7 @@ def get_rag_components():
     return retriever, llm
 
 
-def ask_academic_mentor(query: str, user_id: str) -> str:
+async def ask_academic_mentor(query: str, user_id: str) -> str:
     try:
         retriever, llm = get_rag_components()
 

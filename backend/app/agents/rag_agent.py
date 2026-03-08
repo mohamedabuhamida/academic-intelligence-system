@@ -8,6 +8,7 @@ from langchain_community.vectorstores import SupabaseVectorStore
 
 from app.services.memory_service import store_memory, retrieve_memory
 from app.core.config import get_supabase, get_embedding_model, get_llm
+from app.tools.sql_agent import ask_database
 
 logger = logging.getLogger(__name__)
 
@@ -115,27 +116,45 @@ async def ask_academic_mentor(query: str, user_id: str) -> str:
     try:
         retriever, llm = get_rag_components()
 
-        # 1️⃣ Retrieve regulation context
+        # 1️⃣ RAG context (regulations)
         docs = retriever.invoke(query)
         regulation_context = format_docs(docs)
 
-        # 2️⃣ Retrieve semantic long-term memory
-        memory_context = retrieve_memory(user_id, query)
-
-        # 3️⃣ Build final prompt
-        final_prompt = PROMPT_TEMPLATE.format(
-            memory_context=memory_context,
-            regulation_context=regulation_context,
-            question=query
+        # 2️⃣ Student academic data from SQL
+        student_data = ask_database(
+            f"Get academic data for student {user_id} relevant to: {query}"
         )
 
-        # 4️⃣ LLM call
-        response = llm.invoke(final_prompt)
+        # 3️⃣ User memory
+        memory_context = retrieve_memory(user_id, query)
 
-        # Gemini returns content differently
+        # 4️⃣ Build prompt
+        final_prompt = f"""
+You are the academic assistant for the Faculty of AI at Delta University.
+
+Use the following sources:
+
+University Regulations:
+{regulation_context}
+
+Student Academic Data:
+{student_data}
+
+User Memory:
+{memory_context}
+
+Student Question:
+{query}
+
+Answer accurately and apply the regulations to the student's data.
+"""
+
+        # 5️⃣ LLM
+        response = await llm.ainvoke(final_prompt)
+
         response_text = normalize_text(response)
 
-# 5️⃣ Store memory
+        # 6️⃣ Store memory
         store_memory(user_id, "user", query)
         store_memory(user_id, "ai", response_text)
 

@@ -13,5 +13,5 @@ markdown
 google-generativeai
 python-multipart
 sqlalchemy
-psycopg2
-LangGraph
+psycopg2-binary
+langgraph

@@ -95,9 +95,6 @@ def get_embedding_model():
 # 🔹 LLM Model (Singleton)
 # =========================
 
-_llm_model = None
-
-from langchain_google_genai import ChatGoogleGenerativeAI
 
 _llm_model = None
 

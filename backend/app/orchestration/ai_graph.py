@@ -57,8 +57,12 @@ Return only: SQL or RAG
 
     return "rag"
 
+def router_node(state: AgentState):
+    return state
+
 builder = StateGraph(AgentState)
 
+builder.add_node("router", router_node)
 builder.add_node("rag", rag_node)
 builder.add_node("sql", sql_node)
 builder.add_conditional_edges(

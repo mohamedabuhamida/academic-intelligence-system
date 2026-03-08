@@ -1,17 +1,13 @@
 # backend/app/core/orchestrator.py
 from app.agents.rag_agent import ask_academic_mentor
-from app.agents.gpa_agent import ask_gpa_agent
+from app.tools.sql_agent import ask_database
 
 
-def run_ai_orchestrator(query: str, user_id: str):
+def run_ai_orchestrator(query, user_id):
 
     q = query.lower()
 
-    if "gpa" in q:
-        result = ask_gpa_agent(question=query, user_id=user_id)
-        print("GPA Agent:", result)
-        return result
+    if "gpa" in q or "course" in q or "credit" in q:
+        return ask_database(query)
 
-    result = ask_academic_mentor(query, user_id)
-    print("RAG Agent:", result)
-    return result
+    return ask_academic_mentor(query, user_id)

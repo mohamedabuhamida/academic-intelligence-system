@@ -3,6 +3,9 @@ from typing import TypedDict
 
 from app.agents.rag_agent import ask_academic_mentor
 from app.tools.sql_agent import ask_database
+from app.core.config import get_llm
+
+llm = get_llm()
 
 
 class AgentState(TypedDict):
@@ -29,9 +32,6 @@ def sql_node(state: AgentState):
     state["answer"] = response
     return state
 
-from app.core.config import get_llm
-
-llm = get_llm()
 
 
 def router(state: AgentState):

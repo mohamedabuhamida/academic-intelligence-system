@@ -94,6 +94,23 @@ def get_rag_components():
     return retriever, llm
 
 
+def normalize_text(content):
+
+    if isinstance(content, str):
+        return content
+
+    if hasattr(content, "content"):
+        content = content.content
+
+    if isinstance(content, list):
+        try:
+            return " ".join([c.get("text","") for c in content])
+        except:
+            return str(content)
+
+    return str(content)
+
+
 async def ask_academic_mentor(query: str, user_id: str) -> str:
     try:
         retriever, llm = get_rag_components()

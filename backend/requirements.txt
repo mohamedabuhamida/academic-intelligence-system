@@ -12,3 +12,8 @@ sentence-transformers
 markdown
 google-generativeai
 python-multipart
+sqlalchemy
+psycopg2-binary
+langchain
+langchain-core
+langchain-community

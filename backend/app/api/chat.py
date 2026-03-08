@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from app.models.chat_models import ChatRequest
-from app.core.orchestrator import run_ai_orchestrator
+from app.orchestration.ai_graph import run_ai_graph
 
 router = APIRouter()
 

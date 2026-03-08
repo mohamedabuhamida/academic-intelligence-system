@@ -57,3 +57,28 @@ Return only: SQL or RAG
 
     return "rag"
 
+builder = StateGraph(AgentState)
+
+builder.add_node("rag", rag_node)
+builder.add_node("sql", sql_node)
+builder.add_conditional_edges(
+    "router",
+    router,
+    {
+        "rag": "rag",
+        "sql": "sql"
+    }
+)
+
+builder.set_entry_point("router")
+
+graph = builder.compile()
+
+def run_ai_graph(question, user_id):
+
+    result = graph.invoke({
+        "question": question,
+        "user_id": user_id
+    })
+
+    return result["answer"]

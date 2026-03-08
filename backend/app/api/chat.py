@@ -8,9 +8,9 @@ router = APIRouter()
 @router.post("/api/ask")
 def ask_chat(request: ChatRequest):
 
-    response = run_ai_orchestrator(
-        query=request.question,
-        user_id=request.user_id
+    response = run_ai_graph(
+        request.question,
+        request.user_id
     )
 
     return {

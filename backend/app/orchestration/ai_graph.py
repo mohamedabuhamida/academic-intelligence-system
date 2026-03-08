@@ -1,4 +1,4 @@
-from langgraph.graph import StateGraph
+from langgraph.graph import StateGraph, END
 from typing import TypedDict
 
 from app.agents.rag_agent import ask_academic_mentor
@@ -7,37 +7,26 @@ from app.core.config import get_llm
 
 llm = get_llm()
 
-
 class AgentState(TypedDict):
     question: str
     user_id: str
     answer: str
 
-
+# 1. Node functions should return ONLY the keys being updated
 def rag_node(state: AgentState):
-
     response = ask_academic_mentor(
         state["question"],
         state["user_id"]
     )
-
-    state["answer"] = response
-    return state
-
+    return {"answer": response}
 
 def sql_node(state: AgentState):
-
     response = ask_database(state["question"])
+    return {"answer": response}
 
-    state["answer"] = response
-    return state
-
-
-
-def router(state: AgentState):
-
+# 2. Make the router async to safely use LLM inside FastAPI
+async def router(state: AgentState):
     question = state["question"]
-
     prompt = f"""
 Decide which system should answer the question.
 
@@ -49,24 +38,21 @@ Question:
 
 Return only: SQL or RAG
 """
-
-    decision = llm.invoke(prompt).content.strip()
+    # Use .ainvoke() to prevent blocking the event loop
+    decision = (await llm.ainvoke(prompt)).content.strip()
 
     if "SQL" in decision:
         return "sql"
 
     return "rag"
 
-def router_node(state: AgentState):
-    return state
-
 builder = StateGraph(AgentState)
 
-builder.add_node("router", router_node)
 builder.add_node("rag", rag_node)
 builder.add_node("sql", sql_node)
-builder.add_conditional_edges(
-    "router",
+
+# 3. Drop the empty router_node and use set_conditional_entry_point
+builder.set_conditional_entry_point(
     router,
     {
         "rag": "rag",
@@ -74,15 +60,16 @@ builder.add_conditional_edges(
     }
 )
 
-builder.set_entry_point("router")
+# 4. Explicitly map leaf nodes to END so the graph terminates cleanly
+builder.add_edge("rag", END)
+builder.add_edge("sql", END)
 
 graph = builder.compile()
 
-def run_ai_graph(question, user_id):
-
-    result = graph.invoke({
+# 5. Make the execution function async and use graph.ainvoke()
+async def run_ai_graph(question, user_id):
+    result = await graph.ainvoke({
         "question": question,
         "user_id": user_id
     })
-
     return result["answer"]

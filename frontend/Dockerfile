@@ -7,6 +7,7 @@ COPY package*.json ./
 
 RUN npm install --include=optional
 
+
 # Copy project files
 COPY . .
 

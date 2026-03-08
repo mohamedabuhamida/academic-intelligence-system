@@ -162,7 +162,7 @@ Relevant User Memory:
 ----------------------------------------
 
 Student Question:
-{question}
+{query}
 
 ----------------------------------------
 

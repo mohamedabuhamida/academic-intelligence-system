@@ -11,29 +11,37 @@ except ImportError:
     HAS_INITIALIZE_AGENT = False
 
 
-db = SQLDatabase(engine)
-
 llm = get_llm()
+sql_agent = None
 
-toolkit = SQLDatabaseToolkit(db=db, llm=llm)
 
-if HAS_INITIALIZE_AGENT:
-    sql_agent = initialize_agent(
-        tools=toolkit.get_tools(),
-        llm=llm,
-        agent="zero-shot-react-description",
-        verbose=True,
-    )
-else:
-    sql_agent = create_agent(
-        model=llm,
-        tools=toolkit.get_tools(),
-        system_prompt=(
-            "You are a SQL assistant. Use the provided database tools to answer "
-            "questions with accurate results."
-        ),
-        debug=True,
-    )
+def get_sql_agent():
+    global sql_agent
+    if sql_agent is not None:
+        return sql_agent
+
+    db = SQLDatabase(engine)
+    toolkit = SQLDatabaseToolkit(db=db, llm=llm)
+
+    if HAS_INITIALIZE_AGENT:
+        sql_agent = initialize_agent(
+            tools=toolkit.get_tools(),
+            llm=llm,
+            agent="zero-shot-react-description",
+            verbose=True,
+        )
+    else:
+        sql_agent = create_agent(
+            model=llm,
+            tools=toolkit.get_tools(),
+            system_prompt=(
+                "You are a SQL assistant. Use the provided database tools to answer "
+                "questions with accurate results."
+            ),
+            debug=True,
+        )
+
+    return sql_agent
 
 
 def _extract_text_from_agent_result(result) -> str:
@@ -63,10 +71,15 @@ def _extract_text_from_agent_result(result) -> str:
 
 
 def ask_database(question: str):
-    if HAS_INITIALIZE_AGENT:
-        return sql_agent.run(question)
+    try:
+        agent = get_sql_agent()
+    except Exception as exc:
+        return f"Database connection is unavailable: {exc}"
 
-    result = sql_agent.invoke(
+    if HAS_INITIALIZE_AGENT:
+        return agent.run(question)
+
+    result = agent.invoke(
         {"messages": [{"role": "user", "content": question}]}
     )
     return _extract_text_from_agent_result(result)

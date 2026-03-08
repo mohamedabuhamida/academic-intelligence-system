@@ -39,7 +39,7 @@ Question:
 Return only: SQL or RAG
 """
     # Use .ainvoke() to prevent blocking the event loop
-    decision = (await llm.ainvoke(prompt)).content.strip()
+    decision = (await llm.ainvoke(prompt)).content
 
     if "SQL" in decision:
         return "sql"

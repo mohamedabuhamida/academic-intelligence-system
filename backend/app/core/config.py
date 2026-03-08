@@ -97,12 +97,18 @@ def get_embedding_model():
 
 _llm_model = None
 
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+_llm_model = None
+
 def get_llm():
     global _llm_model
+
     if _llm_model is None:
         _llm_model = ChatGoogleGenerativeAI(
             model="gemini-3.1-flash-lite",
             temperature=0,
             google_api_key=get_env("GOOGLE_API_KEY"),
         )
+
     return _llm_model

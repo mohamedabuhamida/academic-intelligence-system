@@ -67,24 +67,6 @@ class HFInferenceEmbeddings(Embeddings):
             vectors.append(data)
 
         return vectors
-    
-        payload = {"inputs": texts}
-        response = requests.post(
-            self.api_url,
-            headers=self.headers,
-            json=payload,
-            timeout=60,
-        )
-        response.raise_for_status()
-        data = response.json()
-
-        if not data:
-            return []
-
-        if isinstance(data[0], (int, float)):
-            return [data]
-
-        return data
 
     def embed_documents(self, texts):
         if not texts:

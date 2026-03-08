@@ -1,6 +1,9 @@
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.engine import make_url
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def _get_database_url() -> str:

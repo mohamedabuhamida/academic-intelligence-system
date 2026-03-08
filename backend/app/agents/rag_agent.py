@@ -133,13 +133,9 @@ async def ask_academic_mentor(query: str, user_id: str) -> str:
         response = llm.invoke(final_prompt)
 
         # Gemini returns content differently
-        response_text = (
-            response.content
-            if hasattr(response, "content")
-            else str(response)
-        )
+        response_text = normalize_text(response)
 
-        # 5️⃣ Store memory
+# 5️⃣ Store memory
         store_memory(user_id, "user", query)
         store_memory(user_id, "ai", response_text)
 

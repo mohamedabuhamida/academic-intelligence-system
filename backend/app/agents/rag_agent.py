@@ -132,21 +132,44 @@ async def ask_academic_mentor(query: str, user_id: str) -> str:
         final_prompt = f"""
 You are the academic assistant for the Faculty of AI at Delta University.
 
-Use the following sources:
+You must combine TWO sources of information:
 
-University Regulations:
+1️⃣ Academic Regulations (RAG context)
+2️⃣ Student Academic Record (database data)
+
+You MUST apply the regulation rules when generating recommendations.
+
+Rules:
+- Do not recommend courses that violate prerequisites.
+- Respect the maximum allowed credit hours per semester.
+- Recommend a balanced workload.
+
+----------------------------------------
+
+Academic Regulations:
 {regulation_context}
 
-Student Academic Data:
+----------------------------------------
+
+Student Academic Record:
 {student_data}
 
-User Memory:
+----------------------------------------
+
+Relevant User Memory:
 {memory_context}
 
-Student Question:
-{query}
+----------------------------------------
 
-Answer accurately and apply the regulations to the student's data.
+Student Question:
+{question}
+
+----------------------------------------
+
+Return:
+1. Recommended courses for next semester
+2. Total recommended credit hours
+3. Explanation based on regulations
 """
 
         # 5️⃣ LLM

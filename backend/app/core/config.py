@@ -46,6 +46,28 @@ class HFInferenceEmbeddings(Embeddings):
         self.headers = {"Authorization": f"Bearer {token}"}
 
     def _request_embeddings(self, texts):
+        vectors = []
+
+        for text in texts:
+            payload = {"inputs": text}
+
+            response = requests.post(
+                self.api_url,
+                headers=self.headers,
+                json=payload,
+                timeout=60,
+            )
+
+            response.raise_for_status()
+            data = response.json()
+
+            if isinstance(data[0], list):
+                data = data[0]
+
+            vectors.append(data)
+
+        return vectors
+    
         payload = {"inputs": texts}
         response = requests.post(
             self.api_url,

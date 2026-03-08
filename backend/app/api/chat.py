@@ -4,11 +4,10 @@ from app.orchestration.ai_graph import run_ai_graph
 
 router = APIRouter()
 
-
 @router.post("/api/ask")
-def ask_chat(request: ChatRequest):
+async def ask_chat(request: ChatRequest):  # <-- 1. Add 'async' here
 
-    response = run_ai_graph(
+    response = await run_ai_graph(         # <-- 2. Add 'await' here
         request.question,
         request.user_id
     )

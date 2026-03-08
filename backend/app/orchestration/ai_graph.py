@@ -28,3 +28,32 @@ def sql_node(state: AgentState):
 
     state["answer"] = response
     return state
+
+from app.core.config import get_llm
+
+llm = get_llm()
+
+
+def router(state: AgentState):
+
+    question = state["question"]
+
+    prompt = f"""
+Decide which system should answer the question.
+
+SQL → for GPA, courses, grades, credits
+RAG → for academic regulations
+
+Question:
+{question}
+
+Return only: SQL or RAG
+"""
+
+    decision = llm.invoke(prompt).content.strip()
+
+    if "SQL" in decision:
+        return "sql"
+
+    return "rag"
+

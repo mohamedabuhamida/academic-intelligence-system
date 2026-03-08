@@ -41,7 +41,7 @@ def get_embedding_model():
 
     if _embedding_model is None:
         _embedding_model = GoogleGenerativeAIEmbeddings(
-            model="emini-embedding-001",
+            model="models/gemini-embedding-001",
             google_api_key=get_env("GOOGLE_API_KEY"),
         )
 

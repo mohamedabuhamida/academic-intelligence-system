@@ -121,7 +121,7 @@ async def ask_academic_mentor(query: str, user_id: str) -> str:
         regulation_context = format_docs(docs)
 
         # 2️⃣ Student academic data from SQL
-        student_data = ask_database(
+        student_data = await ask_database(
             f"Get academic data for student {user_id} relevant to: {query}"
         )
 

@@ -127,6 +127,19 @@ Get the student's academic data.
 
 Student id: {user_id}
 
+SELECT
+p.full_name,
+p.department,
+p.total_required_hours,
+sc.course_id,
+sc.status,
+sc.grade,
+sc.grade_points
+FROM profiles p
+LEFT JOIN student_courses sc
+ON p.id = sc.user_id
+WHERE p.id = '{user_id}'
+
 Return:
 - completed courses
 - current courses

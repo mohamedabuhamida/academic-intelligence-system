@@ -74,7 +74,7 @@ export default function DashboardOverview() {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* AI Study Assistant */}
-        <motion.div 
+        {/* <motion.div 
           variants={fadeInScale}
           className="lg:col-span-2 bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-[#DAC0A3]/20 shadow-lg"
         >
@@ -135,7 +135,7 @@ export default function DashboardOverview() {
               </motion.button>
             </div>
           </motion.div>
-        </motion.div>
+        </motion.div> */}
 
         {/* Upcoming Tasks */}
         <motion.div 

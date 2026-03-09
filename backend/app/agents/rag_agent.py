@@ -122,8 +122,18 @@ async def ask_academic_mentor(query: str, user_id: str) -> str:
 
         # 2️⃣ Student academic data from SQL
         student_data = await ask_database(
-            f"Get academic data for student {user_id} relevant to: {query}"
-        )
+f"""
+Get the student's academic data.
+
+Student id: {user_id}
+
+Return:
+- completed courses
+- current courses
+- GPA
+- completed credit hours
+"""
+)
 
         # 3️⃣ User memory
         memory_context = retrieve_memory(user_id, query)
@@ -132,44 +142,42 @@ async def ask_academic_mentor(query: str, user_id: str) -> str:
         final_prompt = f"""
 You are the academic assistant for the Faculty of AI at Delta University.
 
-You must combine TWO sources of information:
+Use TWO sources:
 
-1️⃣ Academic Regulations (RAG context)
-2️⃣ Student Academic Record (database data)
-
-You MUST apply the regulation rules when generating recommendations.
+1) Academic Regulations
+2) Student Academic Data
 
 Rules:
-- Do not recommend courses that violate prerequisites.
-- Respect the maximum allowed credit hours per semester.
-- Recommend a balanced workload.
 
-----------------------------------------
+- NEVER assume student's specialization
+- NEVER invent courses
+- Courses MUST come from the database
+- If the question is about regulations, answer using RAG only
+- If the question is about the student, use database data
+
+--------------------------------
 
 Academic Regulations:
 {regulation_context}
 
-----------------------------------------
+--------------------------------
 
-Student Academic Record:
+Student Academic Data:
 {student_data}
 
-----------------------------------------
+--------------------------------
 
-Relevant User Memory:
+User Memory:
 {memory_context}
 
-----------------------------------------
+--------------------------------
 
-Student Question:
+Question:
 {query}
 
-----------------------------------------
+--------------------------------
 
-Return:
-1. Recommended courses for next semester
-2. Total recommended credit hours
-3. Explanation based on regulations
+Answer clearly and accurately.
 """
 
         # 5️⃣ LLM

@@ -123,28 +123,25 @@ async def ask_academic_mentor(query: str, user_id: str) -> str:
         # 2️⃣ Student academic data from SQL
         student_data = await ask_database(
 f"""
-Get the student's academic data.
+Get the academic data for this student.
 
-Student id: {user_id}
+Student ID: {user_id}
 
-SELECT
-p.full_name,
-p.department,
-p.total_required_hours,
-sc.course_id,
-sc.status,
-sc.grade,
-sc.grade_points
-FROM profiles p
-LEFT JOIN student_courses sc
-ON p.id = sc.user_id
-WHERE p.id = '{user_id}'
+Use SQL queries on the database to retrieve:
 
-Return:
-- completed courses
-- current courses
-- GPA
-- completed credit hours
+1) Student profile
+2) Completed courses
+3) Current courses
+4) GPA history
+5) Total completed credits
+
+Relevant tables:
+- profiles
+- student_courses
+- courses
+- gpa_history
+
+Use joins if necessary.
 """
 )
 

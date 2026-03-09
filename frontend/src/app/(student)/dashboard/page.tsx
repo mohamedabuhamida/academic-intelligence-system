@@ -22,7 +22,7 @@ export default function DashboardOverview() {
       className="space-y-8"
     >
       {/* Welcome Section */}
-      {/* <motion.div variants={fadeInScale} className="flex items-center justify-between">
+      <motion.div variants={fadeInScale} className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-[#102C57] mb-2">Welcome back, Alex! 👋</h1>
           <p className="text-[#102C57]/60">Here's your academic intelligence overview</p>
@@ -35,7 +35,7 @@ export default function DashboardOverview() {
           <Sparkles className="w-4 h-4" />
           Start AI Session
         </motion.button>
-      </motion.div> */}
+      </motion.div>
 
       {/* Stats Grid */}
       <motion.div variants={staggerContainer} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

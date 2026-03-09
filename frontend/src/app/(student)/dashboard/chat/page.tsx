@@ -26,6 +26,7 @@ import {
   staggerContainer,
 } from "@/components/animations";
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
@@ -45,6 +46,20 @@ interface Conversation {
   created_at: string;
   last_message?: string;
   message_count?: number;
+}
+
+function normalizeMarkdownTables(content: string): string {
+  // Handle one-line GFM tables like: "| h1 | h2 | | --- | --- | | r1 | r2 | ..."
+  if (!content.includes("|") || content.includes("\n|")) {
+    return content;
+  }
+
+  const compact = content.replace(/\r/g, " ").replace(/\n/g, " ");
+  if (!compact.includes("| :---") && !compact.includes("|---")) {
+    return content;
+  }
+
+  return compact.replace(/\s+\|\s+\|/g, " |\n| ").trim();
 }
 
 export default function ChatPage() {
@@ -627,6 +642,7 @@ export default function ChatPage() {
                     {message.type === "ai" ? (
                       <div className="ai-markdown text-right" dir="rtl">
                         <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
                           components={{
                             h1: ({ children }) => (
                               <h1 className="text-base lg:text-lg font-bold text-[#102C57] mb-3">
@@ -717,7 +733,7 @@ export default function ChatPage() {
                             }
                           }}
                         >
-                          {message.content}
+                          {normalizeMarkdownTables(message.content)}
                         </ReactMarkdown>
                       </div>
                     ) : (

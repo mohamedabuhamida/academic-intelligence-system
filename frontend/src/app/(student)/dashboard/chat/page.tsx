@@ -16,11 +16,16 @@ import {
   Clock,
   ChevronDown,
   Download,
+  Share2,
   Trash2,
+  Edit3,
+  Search,
+  Filter,
   Plus,
   MessageSquare,
-  Menu,
-  X,
+  Settings,
+  User,
+  LogOut,
 } from "lucide-react";
 import {
   fadeInScale,
@@ -44,6 +49,7 @@ interface Conversation {
   id: string;
   title: string;
   created_at: string;
+  last_message?: string;
   message_count?: number;
 }
 
@@ -54,9 +60,10 @@ export default function ChatPage() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showConversations, setShowConversations] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -69,6 +76,7 @@ export default function ChatPage() {
   }, [messages]);
 
   useEffect(() => {
+    // Focus input on mount
     inputRef.current?.focus();
   }, []);
 
@@ -108,12 +116,13 @@ export default function ChatPage() {
 - 📊 تحليل أدائك الأكاديمي
 - 🎯 التخطيط للفصول الدراسية
 - 📝 الإجابة عن أسئلة المقررات
+- 🔍 البحث في المصادر الدراسية
 
 **معدلك التراكمي الحالي:** 3.56
 **المقررات المكتملة:** 18 مقرر
 **الخطة الدراسية:** بكالوريوس علوم الحاسب
 
-اطرح سؤالك وسأساعدك!`,
+اطرح سؤالك وسأبذل قصارى جهدي لمساعدتك!`,
     timestamp: new Date().toLocaleTimeString("ar-SA", {
       hour: "2-digit",
       minute: "2-digit",
@@ -131,6 +140,7 @@ export default function ChatPage() {
         return;
       }
 
+      // Get latest conversation
       const { data: conv } = await supabase
         .from("conversations")
         .select("id")
@@ -143,6 +153,7 @@ export default function ChatPage() {
         setConversationId(conv.id);
         await loadMessages(conv.id);
       } else {
+        // Create new conversation
         const { data: newConv } = await supabase
           .from("conversations")
           .insert([{ 
@@ -205,14 +216,13 @@ export default function ChatPage() {
       setConversationId(newConv.id);
       setMessages([welcomeMessage()]);
       await loadConversations();
-      setIsSidebarOpen(false);
     }
   };
 
   const handleSelectConversation = async (convId: string) => {
     setConversationId(convId);
     await loadMessages(convId);
-    setIsSidebarOpen(false);
+    setShowConversations(false);
   };
 
   const handleDeleteConversation = async (convId: string, e: React.MouseEvent) => {
@@ -253,6 +263,7 @@ export default function ChatPage() {
         return;
       }
 
+      // Add user message immediately
       const userMessageId = `temp-${Date.now()}`;
       const userMessage: Message = {
         id: userMessageId,
@@ -265,6 +276,7 @@ export default function ChatPage() {
       };
       setMessages(prev => [...prev, userMessage]);
 
+      // Save user message to database
       const { data: savedUserMsg } = await supabase
         .from("messages")
         .insert([{
@@ -275,6 +287,7 @@ export default function ChatPage() {
         .select("id, created_at")
         .single();
 
+      // Update message with real ID
       if (savedUserMsg) {
         setMessages(prev => prev.map(msg => 
           msg.id === userMessageId 
@@ -283,6 +296,7 @@ export default function ChatPage() {
         ));
       }
 
+      // Add streaming AI message placeholder
       const aiMessageId = `stream-${Date.now()}`;
       const aiMessage: Message = {
         id: aiMessageId,
@@ -296,6 +310,7 @@ export default function ChatPage() {
       };
       setMessages(prev => [...prev, aiMessage]);
 
+      // Call API with streaming support
       const response = await fetch("http://127.0.0.1:8000/api/ask", {
         method: "POST",
         headers: {
@@ -309,6 +324,7 @@ export default function ChatPage() {
         }),
       });
 
+      // Handle streaming response
       if (response.body) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -321,6 +337,7 @@ export default function ChatPage() {
           const chunk = decoder.decode(value);
           fullContent += chunk;
 
+          // Update message progressively
           setMessages(prev => prev.map(msg => 
             msg.id === aiMessageId 
               ? { ...msg, content: fullContent, isStreaming: true }
@@ -328,6 +345,7 @@ export default function ChatPage() {
           ));
         }
 
+        // Save final message to database
         const { data: savedAiMsg } = await supabase
           .from("messages")
           .insert([{
@@ -338,6 +356,7 @@ export default function ChatPage() {
           .select("id, created_at")
           .single();
 
+        // Update with real ID and remove streaming flag
         if (savedAiMsg) {
           setMessages(prev => prev.map(msg => 
             msg.id === aiMessageId 
@@ -351,6 +370,7 @@ export default function ChatPage() {
           ));
         }
 
+        // Update conversation title if it's the first message
         if (messages.length <= 1) {
           await supabase
             .from("conversations")
@@ -363,8 +383,10 @@ export default function ChatPage() {
     } catch (error) {
       console.error("Error sending message:", error);
       
+      // Remove streaming message
       setMessages(prev => prev.filter(msg => !msg.isStreaming));
       
+      // Add error message
       const errorMessage: Message = {
         id: `error-${Date.now()}`,
         type: "ai",
@@ -396,6 +418,7 @@ export default function ChatPage() {
         : msg
     ));
 
+    // Save feedback to database
     await supabase
       .from("messages")
       .update({ feedback: type })
@@ -404,6 +427,7 @@ export default function ChatPage() {
 
   const handleCopyMessage = (content: string) => {
     navigator.clipboard.writeText(content);
+    // Could add a toast notification here
   };
 
   const handleExportConversation = () => {
@@ -424,312 +448,422 @@ export default function ChatPage() {
   );
 
   return (
-    <div className="h-full flex flex-col" dir="rtl">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="lg:hidden p-2 hover:bg-[#F8F0E5] rounded-lg transition-colors"
-          >
-            <Menu className="w-5 h-5 text-[#102C57]" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-[#102C57]">المساعد الدراسي</h1>
-            <p className="text-sm text-[#102C57]/60">اسأل عن أي شيء يتعلق بدراستك</p>
+    <div className="flex h-[calc(100vh-8rem)] gap-4 relative" dir="rtl">
+      {/* Sidebar Toggle for Mobile */}
+      <button
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        className="lg:hidden fixed bottom-4 right-4 z-50 p-3 bg-[#102C57] text-white rounded-full shadow-lg"
+      >
+        <MessageSquare className="w-5 h-5" />
+      </button>
+
+      {/* Conversations Sidebar */}
+      <motion.div
+        initial={{ x: -300 }}
+        animate={{ x: isSidebarOpen ? 0 : -300 }}
+        transition={{ duration: 0.3 }}
+        className={`fixed lg:relative lg:translate-x-0 z-40 w-80 bg-white rounded-2xl border border-[#DAC0A3]/20 shadow-lg flex flex-col h-full ${!isSidebarOpen ? 'hidden lg:block' : ''}`}
+      >
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-[#DAC0A3]/20">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-[#102C57]">المحادثات</h2>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleNewChat}
+              className="p-2 bg-[#102C57]/5 rounded-lg text-[#102C57] hover:bg-[#102C57]/10"
+            >
+              <Plus className="w-4 h-4" />
+            </motion.button>
+          </div>
+
+          {/* Search Conversations */}
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#102C57]/40" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="بحث في المحادثات..."
+              className="w-full pr-10 pl-3 py-2 bg-[#F8F0E5] rounded-xl text-sm text-[#102C57] placeholder-[#102C57]/40 border border-[#DAC0A3]/20 focus:outline-none focus:ring-2 focus:ring-[#102C57]/20"
+            />
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleExportConversation}
-            className="p-2 hover:bg-[#F8F0E5] rounded-lg transition-colors"
-            title="تصدير المحادثة"
-          >
-            <Download className="w-5 h-5 text-[#102C57]/60" />
-          </button>
-          <button
-            onClick={handleNewChat}
-            className="flex items-center gap-2 px-4 py-2 bg-[#102C57] text-white rounded-xl text-sm font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            <span>محادثة جديدة</span>
-          </button>
-        </div>
-      </div>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 min-h-0 bg-white rounded-2xl border border-[#DAC0A3]/20 shadow-lg overflow-hidden">
-        <div className="h-full flex">
-          {/* Sidebar - Hidden on mobile, toggleable */}
+        {/* Conversations List */}
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
           <AnimatePresence>
-            {isSidebarOpen && (
-              <>
-                {/* Backdrop for mobile */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onClick={() => setIsSidebarOpen(false)}
-                  className="lg:hidden fixed inset-0 bg-black/20 z-40"
-                />
-                
-                {/* Sidebar */}
-                <motion.div
-                  initial={{ x: -300 }}
-                  animate={{ x: 0 }}
-                  exit={{ x: -300 }}
-                  transition={{ type: "tween" }}
-                  className="fixed lg:relative lg:translate-x-0 top-0 right-0 w-80 h-full bg-white border-l border-[#DAC0A3]/20 z-50 lg:z-0 overflow-hidden flex flex-col"
-                >
-                  {/* Sidebar Header */}
-                  <div className="p-4 border-b border-[#DAC0A3]/20">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="font-semibold text-[#102C57]">المحادثات</h2>
-                      <button
-                        onClick={() => setIsSidebarOpen(false)}
-                        className="lg:hidden p-2 hover:bg-[#F8F0E5] rounded-lg"
-                      >
-                        <X className="w-4 h-4 text-[#102C57]" />
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="بحث في المحادثات..."
-                        className="w-full px-4 py-2 bg-[#F8F0E5] rounded-xl text-sm text-[#102C57] placeholder-[#102C57]/40 border border-[#DAC0A3]/20 focus:outline-none focus:ring-2 focus:ring-[#102C57]/20"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Conversations List */}
-                  <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                    {filteredConversations.map((conv) => (
-                      <div
-                        key={conv.id}
-                        onClick={() => handleSelectConversation(conv.id)}
-                        className={`p-3 rounded-xl cursor-pointer transition-colors ${
-                          conv.id === conversationId
-                            ? 'bg-[#102C57] text-white'
-                            : 'hover:bg-[#F8F0E5]'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-sm font-medium truncate ${
-                              conv.id === conversationId ? 'text-white' : 'text-[#102C57]'
-                            }`}>
-                              {conv.title}
-                            </p>
-                            <div className={`flex items-center gap-2 mt-1 text-xs ${
-                              conv.id === conversationId ? 'text-white/60' : 'text-[#102C57]/40'
-                            }`}>
-                              <Clock className="w-3 h-3" />
-                              <span>{new Date(conv.created_at).toLocaleDateString('ar-SA')}</span>
-                            </div>
-                          </div>
-                          <button
-                            onClick={(e) => handleDeleteConversation(conv.id, e)}
-                            className={`p-1 rounded-lg transition-colors ${
-                              conv.id === conversationId
-                                ? 'hover:bg-white/20 text-white/60'
-                                : 'hover:bg-[#102C57]/10 text-[#102C57]/40'
-                            }`}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
-
-          {/* Chat Messages */}
-          <div className="flex-1 flex flex-col min-w-0">
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.type === "user" ? "justify-start" : "justify-end"}`}
-                >
-                  <div
-                    className={`flex gap-3 max-w-2xl ${
-                      message.type === "user" ? "flex-row" : "flex-row-reverse"
-                    }`}
-                  >
-                    {/* Avatar */}
-                    <div
-                      className={`w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center ${
-                        message.type === "ai"
-                          ? "bg-gradient-to-br from-[#102C57] to-[#DAC0A3]"
-                          : "bg-[#102C57]/10"
-                      }`}
-                    >
-                      {message.type === "ai" ? (
-                        <Brain className="w-4 h-4 text-white" />
-                      ) : (
-                        <div className="w-3 h-3 rounded-full bg-[#102C57]" />
+            {filteredConversations.map((conv) => (
+              <motion.div
+                key={conv.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                onClick={() => handleSelectConversation(conv.id)}
+                className={`p-3 rounded-xl cursor-pointer transition-all ${
+                  conv.id === conversationId
+                    ? 'bg-[#102C57] text-white'
+                    : 'hover:bg-[#F8F0E5]'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium truncate ${
+                      conv.id === conversationId ? 'text-white' : 'text-[#102C57]'
+                    }`}>
+                      {conv.title}
+                    </p>
+                    <div className={`flex items-center gap-2 mt-1 text-xs ${
+                      conv.id === conversationId ? 'text-white/60' : 'text-[#102C57]/40'
+                    }`}>
+                      <Clock className="w-3 h-3" />
+                      <span>{new Date(conv.created_at).toLocaleDateString('ar-SA')}</span>
+                      {conv.message_count && (
+                        <>
+                          <span>•</span>
+                          <span>{conv.message_count} رسائل</span>
+                        </>
                       )}
                     </div>
-
-                    {/* Message Content */}
-                    <div className="space-y-1 min-w-0 flex-1">
-                      <div
-                        className={`rounded-2xl p-4 ${
-                          message.type === "ai"
-                            ? message.isStreaming
-                              ? "bg-[#F8F0E5] border border-[#DAC0A3]/20 animate-pulse"
-                              : "bg-[#F8F0E5] border border-[#DAC0A3]/20"
-                            : "bg-[#102C57] text-white"
-                        }`}
-                      >
-                        {message.type === "ai" ? (
-                          <div className="prose prose-sm max-w-none text-right text-[#102C57]">
-                            <ReactMarkdown
-                              components={{
-                                code({ node, inline, className, children, ...props }) {
-                                  const match = /language-(\w+)/.exec(className || '');
-                                  return !inline && match ? (
-                                    <SyntaxHighlighter
-                                      style={vscDarkPlus}
-                                      language={match[1]}
-                                      PreTag="div"
-                                      {...props}
-                                    >
-                                      {String(children).replace(/\n$/, '')}
-                                    </SyntaxHighlighter>
-                                  ) : (
-                                    <code className="bg-[#102C57]/10 px-1 py-0.5 rounded" {...props}>
-                                      {children}
-                                    </code>
-                                  );
-                                }
-                              }}
-                            >
-                              {message.content}
-                            </ReactMarkdown>
-                          </div>
-                        ) : (
-                          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                            {message.content}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Message Footer */}
-                      <div
-                        className={`flex items-center gap-2 px-2 ${
-                          message.type === "user" ? "justify-start" : "justify-end"
-                        }`}
-                      >
-                        <span className="text-xs text-[#102C57]/40">
-                          {message.timestamp}
-                        </span>
-
-                        {message.type === "ai" && !message.isStreaming && (
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => handleCopyMessage(message.content)}
-                              className="p-1 hover:bg-[#F8F0E5] rounded-lg transition-colors"
-                            >
-                              <Copy className="w-3 h-3 text-[#102C57]/40" />
-                            </button>
-                            <button
-                              onClick={() => handleFeedback(message.id, 'like')}
-                              className={`p-1 hover:bg-[#F8F0E5] rounded-lg transition-colors ${
-                                message.feedback === 'like' ? 'text-green-600' : ''
-                              }`}
-                            >
-                              <ThumbsUp className={`w-3 h-3 ${
-                                message.feedback === 'like' ? 'text-green-600' : 'text-[#102C57]/40'
-                              }`} />
-                            </button>
-                            <button
-                              onClick={() => handleFeedback(message.id, 'dislike')}
-                              className={`p-1 hover:bg-[#F8F0E5] rounded-lg transition-colors ${
-                                message.feedback === 'dislike' ? 'text-red-600' : ''
-                              }`}
-                            >
-                              <ThumbsDown className={`w-3 h-3 ${
-                                message.feedback === 'dislike' ? 'text-red-600' : 'text-[#102C57]/40'
-                              }`} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
                   </div>
+                  <button
+                    onClick={(e) => handleDeleteConversation(conv.id, e)}
+                    className={`p-1 rounded-lg transition-colors ${
+                      conv.id === conversationId
+                        ? 'hover:bg-white/20 text-white/60'
+                        : 'hover:bg-[#102C57]/10 text-[#102C57]/40'
+                    }`}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
                 </div>
-              ))}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
 
-              {/* Typing Indicator */}
-              {isTyping && (
-                <div className="flex justify-end">
-                  <div className="flex gap-3 max-w-2xl flex-row-reverse">
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#102C57] to-[#DAC0A3] flex items-center justify-center">
-                      <Brain className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="bg-[#F8F0E5] border border-[#DAC0A3]/20 rounded-2xl p-4">
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin text-[#102C57]" />
-                        <span className="text-sm text-[#102C57]/60">جاري التفكير...</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div ref={messagesEndRef} />
+        {/* User Profile */}
+        <div className="p-4 border-t border-[#DAC0A3]/20">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#102C57]/10 flex items-center justify-center">
+              <User className="w-5 h-5 text-[#102C57]" />
             </div>
-
-            {/* Input Area */}
-            <div className="p-4 border-t border-[#DAC0A3]/20">
-              <div className="flex items-center gap-2">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="اكتب سؤالك هنا..."
-                  className="flex-1 px-4 py-3 bg-[#F8F0E5] rounded-xl text-sm text-[#102C57] placeholder-[#102C57]/40 border border-[#DAC0A3]/20 focus:outline-none focus:ring-2 focus:ring-[#102C57]/20"
-                  dir="rtl"
-                  disabled={isLoading}
-                />
-                <button
-                  onClick={handleSendMessage}
-                  disabled={isLoading || !input.trim() || !conversationId}
-                  className="p-3 bg-[#102C57] text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#102C57]/90 transition-colors"
-                >
-                  <Send className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
-                <span className="text-xs font-medium text-[#102C57]/60 whitespace-nowrap">
-                  اقتراحات:
-                </span>
-                {["متطلبات التخرج", "المقررات", "الخطة الدراسية", "المعدل"].map(
-                  (action) => (
-                    <button
-                      key={action}
-                      onClick={() => setInput(action)}
-                      className="px-3 py-1 bg-[#F8F0E5] rounded-lg text-xs text-[#102C57] hover:bg-[#102C57]/10 transition-colors whitespace-nowrap"
-                    >
-                      {action}
-                    </button>
-                  ),
-                )}
-              </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-[#102C57] truncate">أحمد محمد</p>
+              <p className="text-xs text-[#102C57]/40">معدل: 3.56</p>
             </div>
+            <button className="p-2 hover:bg-[#F8F0E5] rounded-lg">
+              <LogOut className="w-4 h-4 text-[#102C57]/40" />
+            </button>
           </div>
         </div>
-      </div>
+      </motion.div>
+
+      {/* Main Chat Area */}
+      <motion.div
+        variants={staggerContainer}
+        initial="initial"
+        animate="animate"
+        className={`flex-1 flex flex-col min-h-0 transition-all ${isSidebarOpen ? 'lg:mr-0' : ''}`}
+      >
+        {/* Chat Header */}
+        <motion.div
+          variants={fadeInScale}
+          className="flex items-center justify-between mb-4"
+        >
+          <div>
+            <h1 className="text-2xl lg:text-3xl font-bold text-[#102C57] mb-2">
+              المساعد الدراسي الذكي
+            </h1>
+            <p className="text-sm text-[#102C57]/60">
+              اسأل عن أي شيء يتعلق بدراستك، المقررات، أو الخطط الدراسية
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleExportConversation}
+              className="hidden lg:flex items-center gap-2 px-4 py-2 bg-[#102C57]/5 rounded-xl text-[#102C57] text-sm font-medium border border-[#DAC0A3]/20"
+              title="تصدير المحادثة"
+            >
+              <Download className="w-4 h-4" />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleNewChat}
+              className="flex items-center gap-2 px-4 py-2 bg-[#102C57]/5 rounded-xl text-[#102C57] text-sm font-medium border border-[#DAC0A3]/20"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span className="hidden lg:inline">محادثة جديدة</span>
+            </motion.button>
+          </div>
+        </motion.div>
+
+        {/* Chat Messages */}
+        <motion.div
+          variants={fadeInScale}
+          className="flex-1 min-h-0 overflow-y-auto space-y-4 lg:space-y-6 pl-2 lg:pl-4 mb-4 scrollbar-thin"
+        >
+          {messages.map((message, index) => (
+            <motion.div
+              key={message.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className={`flex ${message.type === "user" ? "justify-start" : "justify-end"}`}
+            >
+              <div
+                className={`flex gap-2 lg:gap-3 max-w-full lg:max-w-3xl ${message.type === "user" ? "flex-row" : "flex-row-reverse"}`}
+              >
+                {/* Avatar */}
+                <div
+                  className={`w-6 h-6 lg:w-8 lg:h-8 rounded-xl flex-shrink-0 flex items-center justify-center ${
+                    message.type === "ai"
+                      ? "bg-gradient-to-br from-[#102C57] to-[#DAC0A3]"
+                      : "bg-[#102C57]/10"
+                  }`}
+                >
+                  {message.type === "ai" ? (
+                    <Brain className="w-3 h-3 lg:w-4 lg:h-4 text-[#F8F0E5]" />
+                  ) : (
+                    <div className="w-2 h-2 lg:w-3 lg:h-3 rounded-full bg-[#102C57]" />
+                  )}
+                </div>
+
+                {/* Message Content */}
+                <div className="space-y-1 lg:space-y-2 min-w-0 flex-1">
+                  <div
+                    className={`rounded-2xl p-3 lg:p-4 ${
+                      message.type === "ai"
+                        ? message.isStreaming
+                          ? "bg-white border border-[#DAC0A3]/20 text-[#102C57] animate-pulse"
+                          : "bg-white border border-[#DAC0A3]/20 text-[#102C57]"
+                        : "bg-[#102C57] text-[#F8F0E5]"
+                    }`}
+                  >
+                    {message.type === "ai" ? (
+                      <div className="prose prose-sm max-w-none text-right" dir="rtl">
+                        <ReactMarkdown
+                          components={{
+                            code({ className, children, ...props }) {
+                              const match = /language-(\w+)/.exec(className || '');
+                              const isBlock = Boolean(match) || String(children).includes('\n');
+                              return isBlock && match ? (
+                                <SyntaxHighlighter
+                                  style={vscDarkPlus}
+                                  language={match[1]}
+                                  PreTag="div"
+                                  {...props}
+                                >
+                                  {String(children).replace(/\n$/, '')}
+                                </SyntaxHighlighter>
+                              ) : (
+                                <code className={className} {...props}>
+                                  {children}
+                                </code>
+                              );
+                            }
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                        {message.content}
+                      </p>
+                    )}
+
+                    {/* Sources */}
+                    {message.sources && message.sources.length > 0 && (
+                      <div className="mt-2 lg:mt-3 pt-2 lg:pt-3 border-t border-[#DAC0A3]/20">
+                        <p className="text-xs font-medium text-[#102C57]/60 mb-2">
+                          المصادر:
+                        </p>
+                        <div className="flex gap-2 flex-wrap">
+                          {message.sources.map((source, i) => (
+                            <span
+                              key={i}
+                              className="px-2 py-1 bg-[#F8F0E5] rounded-lg text-xs text-[#102C57]"
+                            >
+                              {source}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Message Footer */}
+                  <div
+                    className={`flex items-center gap-2 px-2 ${message.type === "user" ? "justify-start" : "justify-end"}`}
+                  >
+                    <span className="text-[10px] lg:text-xs text-[#102C57]/40">
+                      {message.timestamp}
+                    </span>
+
+                    {message.type === "ai" && !message.isStreaming && (
+                      <div className="flex items-center gap-1">
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleCopyMessage(message.content)}
+                          className="p-1 hover:bg-[#F8F0E5] rounded-lg transition-colors"
+                        >
+                          <Copy className="w-2 h-2 lg:w-3 lg:h-3 text-[#102C57]/40" />
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleFeedback(message.id, 'like')}
+                          className={`p-1 hover:bg-[#F8F0E5] rounded-lg transition-colors ${
+                            message.feedback === 'like' ? 'text-green-600' : ''
+                          }`}
+                        >
+                          <ThumbsUp className={`w-2 h-2 lg:w-3 lg:h-3 ${
+                            message.feedback === 'like' ? 'text-green-600' : 'text-[#102C57]/40'
+                          }`} />
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleFeedback(message.id, 'dislike')}
+                          className={`p-1 hover:bg-[#F8F0E5] rounded-lg transition-colors ${
+                            message.feedback === 'dislike' ? 'text-red-600' : ''
+                          }`}
+                        >
+                          <ThumbsDown className={`w-2 h-2 lg:w-3 lg:h-3 ${
+                            message.feedback === 'dislike' ? 'text-red-600' : 'text-[#102C57]/40'
+                          }`} />
+                        </motion.button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+
+          {/* Loading Indicator */}
+          {isTyping && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex justify-end"
+            >
+              <div className="flex gap-2 lg:gap-3 max-w-3xl flex-row-reverse">
+                <div className="w-6 h-6 lg:w-8 lg:h-8 rounded-xl bg-gradient-to-br from-[#102C57] to-[#DAC0A3] flex items-center justify-center">
+                  <Brain className="w-3 h-3 lg:w-4 lg:h-4 text-[#F8F0E5]" />
+                </div>
+                <div className="bg-white border border-[#DAC0A3]/20 rounded-2xl p-3 lg:p-4">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-3 h-3 lg:w-4 lg:h-4 animate-spin text-[#102C57]" />
+                    <span className="text-xs lg:text-sm text-[#102C57]/60">
+                      جاري التفكير...
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </motion.div>
+
+        {/* Input Area */}
+        <motion.div variants={fadeInScale} className="relative">
+          <div className="bg-white rounded-2xl border border-[#DAC0A3]/20 shadow-lg">
+            {/* Quick Actions */}
+            <div className="px-3 lg:px-4 py-2 border-b border-[#DAC0A3]/10 flex items-center gap-2 overflow-x-auto">
+              <span className="text-xs font-medium text-[#102C57]/60 whitespace-nowrap">
+                إجراءات سريعة:
+              </span>
+              {["متطلبات التخرج", "المقررات", "الخطة الدراسية", "المعدل", "المشاريع"].map(
+                (action) => (
+                  <motion.button
+                    key={action}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setInput(action)}
+                    className="px-2 lg:px-3 py-1 bg-[#F8F0E5] rounded-lg text-[10px] lg:text-xs text-[#102C57] hover:bg-[#102C57]/10 transition-colors whitespace-nowrap"
+                  >
+                    {action}
+                  </motion.button>
+                ),
+              )}
+            </div>
+
+            {/* Input Field */}
+            <div className="flex items-center gap-2 p-2">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleSendMessage}
+                disabled={isLoading || !input.trim() || !conversationId}
+                className="px-3 lg:px-4 py-2 bg-[#102C57] text-[#F8F0E5] rounded-xl text-xs lg:text-sm font-medium flex items-center gap-1 lg:gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Send className="w-3 h-3 lg:w-4 lg:h-4" />
+                <span className="hidden lg:inline">إرسال</span>
+              </motion.button>
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="اكتب سؤالك هنا..."
+                className="flex-1 px-3 lg:px-4 py-2 bg-transparent border-none outline-none text-xs lg:text-sm text-[#102C57] placeholder-[#102C57]/40 text-right"
+                dir="rtl"
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+
+          {/* Context Info */}
+          <div className="mt-2 flex items-center justify-end gap-2 text-[10px] lg:text-xs text-[#102C57]/40">
+            <BookOpen className="w-2 h-2 lg:w-3 lg:h-3" />
+            <span>السياق: برنامج بكالوريوس علوم الحاسب</span>
+          </div>
+        </motion.div>
+      </motion.div>
+
+      <style jsx>{`
+        .scrollbar-thin::-webkit-scrollbar {
+          width: 4px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+          background: #dac0a3;
+          border-radius: 20px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+          background: #102c57;
+        }
+        .prose {
+          max-width: 100%;
+        }
+        .prose p {
+          margin-bottom: 0.5rem;
+        }
+        .prose code {
+          background: #f3f4f6;
+          padding: 0.2rem 0.4rem;
+          border-radius: 0.25rem;
+          font-size: 0.875rem;
+        }
+        .prose pre {
+          background: #1e1e1e;
+          border-radius: 0.5rem;
+          padding: 1rem;
+          overflow-x: auto;
+          direction: ltr;
+        }
+      `}</style>
     </div>
   );
 }

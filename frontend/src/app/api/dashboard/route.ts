@@ -136,7 +136,6 @@ export async function GET() {
       }
     };
 
-    console.log("Dashboard Data:", response);
     return NextResponse.json(response);
   } catch (error) {
     console.error("Dashboard API error:", error);

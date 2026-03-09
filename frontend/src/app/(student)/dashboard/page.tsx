@@ -182,7 +182,7 @@ export default function DashboardOverview() {
       </div>
 
       {/* Recent Activity */}
-      {/* <motion.div 
+      <motion.div 
         variants={fadeInScale}
         className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-[#DAC0A3]/20 shadow-lg"
       >
@@ -219,7 +219,7 @@ export default function DashboardOverview() {
             </motion.div>
           ))}
         </div>
-      </motion.div> */}
+      </motion.div>
     </div>
   );
 }

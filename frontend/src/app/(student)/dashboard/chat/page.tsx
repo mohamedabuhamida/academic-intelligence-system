@@ -711,7 +711,7 @@ export default function ChatPage() {
                               </tr>
                             ),
                             th: ({ children }) => (
-                              <th className="px-3 py-2 text-right font-semibold text-[#102C57] whitespace-nowrap">
+                              <th className="px-3 py-2 text-start font-semibold text-[#102C57] whitespace-nowrap">
                                 {children}
                               </th>
                             ),

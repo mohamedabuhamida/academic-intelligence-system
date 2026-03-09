@@ -893,24 +893,21 @@ export default function ChatPage() {
         .scrollbar-thin::-webkit-scrollbar-thumb:hover {
           background: #102c57;
         }
-        .prose {
+        .ai-markdown {
           max-width: 100%;
         }
-        .prose p {
-          margin-bottom: 0.5rem;
-        }
-        .prose code {
-          background: #f3f4f6;
-          padding: 0.2rem 0.4rem;
-          border-radius: 0.25rem;
-          font-size: 0.875rem;
-        }
-        .prose pre {
+        .ai-markdown pre {
           background: #1e1e1e;
-          border-radius: 0.5rem;
-          padding: 1rem;
+          border-radius: 0.75rem;
+          padding: 0.75rem;
           overflow-x: auto;
           direction: ltr;
+          border: 1px solid rgba(218, 192, 163, 0.25);
+          margin: 0.75rem 0;
+        }
+        .ai-markdown pre code {
+          background: transparent !important;
+          padding: 0 !important;
         }
       `}</style>
     </div>

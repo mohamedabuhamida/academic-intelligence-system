@@ -48,6 +48,11 @@ interface Conversation {
   message_count?: number;
 }
 
+function detectTextDirection(text: string): "rtl" | "ltr" {
+  const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;
+  return arabicRegex.test(text) ? "rtl" : "ltr";
+}
+
 function normalizeMarkdownTables(content: string): string {
   // Handle one-line GFM tables like: "| h1 | h2 | | --- | --- | | r1 | r2 | ..."
   if (!content.includes("|") || content.includes("\n|")) {

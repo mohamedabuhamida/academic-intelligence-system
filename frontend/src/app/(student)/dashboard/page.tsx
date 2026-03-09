@@ -24,7 +24,7 @@ export default function DashboardOverview() {
       {/* Welcome Section */}
       <motion.div variants={fadeInScale} className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-[#102C57] mb-2">Welcome back, Alex! 👋</h1>
+          <h1 className="text-3xl font-bold text-[#102C57] mb-2">Welcome back, Alex!</h1>
           <p className="text-[#102C57]/60">Here's your academic intelligence overview</p>
         </div>
         <motion.button
@@ -51,15 +51,15 @@ export default function DashboardOverview() {
             whileHover={{ y: -4 }}
             className="relative group"
           >
-            <div className="absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity" />
+            <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${stat.glow} opacity-0 blur-sm transition-opacity duration-300 group-hover:opacity-100`} />
             <div className="relative bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-[#DAC0A3]/20 shadow-lg">
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} bg-opacity-10 flex items-center justify-center mb-4`}>
-                <stat.icon className="w-6 h-6 text-[#102C57]" />
+              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center mb-4 shadow-inner`}>
+                <stat.icon className="w-6 h-6 text-white" />
               </div>
               <p className="text-sm text-[#102C57]/60 mb-1">{stat.label}</p>
               <div className="flex items-end justify-between">
                 <span className="text-2xl font-bold text-[#102C57]">{stat.value}</span>
-                <span className="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                <span className={`text-xs font-medium px-2 py-1 rounded-full ${stat.badge}`}>
                   {stat.change}
                 </span>
               </div>

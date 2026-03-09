@@ -54,15 +54,27 @@ export async function GET() {
     let cgpa = 0;
     let totalGradePoints = 0;
     let totalCredits = 0;
-    let coursesWithGrades = [];
+    let coursesWithGrades: NonNullable<typeof courses> = [];
+    const getCreditHours = (
+      courseRelation:
+        | { credit_hours: number | null }
+        | Array<{ credit_hours: number | null }>
+        | null
+        | undefined,
+    ) => {
+      const course = Array.isArray(courseRelation)
+        ? courseRelation[0]
+        : courseRelation;
+      return Number(course?.credit_hours ?? 0);
+    };
 
     if (courses && courses.length > 0) {
-      coursesWithGrades = courses.filter(c => 
-        c.grade_points && c.courses?.credit_hours
+      coursesWithGrades = courses.filter((c) =>
+        c.grade_points && getCreditHours(c.courses) > 0
       );
 
-      coursesWithGrades.forEach(c => {
-        const credits = c.courses?.credit_hours || 0;
+      coursesWithGrades.forEach((c) => {
+        const credits = getCreditHours(c.courses);
         const gradePoints = Number(c.grade_points) || 0;
         totalGradePoints += gradePoints * credits;
         totalCredits += credits;
@@ -106,8 +118,9 @@ export async function GET() {
           };
         }
         coursesBySemester[semesterId].courses.push(c);
-        if (c.status === 'completed' && c.courses?.credit_hours) {
-          coursesBySemester[semesterId].totalCredits += c.courses.credit_hours;
+        const credits = getCreditHours(c.courses);
+        if (c.status === 'completed' && credits > 0) {
+          coursesBySemester[semesterId].totalCredits += credits;
         }
       });
 
@@ -118,9 +131,10 @@ export async function GET() {
         let semesterCredits = 0;
         
         semester.courses.forEach((c) => {
-          if (c.status === 'completed' && c.grade_points && c.courses?.credit_hours) {
-            semesterPoints += Number(c.grade_points) * c.courses.credit_hours;
-            semesterCredits += c.courses.credit_hours;
+          const credits = getCreditHours(c.courses);
+          if (c.status === 'completed' && c.grade_points && credits > 0) {
+            semesterPoints += Number(c.grade_points) * credits;
+            semesterCredits += credits;
           }
         });
         

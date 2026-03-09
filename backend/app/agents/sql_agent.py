@@ -20,13 +20,18 @@ def get_sql_agent():
     if sql_agent is not None:
         return sql_agent
 
-    db = SQLDatabase(engine, include_tables=[
-    "profiles",
-    "student_courses",
-    "courses",
-    "gpa_history",
-    "course_prerequisites"
-])
+    db = SQLDatabase(
+    engine,
+    include_tables=[
+        "profiles",
+        "student_courses",
+        "courses",
+        "course_prerequisites",
+        "gpa_history",
+        "semester_plans",
+        "semester_plan_courses"
+    ]
+)
     toolkit = SQLDatabaseToolkit(db=db, llm=llm)
 
     if HAS_INITIALIZE_AGENT:

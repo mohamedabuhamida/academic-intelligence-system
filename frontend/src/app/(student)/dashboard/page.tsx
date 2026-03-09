@@ -18,9 +18,10 @@ import { fadeInScale, staggerContainer, listItemVariants } from '@/components/an
 
 export default function DashboardOverview() {
   return (
-    <div
-      className="space-y-8"
-    >
+    <div className="relative isolate space-y-8 overflow-hidden rounded-3xl px-1 py-2">
+      <div className="pointer-events-none absolute -left-32 -top-28 h-72 w-72 rounded-full bg-[#DAC0A3]/25 blur-3xl" />
+      <div className="pointer-events-none absolute -right-20 top-40 h-80 w-80 rounded-full bg-[#102C57]/10 blur-3xl" />
+      <div className="pointer-events-none absolute inset-x-16 -bottom-24 h-48 rounded-full bg-gradient-to-r from-[#102C57]/10 via-[#DAC0A3]/20 to-[#EADBC8]/10 blur-2xl" />
       {/* Welcome Section */}
       <motion.div variants={fadeInScale} className="flex items-center justify-between">
         <div>

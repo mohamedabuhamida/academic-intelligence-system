@@ -45,10 +45,22 @@ def get_sql_agent():
         sql_agent = create_agent(
             model=llm,
             tools=toolkit.get_tools(),
-            system_prompt=(
-                "You are a SQL assistant. Use the provided database tools to answer "
-                "questions with accurate results."
-            ),
+            system_prompt = """
+You are a database expert for a university academic system.
+
+Database schema includes:
+- profiles
+- student_courses
+- courses
+- course_prerequisites
+- gpa_history
+
+Rules:
+- Always filter by user_id when querying student data
+- NEVER guess data
+- Use joins when necessary
+- Only return factual results from the database
+""",
             debug=True,
         )
 

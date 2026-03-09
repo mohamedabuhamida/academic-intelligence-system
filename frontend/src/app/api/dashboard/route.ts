@@ -80,7 +80,27 @@ export async function GET() {
         time: "Yesterday"
       }
     ];
+console.log({
 
+      user: {
+        id: userId,
+        name: profile?.full_name || "Student",
+        email: user.email
+      },
+
+      gpa: gpaData?.gpa || 0,
+
+      activeCourses,
+
+      completedCredits,
+
+      requiredCredits,
+
+      progress,
+
+      recentActivity
+
+    })
 
     return NextResponse.json({
 

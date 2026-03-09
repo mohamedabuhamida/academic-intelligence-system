@@ -27,7 +27,7 @@ services:
     env_file:
       - .env
     environment:
-      - NEXT_PUBLIC_API_URL=http://locathost:8000
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
       - WATCHPACK_POLLING=true
       - CHOKIDAR_USEPOLLING=true
       - CHOKIDAR_INTERVAL=500

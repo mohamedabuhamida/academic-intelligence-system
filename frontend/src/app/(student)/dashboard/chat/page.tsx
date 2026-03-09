@@ -625,9 +625,75 @@ export default function ChatPage() {
                     }`}
                   >
                     {message.type === "ai" ? (
-                      <div className="prose prose-sm max-w-none text-right" dir="rtl">
+                      <div className="ai-markdown text-right" dir="rtl">
                         <ReactMarkdown
                           components={{
+                            h1: ({ children }) => (
+                              <h1 className="text-base lg:text-lg font-bold text-[#102C57] mb-3">
+                                {children}
+                              </h1>
+                            ),
+                            h2: ({ children }) => (
+                              <h2 className="text-sm lg:text-base font-semibold text-[#102C57] mb-2 mt-4 first:mt-0">
+                                {children}
+                              </h2>
+                            ),
+                            h3: ({ children }) => (
+                              <h3 className="text-sm font-semibold text-[#102C57]/90 mb-2 mt-3">
+                                {children}
+                              </h3>
+                            ),
+                            p: ({ children }) => (
+                              <p className="text-sm leading-7 text-[#102C57]/90 mb-3 last:mb-0">
+                                {children}
+                              </p>
+                            ),
+                            ul: ({ children }) => (
+                              <ul className="space-y-2 mb-3 list-disc pr-5 marker:text-[#DAC0A3]">
+                                {children}
+                              </ul>
+                            ),
+                            ol: ({ children }) => (
+                              <ol className="space-y-2 mb-3 list-decimal pr-5 marker:text-[#DAC0A3]">
+                                {children}
+                              </ol>
+                            ),
+                            li: ({ children }) => (
+                              <li className="text-sm leading-6 text-[#102C57]/90">{children}</li>
+                            ),
+                            strong: ({ children }) => (
+                              <strong className="font-semibold text-[#102C57] bg-[#F8F0E5] px-1 py-0.5 rounded">
+                                {children}
+                              </strong>
+                            ),
+                            blockquote: ({ children }) => (
+                              <blockquote className="my-3 border-r-4 border-[#DAC0A3] bg-[#F8F0E5]/60 rounded-lg px-3 py-2 text-[#102C57]/80">
+                                {children}
+                              </blockquote>
+                            ),
+                            table: ({ children }) => (
+                              <div className="my-4 overflow-x-auto rounded-xl border border-[#DAC0A3]/30 bg-[#F8F0E5]/50">
+                                <table className="w-full text-sm border-collapse">
+                                  {children}
+                                </table>
+                              </div>
+                            ),
+                            thead: ({ children }) => (
+                              <thead className="bg-[#102C57]/5">{children}</thead>
+                            ),
+                            tr: ({ children }) => (
+                              <tr className="border-b border-[#DAC0A3]/20 last:border-b-0">
+                                {children}
+                              </tr>
+                            ),
+                            th: ({ children }) => (
+                              <th className="px-3 py-2 text-right font-semibold text-[#102C57] whitespace-nowrap">
+                                {children}
+                              </th>
+                            ),
+                            td: ({ children }) => (
+                              <td className="px-3 py-2 text-[#102C57]/90">{children}</td>
+                            ),
                             code({ className, children, ...props }) {
                               const match = /language-(\w+)/.exec(className || '');
                               const isBlock = Boolean(match) || String(children).includes('\n');
@@ -641,7 +707,10 @@ export default function ChatPage() {
                                   {String(children).replace(/\n$/, '')}
                                 </SyntaxHighlighter>
                               ) : (
-                                <code className={className} {...props}>
+                                <code
+                                  className={`rounded-md bg-[#102C57]/10 px-1.5 py-0.5 text-xs text-[#102C57] ${className || ''}`}
+                                  {...props}
+                                >
                                   {children}
                                 </code>
                               );

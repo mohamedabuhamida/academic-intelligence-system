@@ -106,7 +106,7 @@ console.log({
 
       user: {
         id: userId,
-        name: profile?.full_name || "Student",
+        name: profile?.full_name ,
         email: user.email
       },
 

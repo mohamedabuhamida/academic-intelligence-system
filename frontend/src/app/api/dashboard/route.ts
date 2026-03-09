@@ -54,8 +54,7 @@ export async function GET() {
     const completedCredits =
       courses
         ?.filter((c) => c.status === "completed")
-        .reduce((sum, c) => sum + (c.courses?.credit_hours || 0), 0) || 0;
-
+        .reduce((sum, c) => sum + (c.course?.credit_hours || 0), 0) || 0;
     const requiredCredits = profile?.total_required_hours ?? 142;
 
     const progress =

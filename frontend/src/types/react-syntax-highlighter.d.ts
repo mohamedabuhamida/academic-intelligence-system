@@ -3,7 +3,7 @@ declare module "react-syntax-highlighter" {
 
   export interface SyntaxHighlighterProps {
     language?: string;
-    style?: Record<string, unknown>;
+    style?: unknown;
     PreTag?: keyof JSX.IntrinsicElements | ComponentType<any>;
     children?: ReactNode;
     [key: string]: unknown;
@@ -13,5 +13,5 @@ declare module "react-syntax-highlighter" {
 }
 
 declare module "react-syntax-highlighter/dist/esm/styles/prism" {
-  export const vscDarkPlus: Record<string, unknown>;
+  export const vscDarkPlus: unknown;
 }

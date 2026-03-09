@@ -543,21 +543,7 @@ export default function ChatPage() {
           </AnimatePresence>
         </div>
 
-        {/* User Profile */}
-        <div className="p-4 border-t border-[#DAC0A3]/20">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#102C57]/10 flex items-center justify-center">
-              <User className="w-5 h-5 text-[#102C57]" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[#102C57] truncate">أحمد محمد</p>
-              <p className="text-xs text-[#102C57]/40">معدل: 3.56</p>
-            </div>
-            <button className="p-2 hover:bg-[#F8F0E5] rounded-lg">
-              <LogOut className="w-4 h-4 text-[#102C57]/40" />
-            </button>
-          </div>
-        </div>
+       
       </motion.div>
 
       {/* Main Chat Area */}

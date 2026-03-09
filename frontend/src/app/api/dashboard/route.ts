@@ -7,7 +7,7 @@ export async function GET() {
 
     const supabase = await createClient();
 
-    // current logged user
+    // authenticated user
     const {
       data: { user },
       error: authError
@@ -23,7 +23,7 @@ export async function GET() {
     const userId = user.id;
 
 
-    // Profile (name + required credits)
+    // profile
     const { data: profile } = await supabase
       .from("profiles")
       .select("full_name,total_required_hours")
@@ -31,7 +31,7 @@ export async function GET() {
       .single();
 
 
-    // GPA
+    // latest GPA
     const { data: gpaData } = await supabase
       .from("gpa_history")
       .select("gpa")
@@ -41,33 +41,41 @@ export async function GET() {
       .single();
 
 
-    // Courses
+    // courses with credit hours
     const { data: courses } = await supabase
       .from("student_courses")
-      .select("id,status,credits")
+      .select(`
+        status,
+        courses (
+          credit_hours
+        )
+      `)
       .eq("user_id", userId);
 
 
-    // Active courses
+    // active courses
     const activeCourses =
-      courses?.filter((c) => c.status === "enrolled").length || 0;
+      courses?.filter((c) => c.status === "current").length || 0;
 
 
-    // Completed credits
+    // completed credits
     const completedCredits =
       courses
         ?.filter((c) => c.status === "completed")
-        .reduce((sum, c) => sum + (c.credits || 0), 0) || 0;
+        .reduce(
+          (sum, c) => sum + (c.courses?.credit_hours || 0),
+          0
+        ) || 0;
 
 
-    const requiredCredits = profile?.total_required_hours;
+    const requiredCredits = profile?.total_required_hours ?? 142;
+
 
     const progress = Math.round(
       (completedCredits / requiredCredits) * 100
-    );
+    ) || 0;
 
 
-    // recent activity mock (later can be from DB)
     const recentActivity = [
       {
         action: "AI Generated Semester Plan",
@@ -80,15 +88,17 @@ export async function GET() {
         time: "Yesterday"
       }
     ];
-console.log({
+
+
+    const response = {
 
       user: {
         id: userId,
-        name: profile?.full_name ,
+        name: profile?.full_name ?? "Student",
         email: user.email
       },
 
-      gpa: gpaData?.gpa || 0,
+      gpa: Number(gpaData?.gpa) || 0,
 
       activeCourses,
 
@@ -100,29 +110,11 @@ console.log({
 
       recentActivity
 
-    })
+    };
 
-    return NextResponse.json({
+    console.log("Dashboard Data:", response);
 
-      user: {
-        id: userId,
-        name: profile?.full_name ,
-        email: user.email
-      },
-
-      gpa: gpaData?.gpa || 0,
-
-      activeCourses,
-
-      completedCredits,
-
-      requiredCredits,
-
-      progress,
-
-      recentActivity
-
-    });
+    return NextResponse.json(response);
 
   } catch (error) {
 

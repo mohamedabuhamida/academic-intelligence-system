@@ -25,13 +25,6 @@ export default function DashboardLayout({
 
   return (
     <div className="h-screen flex flex-col bg-[#F8F0E5]">
-      {/* Background Pattern */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 -left-4 w-96 h-96 bg-[#DAC0A3]/20 rounded-full mix-blend-multiply filter blur-3xl animate-blob" />
-        <div className="absolute top-0 -right-4 w-96 h-96 bg-[#EADBC8]/25 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000" />
-        <div className="absolute -bottom-8 left-20 w-96 h-96 bg-[#EADBC8]/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000" />
-      </div>
-
       {/* Sidebar */}
       <Sidebar 
         isExpanded={isSidebarExpanded} 
@@ -63,23 +56,6 @@ export default function DashboardLayout({
         </main>
       </div>
 
-      <style jsx global>{`
-        @keyframes blob {
-          0% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-          100% { transform: translate(0px, 0px) scale(1); }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-      `}</style>
     </div>
   );
 }

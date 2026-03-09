@@ -607,7 +607,10 @@ export default function ChatPage() {
           variants={fadeInScale}
           className="flex-1 min-h-0 overflow-y-auto space-y-4 lg:space-y-6 pl-2 lg:pl-4 mb-4 scrollbar-thin"
         >
-          {messages.map((message, index) => (
+          {messages.map((message, index) => {
+            const messageDir = detectTextDirection(message.content || "");
+            const messageTextAlign = messageDir === "rtl" ? "text-right" : "text-left";
+            return (
             <motion.div
               key={message.id}
               initial={{ opacity: 0, y: 8 }}
@@ -645,7 +648,7 @@ export default function ChatPage() {
                     }`}
                   >
                     {message.type === "ai" ? (
-                      <div className="ai-markdown text-right" dir="rtl">
+                      <div className={`ai-markdown ${messageTextAlign}`} dir={messageDir}>
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
@@ -742,7 +745,10 @@ export default function ChatPage() {
                         </ReactMarkdown>
                       </div>
                     ) : (
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                      <p
+                        className={`text-sm leading-relaxed whitespace-pre-wrap break-words ${messageTextAlign}`}
+                        dir={messageDir}
+                      >
                         {message.content}
                       </p>
                     )}
@@ -815,7 +821,8 @@ export default function ChatPage() {
                 </div>
               </div>
             </motion.div>
-          ))}
+            );
+          })}
 
           {/* Loading Indicator */}
           {isTyping && (

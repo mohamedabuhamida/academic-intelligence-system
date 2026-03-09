@@ -19,7 +19,7 @@ import { fadeInScale, staggerContainer, listItemVariants } from '@/components/an
 export default function DashboardOverview() {
   return (
     <div
-      className="space-y-8 min-h-screen"
+      className="space-y-8 min-h- h-full min-h-fit"
     >
       {/* Welcome Section */}
       {/* <motion.div variants={fadeInScale} className="flex items-center justify-between">

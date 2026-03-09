@@ -93,7 +93,7 @@ const stats = [
 ];
 
   return (
-    <div className="space-y-8">
+    <motion.div initial="initial" animate="animate" className="space-y-8">
       {/* Welcome Section */}
       <motion.div
         variants={fadeInScale}
@@ -301,6 +301,6 @@ const stats = [
           ))}
         </div>
       </motion.div>
-    </div>
+    </motion.div>
   );
 }

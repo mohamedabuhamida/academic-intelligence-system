@@ -42,17 +42,30 @@ export async function GET() {
       console.error("Courses error:", coursesError);
     }
 
+    const getCreditHours = (
+      courseRelation:
+        | { credit_hours: number | null }
+        | Array<{ credit_hours: number | null }>
+        | null
+        | undefined,
+    ) => {
+      const course = Array.isArray(courseRelation)
+        ? courseRelation[0]
+        : courseRelation;
+      return Number(course?.credit_hours ?? 0);
+    };
+
     // Calculate metrics
     const activeCourses = courses?.filter(c => c.status === "current").length || 0;
     
     // Calculate completed credits
     const completedCredits = courses
       ?.filter(c => c.status === "completed")
-      .reduce((sum, c) => sum + (c.courses?.credit_hours || 0), 0) || 0;
+      .reduce((sum, c) => sum + getCreditHours(c.courses), 0) || 0;
 
     // Calculate CGPA from ALL completed courses
     const completedWithGrades = courses?.filter(c => 
-      c.status === "completed" && c.grade_points && c.courses?.credit_hours
+      c.status === "completed" && c.grade_points && getCreditHours(c.courses) > 0
     ) || [];
     
     let cgpa = 0;
@@ -60,7 +73,7 @@ export async function GET() {
     let totalCredits = 0;
     
     completedWithGrades.forEach(c => {
-      const credits = c.courses?.credit_hours || 0;
+      const credits = getCreditHours(c.courses);
       const gradePoints = Number(c.grade_points) || 0;
       totalPoints += gradePoints * credits;
       totalCredits += credits;

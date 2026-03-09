@@ -2,7 +2,7 @@ from langgraph.graph import StateGraph, END
 from typing import TypedDict
 
 from app.agents.rag_agent import ask_academic_mentor
-from backend.app.agents.sql_agent import ask_database
+from app.agents.sql_agent import ask_database
 
 
 class AgentState(TypedDict):

@@ -8,7 +8,7 @@ from langchain_community.vectorstores import SupabaseVectorStore
 
 from app.services.memory_service import store_memory, retrieve_memory
 from app.core.config import get_supabase, get_embedding_model, get_llm
-from backend.app.agents.sql_agent import ask_database
+from app.agents.sql_agent import ask_database
 
 logger = logging.getLogger(__name__)
 

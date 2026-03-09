@@ -72,7 +72,7 @@ export default function DashboardOverview() {
       </motion.div> */}
 
       {/* Main Content Grid */}
-      {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* AI Study Assistant */}
         <motion.div 
           variants={fadeInScale}
@@ -182,7 +182,7 @@ export default function DashboardOverview() {
             ))}
           </div>
         </motion.div>
-      </div> */}
+      </div>
 
       {/* Recent Activity */}
       <motion.div 

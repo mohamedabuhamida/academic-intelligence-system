@@ -14,6 +14,12 @@ import {
 
 import { fadeInScale, staggerContainer, listItemVariants } from '@/components/animations';
 
+type Activity = {
+  action: string
+  detail: string
+  time: string
+}
+
 type DashboardData = {
   user?: {
     name?: string
@@ -23,11 +29,13 @@ type DashboardData = {
   completedCredits: number
   requiredCredits: number
   progress: number
+  recentActivity?: Activity[]
 }
 
 export default function DashboardOverview() {
 
   const [data, setData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
 
@@ -35,13 +43,19 @@ export default function DashboardOverview() {
 
       try {
 
-        const res = await fetch('/api/dashboard')
+        const res = await fetch('/api/dashboard', { cache: "no-store" })
         const json = await res.json()
 
         setData(json)
 
       } catch (err) {
+
         console.error("Dashboard API error", err)
+
+      } finally {
+
+        setLoading(false)
+
       }
 
     }
@@ -51,11 +65,20 @@ export default function DashboardOverview() {
   }, [])
 
 
+  if (loading) {
+    return (
+      <div className="p-8 text-[#102C57] text-sm">
+        Loading dashboard...
+      </div>
+    )
+  }
+
+
   const stats = [
     {
       icon: GraduationCap,
       label: 'Current GPA',
-      value: data?.gpa ? data.gpa.toFixed(2) : '...',
+      value: data?.gpa ? data.gpa.toFixed(2) : '0',
       change: '+0.2',
       color: 'from-green-500 to-emerald-500',
       glow: 'from-green-400/25 to-emerald-400/25',
@@ -65,8 +88,8 @@ export default function DashboardOverview() {
     {
       icon: Target,
       label: 'Active Courses',
-      value: data?.activeCourses ?? '...',
-      change: '2 completed',
+      value: data?.activeCourses ?? 0,
+      change: 'In progress',
       color: 'from-indigo-500 to-sky-500',
       glow: 'from-indigo-400/25 to-sky-400/25',
       badge: 'text-indigo-700 bg-indigo-100'
@@ -75,10 +98,8 @@ export default function DashboardOverview() {
     {
       icon: TrendingUp,
       label: 'Graduation Progress',
-      value: data ? `${data.progress}%` : '...',
-      change: data
-        ? `${data.completedCredits} / ${data.requiredCredits} credits`
-        : '',
+      value: `${data?.progress ?? 0}%`,
+      change: `${data?.completedCredits ?? 0} / ${data?.requiredCredits ?? 0} credits`,
       color: 'from-blue-500 to-cyan-500',
       glow: 'from-blue-400/25 to-cyan-400/25',
       badge: 'text-blue-700 bg-blue-100'
@@ -137,12 +158,14 @@ export default function DashboardOverview() {
 
               <div className="flex items-end justify-between">
                 <span className="text-2xl font-bold text-[#102C57]">{stat.value}</span>
+
                 <span className={`text-xs font-medium px-2 py-1 rounded-full ${stat.badge}`}>
                   {stat.change}
                 </span>
               </div>
 
             </div>
+
           </motion.div>
         ))}
 
@@ -152,6 +175,7 @@ export default function DashboardOverview() {
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
+
         {/* AI Study Assistant */}
         <motion.div 
           variants={fadeInScale}
@@ -159,6 +183,7 @@ export default function DashboardOverview() {
         >
 
           <div className="flex items-center justify-between mb-6">
+
             <h2 className="text-lg font-semibold text-[#102C57] flex items-center gap-2">
               <Brain className="w-5 h-5" />
               AI Study Assistant
@@ -171,9 +196,12 @@ export default function DashboardOverview() {
               View all
               <ChevronRight className="w-4 h-4" />
             </motion.button>
+
           </div>
 
+
           <div className="space-y-4">
+
             {[
               { question: "Build my next semester plan", time: "2 min ago" },
               { question: "Am I at risk of delaying graduation?", time: "1 hour ago" },
@@ -185,17 +213,23 @@ export default function DashboardOverview() {
                 whileHover={{ x: 4 }}
                 className="flex items-center justify-between p-4 rounded-xl bg-[#F8F0E5] border border-[#DAC0A3]/10 cursor-pointer"
               >
+
                 <div className="flex items-center gap-3">
+
                   <div className="w-2 h-2 rounded-full bg-green-500" />
+
                   <div>
                     <p className="text-sm font-medium text-[#102C57]">{item.question}</p>
                     <p className="text-xs text-[#102C57]/40">{item.time}</p>
                   </div>
+
                 </div>
 
                 <ChevronRight className="w-4 h-4 text-[#102C57]/20" />
+
               </motion.div>
             ))}
+
           </div>
 
 
@@ -251,7 +285,7 @@ export default function DashboardOverview() {
 
             <div className="p-4 rounded-xl bg-[#F8F0E5] border border-[#DAC0A3]/10">
               <p className="text-sm text-[#102C57]">
-                You have completed <b>{data?.completedCredits ?? "..."} / {data?.requiredCredits ?? "..."} credits</b>. 
+                You have completed <b>{data?.completedCredits} / {data?.requiredCredits} credits</b>. 
                 At your current pace, you are on track to graduate on time.
               </p>
             </div>
@@ -275,11 +309,7 @@ export default function DashboardOverview() {
 
         <div className="space-y-4">
 
-          {[
-            { action: "Completed AI Study Session", detail: "Machine Learning Fundamentals", time: "2 hours ago" },
-            { action: "AI Generated Semester Plan", detail: "Recommended 15 credits for next semester", time: "Yesterday" },
-            { action: "Graduation Progress Updated", detail: "Credits recalculated", time: "Yesterday" },
-          ].map((item, index) => (
+          {data?.recentActivity?.map((item, index) => (
             <motion.div
               key={index}
               variants={listItemVariants}

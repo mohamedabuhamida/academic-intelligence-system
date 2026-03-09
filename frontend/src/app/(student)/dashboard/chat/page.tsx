@@ -229,7 +229,10 @@ export default function ChatPage() {
         msgs.map((msg: any) => ({
           id: String(msg.id),
           type: msg.role === "user" ? "user" : "ai",
-          content: String(msg.content ?? ""),
+          content:
+            msg.role === "ai"
+              ? extractAssistantAnswer(String(msg.content ?? ""))
+              : String(msg.content ?? ""),
           timestamp: new Date(msg.created_at).toLocaleTimeString("ar-SA", {
             hour: "2-digit",
             minute: "2-digit",
@@ -778,7 +781,7 @@ export default function ChatPage() {
                             }
                           }}
                         >
-                          {normalizeMarkdownTables(message.content)}
+                          {normalizeMarkdownTables(extractAssistantAnswer(message.content))}
                         </ReactMarkdown>
                       </div>
                     ) : (

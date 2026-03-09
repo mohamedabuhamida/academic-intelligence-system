@@ -21,8 +21,11 @@ def _get_database_url() -> str:
     return str(url)
 
 
-DATABASE_URL = _get_database_url()
+DATABASE_URL = "postgresql://postgres.lzunnuzmzvrkzgjvqbnm:AI-Acadymi%5E123@aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require"
 
 engine = create_engine(
-    "postgresql://postgres.lzunnuzmzvrkzgjvqbnm:AI-Acadymi%5E123@aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require"
+    DATABASE_URL,
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10
 )

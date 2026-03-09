@@ -84,11 +84,19 @@ export async function GET() {
       .eq("user_id", userId)
       .order("created_at", { ascending: true });
 
+    type SemesterCourse = NonNullable<typeof coursesWithSemesters>[number];
+    type SemesterBucket = {
+      semester: SemesterCourse["semesters"];
+      courses: SemesterCourse[];
+      totalCredits: number;
+      semesterGPA: number;
+    };
+
     // Group by semester
-    const coursesBySemester = {};
+    const coursesBySemester: Record<string, SemesterBucket> = {};
     if (coursesWithSemesters) {
-      coursesWithSemesters.forEach(c => {
-        const semesterId = c.semester_id;
+      coursesWithSemesters.forEach((c) => {
+        const semesterId = String(c.semester_id ?? "unassigned");
         if (!coursesBySemester[semesterId]) {
           coursesBySemester[semesterId] = {
             semester: c.semesters,
@@ -104,12 +112,12 @@ export async function GET() {
       });
 
       // Calculate GPA for each semester
-      Object.keys(coursesBySemester).forEach(semesterId => {
+      Object.keys(coursesBySemester).forEach((semesterId) => {
         const semester = coursesBySemester[semesterId];
         let semesterPoints = 0;
         let semesterCredits = 0;
         
-        semester.courses.forEach(c => {
+        semester.courses.forEach((c) => {
           if (c.status === 'completed' && c.grade_points && c.courses?.credit_hours) {
             semesterPoints += Number(c.grade_points) * c.courses.credit_hours;
             semesterCredits += c.courses.credit_hours;

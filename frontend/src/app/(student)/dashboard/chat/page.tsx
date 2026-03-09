@@ -892,8 +892,10 @@ export default function ChatPage() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="اكتب سؤالك هنا..."
-                className="flex-1 px-3 lg:px-4 py-2 bg-transparent border-none outline-none text-xs lg:text-sm text-[#102C57] placeholder-[#102C57]/40 text-right"
-                dir="rtl"
+                className={`flex-1 px-3 lg:px-4 py-2 bg-transparent border-none outline-none text-xs lg:text-sm text-[#102C57] placeholder-[#102C57]/40 ${
+                  detectTextDirection(input) === "rtl" ? "text-right" : "text-left"
+                }`}
+                dir={detectTextDirection(input)}
                 disabled={isLoading}
               />
             </div>

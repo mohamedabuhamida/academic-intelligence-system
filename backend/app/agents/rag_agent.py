@@ -12,37 +12,13 @@ from app.agents.sql_agent import ask_database
 
 logger = logging.getLogger(__name__)
 
-PROMPT_TEMPLATE = """
-You are the academic assistant for the Faculty of AI at Delta University.
-
-You must follow these strict rules:
-1) Use the Academic Regulation context as the primary source of truth.
-2) Use User Memory only to personalize the answer.
-3) If the answer is not found in the regulation context, say:
-   "I do not have enough information in the current regulation."
-
-----------------------------------------
-Relevant User Memory:
-{memory_context}
-
-----------------------------------------
-Retrieved Academic Regulation Context:
-{regulation_context}
-
-----------------------------------------
-Student Question:
-{question}
-
-----------------------------------------
-Accurate Answer:
-"""
-
 
 def format_docs(docs: List[Document]) -> str:
     return "\n\n---\n\n".join(doc.page_content for doc in docs)
 
 
 class SupabaseVectorStoreCompat(SupabaseVectorStore):
+
     def similarity_search_by_vector_with_relevance_scores(
         self,
         query: List[float],
@@ -53,6 +29,7 @@ class SupabaseVectorStoreCompat(SupabaseVectorStore):
     ) -> List[Tuple[Document, float]]:
 
         match_documents_params = self.match_args(query, filter)
+
         query_builder = self._client.rpc(self.query_name, match_documents_params)
 
         if hasattr(query_builder, "params"):
@@ -76,6 +53,7 @@ class SupabaseVectorStoreCompat(SupabaseVectorStore):
 
 
 def get_rag_components():
+
     llm = get_llm()
     embeddings = get_embedding_model()
     supabase = get_supabase()
@@ -105,7 +83,7 @@ def normalize_text(content):
 
     if isinstance(content, list):
         try:
-            return " ".join([c.get("text","") for c in content])
+            return " ".join([c.get("text", "") for c in content])
         except:
             return str(content)
 
@@ -113,21 +91,48 @@ def normalize_text(content):
 
 
 async def ask_academic_mentor(query: str, user_id: str) -> str:
+
     try:
+
         retriever, llm = get_rag_components()
 
-        # 1️⃣ RAG context (regulations)
+        # 1️⃣ Retrieve academic regulation context (RAG)
         docs = retriever.invoke(query)
         regulation_context = format_docs(docs)
 
-        # 2️⃣ Student academic data from SQL
-        student_data = await ask_database(
-f"""
-Get the academic data for this student.
+        # 2️⃣ Decide if database is required
+        decision_prompt = f"""
+Does this question require the student's personal academic record?
+
+Examples requiring database:
+- GPA
+- completed credits
+- my courses
+- semester planning
+- improve my GPA
+
+Question:
+{query}
+
+Answer ONLY: YES or NO
+"""
+
+        decision = await llm.ainvoke(decision_prompt)
+
+        use_database = "YES" in decision.content.upper()
+
+        student_data = "Not required"
+
+        # 3️⃣ Query database ONLY if needed
+        if use_database:
+
+            student_data = await ask_database(
+                f"""
+Retrieve academic data for this student.
 
 Student ID: {user_id}
 
-Use SQL queries on the database to retrieve:
+Use SQL queries to retrieve:
 
 1) Student profile
 2) Completed courses
@@ -136,34 +141,29 @@ Use SQL queries on the database to retrieve:
 5) Total completed credits
 
 Relevant tables:
-- profiles
-- student_courses
-- courses
-- gpa_history
-
-Use joins if necessary.
+profiles
+student_courses
+courses
+gpa_history
 """
-)
+            )
 
-        # 3️⃣ User memory
+        # 4️⃣ Retrieve semantic memory
         memory_context = retrieve_memory(user_id, query)
 
-        # 4️⃣ Build prompt
+        # 5️⃣ Build final prompt
         final_prompt = f"""
 You are the academic assistant for the Faculty of AI at Delta University.
 
-Use TWO sources:
+Use the following information carefully.
 
-1) Academic Regulations
-2) Student Academic Data
-
-Rules:
+RULES:
 
 - NEVER assume student's specialization
 - NEVER invent courses
-- Courses MUST come from the database
-- If the question is about regulations, answer using RAG only
-- If the question is about the student, use database data
+- Courses must come from the database
+- Use academic regulations for policy questions
+- Use student data only when needed
 
 --------------------------------
 
@@ -182,20 +182,20 @@ User Memory:
 
 --------------------------------
 
-Question:
+Student Question:
 {query}
 
 --------------------------------
 
-Answer clearly and accurately.
+Provide a clear and accurate answer.
 """
 
-        # 5️⃣ LLM
+        # 6️⃣ Generate answer
         response = await llm.ainvoke(final_prompt)
 
         response_text = normalize_text(response)
 
-        # 6️⃣ Store memory
+        # 7️⃣ Store conversation memory
         store_memory(user_id, "user", query)
         store_memory(user_id, "ai", response_text)
 

@@ -41,7 +41,7 @@ export default function DashboardOverview() {
       </motion.div> */}
 
       {/* Stats Grid */}
-      <motion.div variants={staggerContainer} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* <motion.div variants={staggerContainer} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { icon: GraduationCap, label: 'Current GPA', value: '3.85', change: '+0.2', color: 'from-green-500 to-emerald-500' },
           { icon: Clock, label: 'Study Hours', value: '124', change: '+12', color: 'from-blue-500 to-cyan-500' },
@@ -69,10 +69,10 @@ export default function DashboardOverview() {
             </div>
           </motion.div>
         ))}
-      </motion.div>
+      </motion.div> */}
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* AI Study Assistant */}
         <motion.div 
           variants={fadeInScale}
@@ -182,7 +182,7 @@ export default function DashboardOverview() {
             ))}
           </div>
         </motion.div>
-      </div>
+      </div> */}
 
       {/* Recent Activity */}
       <motion.div 

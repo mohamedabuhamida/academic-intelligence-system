@@ -1,4 +1,4 @@
-// app/api/debug/route.ts
+// app/api/dashboard/route.ts
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -8,201 +8,128 @@ export async function GET() {
 
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser();
 
-    if (!user) {
+    if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const userId = user.id;
 
     // Get profile
-    const profile = await supabase
+    const { data: profile } = await supabase
       .from("profiles")
-      .select("*")
+      .select("full_name, total_required_hours")
       .eq("id", userId)
-      .maybeSingle();
+      .single();
 
-    // Get all GPA history (for reference)
-    const gpaHistory = await supabase
-      .from("gpa_history")
-      .select("*")
-      .eq("user_id", userId)
-      .order("recorded_at", { ascending: false });
-
-    // Get all completed courses with their grades and credit hours
+    // Get all courses with their details
     const { data: courses, error: coursesError } = await supabase
       .from("student_courses")
-      .select(
-        `
-        id,
+      .select(`
         status,
-        grade,
         grade_points,
-        created_at,
-        semester_id,
         courses (
-          id,
+          credit_hours,
           name,
-          code,
-          credit_hours
+          code
         )
-      `,
-      )
-      .eq("user_id", userId)
-      .eq("status", "completed");
+      `)
+      .eq("user_id", userId);
 
-    // Calculate CGPA from all completed courses
+    if (coursesError) {
+      console.error("Courses error:", coursesError);
+    }
+
+    // Calculate metrics
+    const activeCourses = courses?.filter(c => c.status === "current").length || 0;
+    
+    // Calculate completed credits
+    const completedCredits = courses
+      ?.filter(c => c.status === "completed")
+      .reduce((sum, c) => sum + (c.courses?.credit_hours || 0), 0) || 0;
+
+    // Calculate CGPA from ALL completed courses
+    const completedWithGrades = courses?.filter(c => 
+      c.status === "completed" && c.grade_points && c.courses?.credit_hours
+    ) || [];
+    
     let cgpa = 0;
-    let totalGradePoints = 0;
+    let totalPoints = 0;
     let totalCredits = 0;
-    let coursesWithGrades: NonNullable<typeof courses> = [];
-    const getCreditHours = (
-      courseRelation:
-        | { credit_hours: number | null }
-        | Array<{ credit_hours: number | null }>
-        | null
-        | undefined,
-    ) => {
-      const course = Array.isArray(courseRelation)
-        ? courseRelation[0]
-        : courseRelation;
-      return Number(course?.credit_hours ?? 0);
-    };
+    
+    completedWithGrades.forEach(c => {
+      const credits = c.courses?.credit_hours || 0;
+      const gradePoints = Number(c.grade_points) || 0;
+      totalPoints += gradePoints * credits;
+      totalCredits += credits;
+    });
+    
+    if (totalCredits > 0) {
+      cgpa = Number((totalPoints / totalCredits).toFixed(3));
+    }
 
-    if (courses && courses.length > 0) {
-      coursesWithGrades = courses.filter(
-        (c) => c.grade_points && getCreditHours(c.courses) > 0,
-      );
+    const requiredCredits = profile?.total_required_hours ?? 142;
+    const progress = requiredCredits > 0 
+      ? Math.min(Math.round((completedCredits / requiredCredits) * 100), 100) 
+      : 0;
 
-      coursesWithGrades.forEach((c) => {
-        const credits = getCreditHours(c.courses);
-        const gradePoints = Number(c.grade_points) || 0;
-        totalGradePoints += gradePoints * credits;
-        totalCredits += credits;
-      });
-
-      if (totalCredits > 0) {
-        cgpa = Number((totalGradePoints / totalCredits).toFixed(3));
+    // Create recent activity based on actual data
+    const recentActivity = [
+      {
+        action: "CGPA",
+        detail: cgpa.toString(),
+        time: "Cumulative GPA",
+      },
+      {
+        action: "Total Credits",
+        detail: `${completedCredits} of ${requiredCredits} credits completed`,
+        time: `${progress}% complete`,
+      },
+      {
+        action: "Courses Completed",
+        detail: `${completedWithGrades.length} courses completed`,
+        time: "To date",
       }
+    ];
+
+    if (activeCourses > 0) {
+      recentActivity.unshift({
+        action: "Active Courses",
+        detail: `${activeCourses} courses in progress`,
+        time: "Current semester",
+      });
     }
 
-    // Group courses by semester for better visualization
-    const { data: coursesWithSemesters } = await supabase
-      .from("student_courses")
-      .select(
-        `
-        *,
-        courses (*),
-        semesters (*)
-      `,
-      )
-      .eq("user_id", userId)
-      .order("created_at", { ascending: true });
-
-    type SemesterCourse = NonNullable<typeof coursesWithSemesters>[number];
-    type SemesterBucket = {
-      semester: SemesterCourse["semesters"];
-      courses: SemesterCourse[];
-      totalCredits: number;
-      semesterGPA: number;
+    const response = {
+      user: {
+        id: userId,
+        name: profile?.full_name ?? "Student",
+        email: user.email,
+      },
+      gpa: cgpa, // Now this is CGPA, not just last semester GPA
+      activeCourses,
+      completedCredits,
+      requiredCredits,
+      progress,
+      recentActivity,
+      // Add semester breakdown for reference
+      semesterBreakdown: {
+        totalSemesters: 4,
+        totalCourses: completedWithGrades.length,
+        totalCredits,
+        cgpa,
+      }
     };
 
-    // Group by semester
-    const coursesBySemester: Record<string, SemesterBucket> = {};
-    if (coursesWithSemesters) {
-      coursesWithSemesters.forEach((c) => {
-        const semesterId = String(c.semester_id ?? "unassigned");
-        if (!coursesBySemester[semesterId]) {
-          coursesBySemester[semesterId] = {
-            semester: c.semesters,
-            courses: [],
-            totalCredits: 0,
-            semesterGPA: 0,
-          };
-        }
-        coursesBySemester[semesterId].courses.push(c);
-        const credits = getCreditHours(c.courses);
-        if (c.status === "completed" && credits > 0) {
-          coursesBySemester[semesterId].totalCredits += credits;
-        }
-      });
-
-      // Calculate GPA for each semester
-      Object.keys(coursesBySemester).forEach((semesterId) => {
-        const semester = coursesBySemester[semesterId];
-        let semesterPoints = 0;
-        let semesterCredits = 0;
-
-        semester.courses.forEach((c) => {
-          const credits = getCreditHours(c.courses);
-          if (c.status === "completed" && c.grade_points && credits > 0) {
-            semesterPoints += Number(c.grade_points) * credits;
-            semesterCredits += credits;
-          }
-        });
-
-        if (semesterCredits > 0) {
-          semester.semesterGPA = Number(
-            (semesterPoints / semesterCredits).toFixed(3),
-          );
-        }
-      });
-    }
-    console.log({
-      user: {
-        id: user.id,
-        email: user.email,
-      },
-      profile: profile.data,
-      cgpa: {
-        value: cgpa,
-        totalCredits,
-        totalCourses: courses?.length || 0,
-        coursesWithGrades: coursesWithGrades.length,
-      },
-      gpaHistory: gpaHistory.data,
-      summary: {
-        totalCompletedCourses: courses?.length || 0,
-        totalCreditsEarned: totalCredits,
-        cgpa: cgpa,
-      },
-      coursesBySemester: coursesBySemester,
-      rawCourses: courses,
-      errors: {
-        profile: profile.error,
-        gpaHistory: gpaHistory.error,
-        courses: coursesError,
-      },
-    });
-
-    return NextResponse.json({
-      user: {
-        id: user.id,
-        email: user.email,
-      },
-      profile: profile.data,
-      cgpa: {
-        value: cgpa,
-        totalCredits,
-        totalCourses: courses?.length || 0,
-        coursesWithGrades: coursesWithGrades.length,
-      },
-      gpaHistory: gpaHistory.data,
-      summary: {
-        totalCompletedCourses: courses?.length || 0,
-        totalCreditsEarned: totalCredits,
-        cgpa: cgpa,
-      },
-      coursesBySemester: coursesBySemester,
-      rawCourses: courses,
-      errors: {
-        profile: profile.error,
-        gpaHistory: gpaHistory.error,
-        courses: coursesError,
-      },
-    });
+    console.log("Dashboard Data:", response);
+    return NextResponse.json(response);
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    console.error("Dashboard API error:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

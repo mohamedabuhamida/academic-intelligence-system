@@ -20,8 +20,8 @@ export default function DashboardOverview() {
   return (
     <div className="relative isolate space-y-8 overflow-hidden rounded-3xl px-1 py-2">
       <div className="pointer-events-none absolute -left-32 -top-28 h-72 w-72 rounded-full bg-[#DAC0A3]/25 blur-3xl" />
-      <div className="pointer-events-none absolute -right-20 top-40 h-80 w-80 rounded-full bg-[#102C57]/10 blur-3xl" />
-      <div className="pointer-events-none absolute inset-x-16 -bottom-24 h-48 rounded-full bg-gradient-to-r from-[#102C57]/10 via-[#DAC0A3]/20 to-[#EADBC8]/10 blur-2xl" />
+      <div className="pointer-events-none absolute -right-20 top-40 h-80 w-80 rounded-full bg-[#EADBC8]/25 blur-3xl" />
+      <div className="pointer-events-none absolute inset-x-16 -bottom-24 h-48 rounded-full bg-gradient-to-r from-[#EADBC8]/10 via-[#DAC0A3]/20 to-[#F8F0E5]/20 blur-2xl" />
       {/* Welcome Section */}
       <motion.div variants={fadeInScale} className="flex items-center justify-between">
         <div>
@@ -41,10 +41,10 @@ export default function DashboardOverview() {
       {/* Stats Grid */}
       <motion.div variants={staggerContainer} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { icon: GraduationCap, label: 'Current GPA', value: '3.85', change: '+0.2', color: 'from-green-500 to-emerald-500' },
-          { icon: Clock, label: 'Study Hours', value: '124', change: '+12', color: 'from-blue-500 to-cyan-500' },
-          { icon: Target, label: 'Courses', value: '5', change: '2 completed', color: 'from-purple-500 to-pink-500' },
-          { icon: Award, label: 'Achievements', value: '8', change: '3 new', color: 'from-amber-500 to-orange-500' },
+          { icon: GraduationCap, label: 'Current GPA', value: '3.85', change: '+0.2', color: 'from-green-500 to-emerald-500', glow: 'from-green-400/25 to-emerald-400/25', badge: 'text-green-700 bg-green-100' },
+          { icon: Clock, label: 'Study Hours', value: '124', change: '+12', color: 'from-blue-500 to-cyan-500', glow: 'from-blue-400/25 to-cyan-400/25', badge: 'text-blue-700 bg-blue-100' },
+          { icon: Target, label: 'Courses', value: '5', change: '2 completed', color: 'from-indigo-500 to-sky-500', glow: 'from-indigo-400/25 to-sky-400/25', badge: 'text-indigo-700 bg-indigo-100' },
+          { icon: Award, label: 'Achievements', value: '8', change: '3 new', color: 'from-amber-500 to-orange-500', glow: 'from-amber-400/25 to-orange-400/25', badge: 'text-amber-700 bg-amber-100' },
         ].map((stat, index) => (
           <motion.div
             key={index}

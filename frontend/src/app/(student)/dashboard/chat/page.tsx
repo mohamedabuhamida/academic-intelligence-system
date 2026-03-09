@@ -67,6 +67,35 @@ function normalizeMarkdownTables(content: string): string {
   return compact.replace(/\s+\|\s+\|/g, " |\n| ").trim();
 }
 
+function extractAssistantAnswer(raw: string): string {
+  const cleaned = raw.trim();
+  if (!cleaned) return raw;
+
+  // Handle JSON wrapped in markdown fences.
+  const fenceMatch = cleaned.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  const candidate = fenceMatch?.[1]?.trim() || cleaned;
+
+  try {
+    const parsed = JSON.parse(candidate) as {
+      answer?: unknown;
+      response?: unknown;
+      message?: unknown;
+      data?: { answer?: unknown; response?: unknown; message?: unknown };
+    };
+
+    if (typeof parsed.answer === "string") return parsed.answer;
+    if (typeof parsed.response === "string") return parsed.response;
+    if (typeof parsed.message === "string") return parsed.message;
+    if (typeof parsed.data?.answer === "string") return parsed.data.answer;
+    if (typeof parsed.data?.response === "string") return parsed.data.response;
+    if (typeof parsed.data?.message === "string") return parsed.data.message;
+  } catch {
+    // Not JSON, return as-is.
+  }
+
+  return raw;
+}
+
 export default function ChatPage() {
   const supabase = createClient();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -359,13 +388,15 @@ export default function ChatPage() {
           ));
         }
 
+        const finalContent = extractAssistantAnswer(fullContent);
+
         // Save final message to database
         const { data: savedAiMsg } = await supabase
           .from("messages")
           .insert([{
             conversation_id: conversationId,
             role: "ai",
-            content: fullContent,
+            content: finalContent,
           }])
           .select("id, created_at")
           .single();
@@ -377,9 +408,15 @@ export default function ChatPage() {
               ? { 
                   ...msg, 
                   id: String(savedAiMsg.id),
-                  content: fullContent,
+                  content: finalContent,
                   isStreaming: false 
                 }
+              : msg
+          ));
+        } else {
+          setMessages(prev => prev.map(msg =>
+            msg.id === aiMessageId
+              ? { ...msg, content: finalContent, isStreaming: false }
               : msg
           ));
         }

@@ -14,18 +14,12 @@ import {
   BookOpen,
   Loader2,
   Clock,
-  ChevronDown,
   Download,
-  Share2,
   Trash2,
-  Edit3,
   Search,
-  Filter,
   Plus,
   MessageSquare,
-  Settings,
-  User,
-  LogOut,
+  
 } from "lucide-react";
 import {
   fadeInScale,

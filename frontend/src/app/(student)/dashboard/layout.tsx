@@ -24,7 +24,7 @@ export default function DashboardLayout({
   if (!mounted) return null;
 
   return (
-    <div className="h-screen flex flex-col bg-[#F8F0E5]">
+    <div className="min-h-screen flex flex-col bg-[#F8F0E5]">
       {/* Sidebar */}
       <Sidebar 
         isExpanded={isSidebarExpanded} 

@@ -47,7 +47,7 @@ export default function Header({ isSidebarExpanded }: HeaderProps) {
       initial="initial"
       animate="animate"
       className={`fixed top-0 right-0 z-40 bg-white/70 backdrop-blur-xl border-b border-[#DAC0A3]/20 px-8 py-4 transition-all duration-300 ${
-        isSidebarExpanded ? "left-[280px]" : "left-[88px]"
+        isSidebarExpanded ? "left-70" : "left-22"
       }`}
     >
       <div className="flex items-center justify-between">

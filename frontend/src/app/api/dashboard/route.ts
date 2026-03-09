@@ -60,7 +60,7 @@ export async function GET() {
         .reduce((sum, c) => sum + (c.credits || 0), 0) || 0;
 
 
-    const requiredCredits = profile?.total_required_hours || 142;
+    const requiredCredits = profile?.total_required_hours;
 
     const progress = Math.round(
       (completedCredits / requiredCredits) * 100

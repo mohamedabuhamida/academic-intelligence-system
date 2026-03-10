@@ -1,3 +1,5 @@
+import asyncio
+
 from langchain_community.utilities import SQLDatabase
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from app.core.database import engine
@@ -28,6 +30,7 @@ def get_sql_agent():
         "courses",
         "course_prerequisites",
         "gpa_history",
+        "student_cgpa",
         "semester_plans",
         "semester_plan_courses"
     ]
@@ -39,7 +42,7 @@ def get_sql_agent():
             tools=toolkit.get_tools(),
             llm=llm,
             agent="zero-shot-react-description",
-            verbose=True,
+            verbose=False,
         )
     else:
         sql_agent = create_agent(
@@ -61,7 +64,7 @@ Rules:
 - Use joins when necessary
 - Only return factual results from the database
 """,
-            debug=True,
+            debug=False,
         )
 
     return sql_agent
@@ -100,9 +103,10 @@ async def ask_database(question: str):
         return f"Database connection is unavailable: {exc}"
 
     if HAS_INITIALIZE_AGENT:
-        return agent.run(question)
+        return await asyncio.to_thread(agent.run, question)
 
-    result = agent.invoke(
-        {"messages": [{"role": "user", "content": question}]}
+    result = await asyncio.to_thread(
+        agent.invoke,
+        {"messages": [{"role": "user", "content": question}]},
     )
     return _extract_text_from_agent_result(result)

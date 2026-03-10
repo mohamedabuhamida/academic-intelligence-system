@@ -119,7 +119,8 @@ async def ask_planner_agent(query: str, user_id: str) -> str:
            - CGPA >= 3.0: Maximum 21 credits allowed per semester.
 
         [YOUR TOOLS & CAPABILITIES]
-        - Use `check_course_eligibility` tool (pass the course CODE, e.g., 'AI314') BEFORE recommending ANY course.
+        - Use `check_course_eligibility` tool ONLY if the user explicitly asks about a specific course code
+          or if you are about to recommend a specific course by code.
         - Use `calculate_target_gpa` tool to simulate GPA targets if asked.
         - Use `evaluate_risk` tool to assess the danger of the planned courses based on student's history.
 
@@ -128,6 +129,10 @@ async def ask_planner_agent(query: str, user_id: str) -> str:
         - Output your FINAL RESPONSE to the student in ELEGANT, ENCOURAGING, AND CLEAR ARABIC.
         - Use markdown (bullet points, bold text) for readability.
         - Never invent courses or grades. Base your recommendations ONLY on the database output and tool results.
+        - Do NOT introduce any course code that is not mentioned in the current user question.
+        - Do NOT mention database/technical errors unless a tool call in this run actually fails.
+        - If the user asks "how many A+ / how to raise GPA" without enough numbers, ask a concise follow-up for:
+          target CGPA and planned semester credits (or number of courses and their credit hours).
         """
 
         agent_executor = create_react_agent(llm, tools)

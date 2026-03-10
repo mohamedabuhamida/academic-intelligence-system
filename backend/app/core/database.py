@@ -21,7 +21,7 @@ def _get_database_url() -> str:
     return str(url)
 
 
-DATABASE_URL = "postgresql://postgres.lzunnuzmzvrkzgjvqbnm:AI-Acadymi%5E123@aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require"
+DATABASE_URL = _get_database_url()
 
 engine = create_engine(
     DATABASE_URL,

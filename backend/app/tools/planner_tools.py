@@ -101,8 +101,8 @@ def evaluate_risk(user_id: str, planned_courses: List[str]) -> str:
         total_planned_credits = sum([c["credit_hours"] for c in courses_res.data]) if courses_res.data else len(planned_courses) * 3
             
         # 2. سحب الـ CGPA الحالي
-        cgpa_res = supabase.table("student_cgpa").select("cgpa").eq("user_id", user_id).execute()
-        current_cgpa = float(cgpa_res.data[0]["cgpa"]) if cgpa_res.data else 3.0
+        cgpa_data = get_cgpa(user_id)
+        current_cgpa = float(cgpa_data.get("cgpa")) if cgpa_data.get("cgpa") is not None else 3.0
         
         # 3. تحليل المخاطر
         risk_factors = []

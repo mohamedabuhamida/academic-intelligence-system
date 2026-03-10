@@ -96,25 +96,120 @@ def _calculate_cgpa_from_history(rows: list[dict]) -> float | None:
     return round(avg, 3)
 
 
+def _calculate_total_credits_from_history(rows: list[dict]) -> int | None:
+    """
+    Infers total earned credits from GPA history.
+    Supports both schemas:
+    1) cumulative total_credits per row
+    2) per-semester credits per row
+    """
+    credits = [_to_int(row.get("total_credits")) for row in rows]
+    if not credits or any(c is None for c in credits):
+        return None
+
+    values = [c for c in credits if c is not None]
+    if not values:
+        return None
+
+    is_strictly_increasing = all(values[i] > values[i - 1] for i in range(1, len(values)))
+    if is_strictly_increasing:
+        return values[-1]
+
+    return sum(values)
+
+
+def _extract_credit_hours(course_relation: Any) -> int:
+    if course_relation is None:
+        return 0
+
+    if isinstance(course_relation, list):
+        if not course_relation:
+            return 0
+        item = course_relation[0]
+        if isinstance(item, dict):
+            return _to_int(item.get("credit_hours")) or 0
+        return 0
+
+    if isinstance(course_relation, dict):
+        return _to_int(course_relation.get("credit_hours")) or 0
+
+    return 0
+
+
+def _calculate_cgpa_from_completed_courses(user_id: str) -> dict | None:
+    """
+    Calculates CGPA from completed courses using:
+    student_courses.grade_points * courses.credit_hours.
+    This is usually the most accurate source of truth.
+    """
+    supabase = get_supabase()
+    response = (
+        supabase.table("student_courses")
+        .select("status, grade_points, courses(credit_hours)")
+        .eq("user_id", user_id)
+        .eq("status", "completed")
+        .execute()
+    )
+    rows = response.data or []
+    if not rows:
+        return None
+
+    total_points = 0.0
+    total_credits = 0
+
+    for row in rows:
+        grade_points = _to_float(row.get("grade_points"))
+        credits = _extract_credit_hours(row.get("courses"))
+        if grade_points is None or credits <= 0:
+            continue
+        total_points += grade_points * credits
+        total_credits += credits
+
+    if total_credits <= 0:
+        return None
+
+    return {
+        "cgpa": round(total_points / total_credits, 3),
+        "total_credits": total_credits,
+        "source": "student_courses",
+    }
+
+
 def get_cgpa(user_id: str) -> dict:
     """
     Computes CGPA using all historical semester GPA rows.
     Returns metadata that can be reused by tools/APIs.
     """
+    # Preferred source: graded completed courses + course credit hours.
+    from_courses = _calculate_cgpa_from_completed_courses(user_id)
+    if from_courses is not None:
+        history_rows = get_semester_gpa(user_id)
+        return {
+            "cgpa": from_courses["cgpa"],
+            "total_credits": from_courses["total_credits"],
+            "source": from_courses["source"],
+            "semesters_count": len(history_rows),
+            "history": history_rows,
+        }
+
+    # Fallback 1: GPA history.
     rows = get_semester_gpa(user_id)
     calculated = _calculate_cgpa_from_history(rows)
 
     if calculated is not None:
-        last_row = rows[-1] if rows else {}
+        total_credits = _calculate_total_credits_from_history(rows)
+        if total_credits is None:
+            last_row = rows[-1] if rows else {}
+            total_credits = _to_int(last_row.get("total_credits"))
         return {
             "cgpa": calculated,
-            "total_credits": _to_int(last_row.get("total_credits")),
+            "total_credits": total_credits,
             "source": "gpa_history",
             "semesters_count": len(rows),
             "history": rows,
         }
 
-    # Fallback to student_cgpa table if history is missing/incomplete
+    # Fallback 2: student_cgpa table if history is missing/incomplete.
     supabase = get_supabase()
     fallback = (
         supabase.table("student_cgpa")

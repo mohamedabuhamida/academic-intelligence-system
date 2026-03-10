@@ -8,41 +8,11 @@ from langchain_community.vectorstores import SupabaseVectorStore
 
 from app.services.memory_service import store_memory, retrieve_memory
 from app.core.config import get_supabase, get_embedding_model, get_llm
-from app.agents.sql_agent import ask_database
 
 logger = logging.getLogger(__name__)
 
-PROMPT_TEMPLATE = """
-You are the academic assistant for the Faculty of AI at Delta University.
-
-You must follow these strict rules:
-1) Use the Academic Regulation context as the primary source of truth.
-2) Use User Memory only to personalize the answer.
-3) If the answer is not found in the regulation context, say:
-   "I do not have enough information in the current regulation."
-
-----------------------------------------
-Relevant User Memory:
-{memory_context}
-
-----------------------------------------
-Retrieved Academic Regulation Context:
-{regulation_context}
-
-----------------------------------------
-Student Question:
-{question}
-
-----------------------------------------
-Accurate Answer:
-"""
-
-
-def format_docs(docs: List[Document]) -> str:
-    return "\n\n---\n\n".join(doc.page_content for doc in docs)
-
-
 class SupabaseVectorStoreCompat(SupabaseVectorStore):
+    """Custom wrapper to handle Supabase RPC parameter compatibility."""
     def similarity_search_by_vector_with_relevance_scores(
         self,
         query: List[float],
@@ -74,6 +44,8 @@ class SupabaseVectorStoreCompat(SupabaseVectorStore):
             if search.get("content")
         ]
 
+def format_docs(docs: List[Document]) -> str:
+    return "\n\n---\n\n".join(doc.page_content for doc in docs)
 
 def get_rag_components():
     llm = get_llm()
@@ -94,113 +66,69 @@ def get_rag_components():
 
     return retriever, llm
 
-
 def normalize_text(content):
-
     if isinstance(content, str):
         return content
-
     if hasattr(content, "content"):
         content = content.content
-
     if isinstance(content, list):
         try:
             return " ".join([c.get("text","") for c in content])
         except:
             return str(content)
-
     return str(content)
-
 
 async def ask_academic_mentor(query: str, user_id: str) -> str:
     try:
         retriever, llm = get_rag_components()
 
-        # 1️⃣ RAG context (regulations)
+        # 1️⃣ Retrieve Relevant Policy Context (RAG)
         docs = retriever.invoke(query)
         regulation_context = format_docs(docs)
 
-        # 2️⃣ Student academic data from SQL
-        student_data = await ask_database(
-f"""
-Get the academic data for this student.
-
-Student ID: {user_id}
-
-Use SQL queries on the database to retrieve:
-
-1) Student profile
-2) Completed courses
-3) Current courses
-4) GPA history
-5) Total completed credits
-
-Relevant tables:
-- profiles
-- student_courses
-- courses
-- gpa_history
-
-Use joins if necessary.
-"""
-)
-
-        # 3️⃣ User memory
+        # 2️⃣ Retrieve Conversational Memory
         memory_context = retrieve_memory(user_id, query)
 
-        # 4️⃣ Build prompt
+        # 3️⃣ The "Super" System Prompt (English Core, Arabic Output)
         final_prompt = f"""
-You are the academic assistant for the Faculty of AI at Delta University.
+You are the "Policy & Regulation Expert Agent", a core component of the Multi-Agent Academic Decision Intelligence System for the Faculty of AI at Delta University.
 
-Use TWO sources:
+Your SPECIFIC ROLE: Answer student inquiries STRICTLY using the official retrieved Academic Regulations. 
+You are NOT the Database Agent. You do NOT have access to the student's personal grades, GPA, or registered courses.
 
-1) Academic Regulations
-2) Student Academic Data
+STRICT RULES:
+1. GROUNDING: Base your answer EXCLUSIVELY on the "Retrieved Academic Regulation Context".
+2. NO HALLUCINATION: If the provided context does not explicitly contain the answer, DO NOT invent information. Respond exactly with: "عذراً، اللائحة الأكاديمية لا تحتوي على معلومات كافية للإجابة على هذا السؤال."
+3. ROLE BOUNDARY: If the user asks about their personal GPA or grades, politely apologize and inform them that this requires accessing their academic record, which is outside your current scope.
+4. CONTEXTUAL AWARENESS: Use the "Relevant User Memory" to understand the flow of the conversation, but never let memory override the official regulations.
+5. FINAL OUTPUT LANGUAGE: Your internal reasoning is in English, but your final response to the user MUST be in clear, professional, and elegant Arabic using markdown bullet points where appropriate.
 
-Rules:
-
-- NEVER assume student's specialization
-- NEVER invent courses
-- Courses MUST come from the database
-- If the question is about regulations, answer using RAG only
-- If the question is about the student, use database data
-
---------------------------------
-
-Academic Regulations:
-{regulation_context}
-
---------------------------------
-
-Student Academic Data:
-{student_data}
-
---------------------------------
-
-User Memory:
+----------------------------------------
+Relevant User Memory:
 {memory_context}
 
---------------------------------
+----------------------------------------
+Retrieved Academic Regulation Context:
+{regulation_context}
 
-Question:
+----------------------------------------
+Student Question:
 {query}
 
---------------------------------
-
-Answer clearly and accurately.
+----------------------------------------
+Accurate Arabic Answer:
 """
 
-        # 5️⃣ LLM
+        # 4️⃣ LLM Execution
         response = await llm.ainvoke(final_prompt)
-
         response_text = normalize_text(response)
 
-        # 6️⃣ Store memory
+        # 5️⃣ Memory Storage
         store_memory(user_id, "user", query)
         store_memory(user_id, "ai", response_text)
 
         return response_text
 
-    except Exception:
-        logger.exception("Academic mentor failed")
-        return "حدث خطأ أثناء معالجة الطلب."
+    except Exception as e:
+        logger.error(f"Error in RAG Agent: {str(e)}")
+        return "عذراً، حدث خطأ فني أثناء البحث في اللائحة. يرجى المحاولة مرة أخرى."

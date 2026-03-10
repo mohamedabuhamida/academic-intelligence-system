@@ -2,12 +2,15 @@
 
 from langgraph.graph import StateGraph, END
 from typing import TypedDict
+import logging
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 from app.agents.rag_agent import ask_academic_mentor
 from app.agents.planner_agent import ask_planner_agent
 from app.core.config import get_llm
+
+logger = logging.getLogger(__name__)
 
 class AgentState(TypedDict):
     question: str
@@ -56,9 +59,29 @@ async def router(state: AgentState):
     decision = decision.strip().lower().replace(".", "").replace("'", "").replace('"', "")
     
     # شرط صارم (Exact Match)
-    if decision == "planner":
-        return "planner"
-    return "rag"
+    if decision in {"rag", "planner"}:
+        return decision
+
+    q = question.lower()
+    personal_keywords = [
+        "my",
+        "me",
+        "gpa",
+        "grade",
+        "grades",
+        "register",
+        "registration",
+        "courses i",
+        "plan",
+        "risk",
+    ]
+    heuristic_decision = "planner" if any(k in q for k in personal_keywords) else "rag"
+    logger.warning(
+        "Router produced unexpected label '%s'. Falling back to '%s'.",
+        decision,
+        heuristic_decision,
+    )
+    return heuristic_decision
 
 # --- Graph Building ---
 builder = StateGraph(AgentState)

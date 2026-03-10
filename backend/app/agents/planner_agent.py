@@ -1,5 +1,6 @@
 # app/agents/planner_agent.py
 
+import asyncio
 import logging
 from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -23,7 +24,7 @@ async def ask_planner_agent(query: str, user_id: str) -> str:
         student_data = await ask_database(student_data_query)
         
         # 2. استرجاع ذاكرة المحادثة
-        memory_context = retrieve_memory(user_id, query)
+        memory_context = await asyncio.to_thread(retrieve_memory, user_id, query)
         
         # 3. تجهيز الموديل والأدوات
         llm = get_llm()
@@ -83,11 +84,12 @@ async def ask_planner_agent(query: str, user_id: str) -> str:
         # -----------------------------------------------
         
         # 7. تخزين المحادثة (دلوقتي الـ Embedding هياخد String نظيف)
-        store_memory(user_id, "user", query)
-        store_memory(user_id, "ai", final_answer)
+        await asyncio.to_thread(store_memory, user_id, "user", query)
+        await asyncio.to_thread(store_memory, user_id, "ai", final_answer)
         
         return final_answer
 
     except Exception as e:
         logger.error(f"CRITICAL ERROR in Planner Agent: {str(e)}", exc_info=True)
-        return f"عذراً، حدث خطأ فني أثناء التخطيط. (رسالة للمطور لمعرفة الخطأ: {str(e)})"
+        return "عذراً، حدث خطأ فني أثناء التخطيط. يرجى المحاولة مرة أخرى."
+

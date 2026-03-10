@@ -21,6 +21,12 @@ app.add_middleware(
 app.include_router(chat.router)
 app.include_router(embeddings.router)
 
+
 @app.get("/")
 def read_root():
-    return {"status": "Academic AI Backend is Online 🚀"}
+    return {"status": "Academic AI Backend is Online"}
+
+
+@app.get("/health")
+def health_check():
+    return {"ok": True}

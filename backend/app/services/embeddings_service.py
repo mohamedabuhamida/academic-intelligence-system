@@ -1,5 +1,4 @@
 import re
-import requests
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_text_splitters import MarkdownHeaderTextSplitter
 from app.core.config import get_embedding_model, get_supabase

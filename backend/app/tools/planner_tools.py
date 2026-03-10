@@ -4,6 +4,7 @@ import logging
 from typing import List
 from langchain_core.tools import tool
 from app.core.config import get_supabase
+from app.services.gpa_service import get_cgpa
 
 logger = logging.getLogger(__name__)
 

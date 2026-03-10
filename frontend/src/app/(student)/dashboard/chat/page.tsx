@@ -307,6 +307,14 @@ export default function ChatPage() {
         return;
       }
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      if (!accessToken) {
+        throw new Error("Missing Supabase access token");
+      }
+
       // Add user message immediately
       const userMessageId = `temp-${Date.now()}`;
       const userMessage: Message = {
@@ -360,6 +368,7 @@ export default function ChatPage() {
         headers: {
           accept: "application/json",
           "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           question,
@@ -367,6 +376,11 @@ export default function ChatPage() {
           conversation_id: conversationId,
         }),
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Backend request failed (${response.status}): ${errorText}`);
+      }
 
       // Handle streaming response
       if (response.body) {

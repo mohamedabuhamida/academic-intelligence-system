@@ -1,5 +1,6 @@
 # app/agents/rag_agent.py
 
+import asyncio
 import logging
 from typing import List, Tuple, Optional, Dict
 
@@ -83,11 +84,11 @@ async def ask_academic_mentor(query: str, user_id: str) -> str:
         retriever, llm = get_rag_components()
 
         # 1️⃣ Retrieve Relevant Policy Context (RAG)
-        docs = retriever.invoke(query)
+        docs = await asyncio.to_thread(retriever.invoke, query)
         regulation_context = format_docs(docs)
 
         # 2️⃣ Retrieve Conversational Memory
-        memory_context = retrieve_memory(user_id, query)
+        memory_context = await asyncio.to_thread(retrieve_memory, user_id, query)
 
         # 3️⃣ The "Super" System Prompt (English Core, Arabic Output)
         final_prompt = f"""
@@ -124,8 +125,8 @@ Accurate Arabic Answer:
         response_text = normalize_text(response)
 
         # 5️⃣ Memory Storage
-        store_memory(user_id, "user", query)
-        store_memory(user_id, "ai", response_text)
+        await asyncio.to_thread(store_memory, user_id, "user", query)
+        await asyncio.to_thread(store_memory, user_id, "ai", response_text)
 
         return response_text
 

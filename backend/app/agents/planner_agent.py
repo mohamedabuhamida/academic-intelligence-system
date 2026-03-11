@@ -80,9 +80,14 @@ async def ask_planner_agent(query: str, user_id: str) -> str:
         student_data_query = f"""
         Retrieve the academic profile for user_id: '{user_id}'.
         1. Get ALL semester GPA rows from 'gpa_history' (gpa, total_credits, recorded_at), then compute the latest cumulative CGPA using all rows.
-        2. Get a list of completed courses by joining 'student_courses' with 'courses' on course_id.
-           Filter where status is 'completed' and grade is not null, F, or W.
-           Return ONLY the course 'code', 'name', and 'grade'.
+        2. Get ALL student courses from 'student_courses' joined with 'courses' on course_id.
+           Include statuses: completed, current, planned.
+           Return for each row: status, grade, grade_points, course code, course name, credit_hours, semester_id.
+        3. Build a concise summary:
+           - completed credits total
+           - planned/current credits total
+           - count of courses by status
+           - list of planned/current courses with their credit hours.
         """
         student_data = await ask_database(student_data_query)
 
@@ -133,6 +138,9 @@ async def ask_planner_agent(query: str, user_id: str) -> str:
         - Do NOT mention database/technical errors unless a tool call in this run actually fails.
         - If the user asks "how many A+ / how to raise GPA" without enough numbers, ask a concise follow-up for:
           target CGPA and planned semester credits (or number of courses and their credit hours).
+        - If planned/current courses exist in database, you MUST use their real credit hours in calculations.
+        - Never assume "18 credits = 6 courses" unless no planned/current course data exists.
+        - If database already has planned/current courses and credits, do not ask the user for data that already exists.
         """
 
         agent_executor = create_react_agent(llm, tools)

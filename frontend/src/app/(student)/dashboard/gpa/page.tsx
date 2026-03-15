@@ -37,6 +37,13 @@ type CalculatorCourse = {
   grade: string;
 };
 
+type SemesterPlan = {
+  id: string;
+  name: string;
+  pendingCourseId: string;
+  courses: CalculatorCourse[];
+};
+
 type GpaData = {
   user?: {
     name?: string;
@@ -65,8 +72,15 @@ export default function GpaPage() {
   const [data, setData] = useState<GpaData | null>(null);
   const [loading, setLoading] = useState(true);
   const [targetCgpa, setTargetCgpa] = useState("");
-  const [pendingCourseId, setPendingCourseId] = useState("");
-  const [courses, setCourses] = useState<CalculatorCourse[]>([]);
+  const [semesterPlans, setSemesterPlans] = useState<SemesterPlan[]>([
+    {
+      id: crypto.randomUUID(),
+      name: "Semester 1",
+      pendingCourseId: "",
+      courses: [],
+    },
+  ]);
+  const [activeSemesterId, setActiveSemesterId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadGpaData() {
@@ -112,9 +126,18 @@ export default function GpaPage() {
     [gradeScale],
   );
 
-  const semesterTotals = useMemo(() => {
-    const totalCredits = courses.reduce((sum, course) => sum + Number(course.creditHours || 0), 0);
-    const totalPoints = courses.reduce(
+  useEffect(() => {
+    if (!activeSemesterId && semesterPlans.length > 0) {
+      setActiveSemesterId(semesterPlans[0].id);
+    }
+  }, [activeSemesterId, semesterPlans]);
+
+  const activeSemester = semesterPlans.find((semester) => semester.id === activeSemesterId) ?? semesterPlans[0];
+  const allPlannedCourses = semesterPlans.flatMap((semester) => semester.courses);
+
+  const activeSemesterTotals = useMemo(() => {
+    const totalCredits = (activeSemester?.courses ?? []).reduce((sum, course) => sum + Number(course.creditHours || 0), 0);
+    const totalPoints = (activeSemester?.courses ?? []).reduce(
       (sum, course) => sum + (Number(course.creditHours || 0) * (gradeMap[course.grade] ?? 0)),
       0,
     );
@@ -124,63 +147,116 @@ export default function GpaPage() {
       semesterGpa: totalCredits > 0 ? Number((totalPoints / totalCredits).toFixed(3)) : 0,
       totalPoints,
     };
-  }, [courses, gradeMap]);
+  }, [activeSemester, gradeMap]);
+
+  const planTotals = useMemo(() => {
+    const totalCredits = allPlannedCourses.reduce((sum, course) => sum + Number(course.creditHours || 0), 0);
+    const totalPoints = allPlannedCourses.reduce(
+      (sum, course) => sum + (Number(course.creditHours || 0) * (gradeMap[course.grade] ?? 0)),
+      0,
+    );
+
+    return {
+      totalCredits,
+      totalPoints,
+      averageGpa: totalCredits > 0 ? Number((totalPoints / totalCredits).toFixed(3)) : 0,
+    };
+  }, [allPlannedCourses, gradeMap]);
 
   const projectedCgpa = useMemo(() => {
     if (!academic) return 0;
 
     const existingQualityPoints = academic.currentCgpa * academic.gradedCredits;
-    const projectedCredits = academic.gradedCredits + semesterTotals.totalCredits;
+    const projectedCredits = academic.gradedCredits + planTotals.totalCredits;
     if (projectedCredits <= 0) return 0;
 
     return Number(
-      ((existingQualityPoints + semesterTotals.totalPoints) / projectedCredits).toFixed(3),
+      ((existingQualityPoints + planTotals.totalPoints) / projectedCredits).toFixed(3),
     );
-  }, [academic, semesterTotals]);
+  }, [academic, planTotals]);
 
   const requiredSemesterGpa = useMemo(() => {
     const target = Number(targetCgpa);
-    if (!academic || !target || semesterTotals.totalCredits <= 0) {
+    if (!academic || !target || planTotals.totalCredits <= 0) {
       return null;
     }
 
     const currentQualityPoints = academic.currentCgpa * academic.gradedCredits;
-    const totalFutureCredits = academic.gradedCredits + semesterTotals.totalCredits;
+    const totalFutureCredits = academic.gradedCredits + planTotals.totalCredits;
     const requiredQualityPoints = target * totalFutureCredits;
-    const neededThisSemester = (requiredQualityPoints - currentQualityPoints) / semesterTotals.totalCredits;
+    const neededThisSemester = (requiredQualityPoints - currentQualityPoints) / planTotals.totalCredits;
 
     return Number(neededThisSemester.toFixed(3));
-  }, [academic, semesterTotals.totalCredits, targetCgpa]);
+  }, [academic, planTotals.totalCredits, targetCgpa]);
 
-  const addCourse = () => {
-    if (!pendingCourseId) return;
+  const addSemester = () => {
+    const newSemester: SemesterPlan = {
+      id: crypto.randomUUID(),
+      name: `Semester ${semesterPlans.length + 1}`,
+      pendingCourseId: "",
+      courses: [],
+    };
 
-    const selectedCourse = availableCourses.find((course) => course.id === pendingCourseId);
-    if (!selectedCourse) return;
-
-    setCourses((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        courseId: selectedCourse.id,
-        creditHours: selectedCourse.creditHours,
-        grade: "A",
-      },
-    ]);
-    setPendingCourseId("");
+    setSemesterPlans((prev) => [...prev, newSemester]);
+    setActiveSemesterId(newSemester.id);
   };
 
-  const removeCourse = (id: string) =>
-    setCourses((prev) => prev.filter((course) => course.id !== id));
+  const addCourse = () => {
+    if (!activeSemester?.pendingCourseId) return;
 
-  const updateCourseGrade = (id: string, grade: string) => {
-    setCourses((prev) =>
-      prev.map((course) => (course.id === id ? { ...course, grade } : course)),
+    const selectedCourse = availableCourses.find((course) => course.id === activeSemester.pendingCourseId);
+    if (!selectedCourse) return;
+
+    setSemesterPlans((prev) =>
+      prev.map((semester) =>
+        semester.id === activeSemester.id
+          ? {
+              ...semester,
+              pendingCourseId: "",
+              courses: [
+                ...semester.courses,
+                {
+                  id: crypto.randomUUID(),
+                  courseId: selectedCourse.id,
+                  creditHours: selectedCourse.creditHours,
+                  grade: "A",
+                },
+              ],
+            }
+          : semester,
+      ),
+    );
+  };
+
+  const removeCourse = (semesterId: string, courseId: string) =>
+    setSemesterPlans((prev) =>
+      prev.map((semester) =>
+        semester.id === semesterId
+          ? {
+              ...semester,
+              courses: semester.courses.filter((course) => course.id !== courseId),
+            }
+          : semester,
+      ),
+    );
+
+  const updateCourseGrade = (semesterId: string, courseId: string, grade: string) => {
+    setSemesterPlans((prev) =>
+      prev.map((semester) =>
+        semester.id === semesterId
+          ? {
+              ...semester,
+              courses: semester.courses.map((course) =>
+                course.id === courseId ? { ...course, grade } : course,
+              ),
+            }
+          : semester,
+      ),
     );
   };
 
   const selectedCourseIds = new Set(
-    courses.map((course) => course.courseId).filter((courseId) => courseId.length > 0),
+    allPlannedCourses.map((course) => course.courseId).filter((courseId) => courseId.length > 0),
   );
   const selectableCourses = availableCourses.filter(
     (catalogCourse) => !selectedCourseIds.has(catalogCourse.id),
@@ -200,16 +276,16 @@ export default function GpaPage() {
     },
     {
       icon: Calculator,
-      label: "Projected Semester GPA",
-      value: semesterTotals.semesterGpa.toFixed(3),
-      detail: `${semesterTotals.totalCredits} planned credits`,
+      label: "Active Semester GPA",
+      value: activeSemesterTotals.semesterGpa.toFixed(3),
+      detail: `${activeSemesterTotals.totalCredits} active semester credits`,
       color: "from-indigo-500 to-sky-500",
     },
     {
       icon: TrendingUp,
       label: "Projected CGPA",
       value: projectedCgpa.toFixed(3),
-      detail: `${academic?.remainingCredits ?? 0} credits left after completed load`,
+      detail: `${planTotals.totalCredits} planned credits across ${semesterPlans.length} semesters`,
       color: "from-blue-500 to-cyan-500",
     },
   ];
@@ -264,14 +340,53 @@ export default function GpaPage() {
           <div className="mb-5 flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-[#102C57]">Semester Projection</h2>
-              <p className="text-sm text-[#102C57]/60">Choose a course once, add it, then adjust its expected grade in the table.</p>
+              <p className="text-sm text-[#102C57]/60">Build multiple semesters, then project your total GPA plan across all of them.</p>
             </div>
+            <button
+              onClick={addSemester}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#102C57]/20 bg-white px-4 py-2 text-sm font-medium text-[#102C57]"
+            >
+              <Plus className="h-4 w-4" />
+              Add Semester
+            </button>
+          </div>
+
+          <div className="mb-5 flex flex-wrap gap-2">
+            {semesterPlans.map((semester, index) => {
+              const semesterCreditTotal = semester.courses.reduce((sum, course) => sum + course.creditHours, 0);
+              const active = semester.id === activeSemester?.id;
+
+              return (
+                <button
+                  key={semester.id}
+                  onClick={() => setActiveSemesterId(semester.id)}
+                  className={`rounded-2xl border px-4 py-3 text-left transition ${
+                    active
+                      ? "border-[#102C57] bg-[#102C57] text-[#F8F0E5]"
+                      : "border-[#DAC0A3]/30 bg-[#F8F0E5]/60 text-[#102C57]"
+                  }`}
+                >
+                  <div className="text-sm font-semibold">{semester.name}</div>
+                  <div className={`text-xs ${active ? "text-[#F8F0E5]/80" : "text-[#102C57]/60"}`}>
+                    {semester.courses.length} course(s) • {semesterCreditTotal} credits
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
           <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-[#DAC0A3]/20 bg-[#F8F0E5]/60 p-4 md:flex-row">
             <select
-              value={pendingCourseId}
-              onChange={(e) => setPendingCourseId(e.target.value)}
+              value={activeSemester?.pendingCourseId ?? ""}
+              onChange={(e) =>
+                setSemesterPlans((prev) =>
+                  prev.map((semester) =>
+                    semester.id === activeSemester?.id
+                      ? { ...semester, pendingCourseId: e.target.value }
+                      : semester,
+                  ),
+                )
+              }
               className="w-full rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-3 text-[#102C57] outline-none focus:border-[#102C57]/35"
             >
               <option value="">Select a course to add</option>
@@ -284,11 +399,11 @@ export default function GpaPage() {
 
             <button
               onClick={addCourse}
-              disabled={!pendingCourseId}
+              disabled={!activeSemester?.pendingCourseId}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#102C57] px-4 py-3 text-sm font-medium text-[#F8F0E5] disabled:cursor-not-allowed disabled:opacity-50 md:min-w-[150px]"
             >
               <Plus className="h-4 w-4" />
-              Add Course
+              Add To {activeSemester?.name ?? "Semester"}
             </button>
           </div>
 
@@ -298,9 +413,9 @@ export default function GpaPage() {
             </p>
           )}
 
-          {courses.length === 0 ? (
+          {activeSemester?.courses.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[#DAC0A3]/35 bg-white/70 px-4 py-8 text-center text-sm text-[#102C57]/60">
-              No courses selected yet. Choose one course above, then add it to the table.
+              No courses selected for {activeSemester?.name ?? "this semester"} yet.
             </div>
           ) : (
             <div className="overflow-x-auto rounded-2xl border border-[#DAC0A3]/20 bg-[#F8F0E5]/60">
@@ -315,7 +430,7 @@ export default function GpaPage() {
                 </thead>
 
                 <tbody className="divide-y divide-[#DAC0A3]/20">
-                {courses.map((course) => {
+                {activeSemester?.courses.map((course) => {
                   const selectedCourse = availableCourses.find(
                     (catalogCourse) => catalogCourse.id === course.courseId,
                   );
@@ -341,7 +456,7 @@ export default function GpaPage() {
                       <td className="px-4 py-4">
                         <select
                           value={course.grade}
-                          onChange={(e) => updateCourseGrade(course.id, e.target.value)}
+                          onChange={(e) => updateCourseGrade(activeSemester.id, course.id, e.target.value)}
                           className="w-full rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-2.5 text-[#102C57] outline-none focus:border-[#102C57]/35"
                         >
                           {gradeScale.map((grade) => (
@@ -354,7 +469,7 @@ export default function GpaPage() {
 
                       <td className="px-4 py-4 text-center">
                         <button
-                          onClick={() => removeCourse(course.id)}
+                          onClick={() => removeCourse(activeSemester.id, course.id)}
                           className="inline-flex h-[44px] w-[44px] items-center justify-center rounded-xl border border-red-200 bg-white text-red-500 hover:bg-red-50"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -372,9 +487,10 @@ export default function GpaPage() {
             <div className="rounded-2xl border border-[#DAC0A3]/20 bg-white p-4">
               <p className="text-sm font-medium text-[#102C57]">Projected Results</p>
               <div className="mt-3 space-y-2 text-sm text-[#102C57]/75">
-                <p>Semester GPA: <span className="font-semibold text-[#102C57]">{semesterTotals.semesterGpa.toFixed(3)}</span></p>
+                <p>{activeSemester?.name ?? "Active semester"} GPA: <span className="font-semibold text-[#102C57]">{activeSemesterTotals.semesterGpa.toFixed(3)}</span></p>
+                <p>Total planned GPA: <span className="font-semibold text-[#102C57]">{planTotals.averageGpa.toFixed(3)}</span></p>
                 <p>Projected CGPA: <span className="font-semibold text-[#102C57]">{projectedCgpa.toFixed(3)}</span></p>
-                <p>Semester Credits: <span className="font-semibold text-[#102C57]">{semesterTotals.totalCredits}</span></p>
+                <p>Total planned credits: <span className="font-semibold text-[#102C57]">{planTotals.totalCredits}</span></p>
               </div>
             </div>
 

@@ -60,6 +60,27 @@ export async function GET() {
     }
 
     // Helper function to safely get credit hours
+    const getCourseDetails = (
+      courseRelation:
+        | {
+            credit_hours: number | null;
+            name?: string | null;
+            code?: string | null;
+            difficulty_level?: number | null;
+          }
+        | Array<{
+            credit_hours: number | null;
+            name?: string | null;
+            code?: string | null;
+            difficulty_level?: number | null;
+          }>
+        | null
+        | undefined,
+    ) => {
+      if (!courseRelation) return null;
+      return Array.isArray(courseRelation) ? courseRelation[0] ?? null : courseRelation;
+    };
+
     const getCreditHours = (
       courseRelation:
         | { credit_hours: number | null }
@@ -67,8 +88,7 @@ export async function GET() {
         | null
         | undefined,
     ): number => {
-      if (!courseRelation) return 0;
-      const course = Array.isArray(courseRelation) ? courseRelation[0] : courseRelation;
+      const course = getCourseDetails(courseRelation);
       return Number(course?.credit_hours ?? 0);
     };
 
@@ -128,9 +148,15 @@ export async function GET() {
 
     // Get course distribution by difficulty
     const courseDistribution = {
-      easy: completedWithGrades.filter(c => c.courses?.difficulty_level && c.courses.difficulty_level <= 2).length,
-      medium: completedWithGrades.filter(c => c.courses?.difficulty_level === 3).length,
-      hard: completedWithGrades.filter(c => c.courses?.difficulty_level && c.courses.difficulty_level >= 4).length,
+      easy: completedWithGrades.filter(c => {
+        const difficultyLevel = getCourseDetails(c.courses)?.difficulty_level;
+        return difficultyLevel !== null && difficultyLevel !== undefined && difficultyLevel <= 2;
+      }).length,
+      medium: completedWithGrades.filter(c => getCourseDetails(c.courses)?.difficulty_level === 3).length,
+      hard: completedWithGrades.filter(c => {
+        const difficultyLevel = getCourseDetails(c.courses)?.difficulty_level;
+        return difficultyLevel !== null && difficultyLevel !== undefined && difficultyLevel >= 4;
+      }).length,
     };
 
     // Create recent activity based on actual data

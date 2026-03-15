@@ -11,11 +11,21 @@ export default function ResetPassword() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const supabase = createClient();
+
+  const formatResetError = (message: string) => {
+    const normalized = message.toLowerCase();
+    if (normalized.includes('email rate limit exceeded')) {
+      return 'Too many reset emails were requested recently. Please wait a few minutes and try again.';
+    }
+    return message;
+  };
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage('');
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -24,7 +34,7 @@ export default function ResetPassword() {
       if (error) throw error;
       setSubmitted(true);
     } catch (error: any) {
-      alert(error.message);
+      setErrorMessage(formatResetError(error.message));
     } finally {
       setLoading(false);
     }
@@ -54,6 +64,12 @@ export default function ResetPassword() {
               </p>
 
               <form onSubmit={handleReset} className="space-y-4">
+                {errorMessage && (
+                  <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {errorMessage}
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-medium text-[#102C57]/70 mb-2">
                     Email Address

@@ -19,12 +19,22 @@ export default function SignIn() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const router = useRouter();
   const supabase = createClient();
+
+  const formatAuthError = (message: string) => {
+    const normalized = message.toLowerCase();
+    if (normalized.includes('email rate limit exceeded')) {
+      return 'Too many email requests were sent recently. Please wait a few minutes and try again.';
+    }
+    return message;
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage('');
 
     try {
       if (isSignUp) {
@@ -48,7 +58,7 @@ export default function SignIn() {
         router.refresh();
       }
     } catch (error: any) {
-      alert(error.message);
+      setErrorMessage(formatAuthError(error.message));
     } finally {
       setLoading(false);
     }
@@ -56,6 +66,7 @@ export default function SignIn() {
 
   const handleOAuthSignIn = async (provider: 'github' | 'google') => {
     try {
+      setErrorMessage('');
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
@@ -64,7 +75,7 @@ export default function SignIn() {
       });
       if (error) throw error;
     } catch (error: any) {
-      alert(error.message);
+      setErrorMessage(formatAuthError(error.message));
     }
   };
 
@@ -219,6 +230,12 @@ export default function SignIn() {
             onSubmit={handleAuth}
             className="space-y-5"
           >
+            {errorMessage && (
+              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {errorMessage}
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-[#102C57]/70 mb-2">
                 Email Address

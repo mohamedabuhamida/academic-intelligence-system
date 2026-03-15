@@ -45,6 +45,7 @@ export default function VerifyEmailPage() {
               <p>1. Open your inbox.</p>
               <p>2. Click the verification link from the email.</p>
               <p>3. Return here and sign in to continue.</p>
+              <p className="mt-3 text-[#102C57]/55">If you hit an email rate limit, wait a few minutes before trying again.</p>
             </div>
 
             <div className="mt-8">

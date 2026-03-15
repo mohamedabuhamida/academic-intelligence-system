@@ -201,6 +201,32 @@ export default function GpaPage() {
     setActiveSemesterId(newSemester.id);
   };
 
+  const removeSemester = (semesterId: string) => {
+    setSemesterPlans((prev) => {
+      const remainingSemesters = prev.filter((semester) => semester.id !== semesterId);
+
+      if (remainingSemesters.length === 0) {
+        const fallbackSemester: SemesterPlan = {
+          id: crypto.randomUUID(),
+          name: "Semester 1",
+          pendingCourseId: "",
+          courses: [],
+        };
+        setActiveSemesterId(fallbackSemester.id);
+        return [fallbackSemester];
+      }
+
+      if (activeSemesterId === semesterId) {
+        setActiveSemesterId(remainingSemesters[0].id);
+      }
+
+      return remainingSemesters.map((semester, index) => ({
+        ...semester,
+        name: `Semester ${index + 1}`,
+      }));
+    });
+  };
+
   const addCourse = () => {
     if (!activeSemester?.pendingCourseId) return;
 
@@ -357,20 +383,36 @@ export default function GpaPage() {
               const active = semester.id === activeSemester?.id;
 
               return (
-                <button
+                <div
                   key={semester.id}
-                  onClick={() => setActiveSemesterId(semester.id)}
-                  className={`rounded-2xl border px-4 py-3 text-left transition ${
+                  className={`flex items-start gap-2 rounded-2xl border px-4 py-3 transition ${
                     active
                       ? "border-[#102C57] bg-[#102C57] text-[#F8F0E5]"
                       : "border-[#DAC0A3]/30 bg-[#F8F0E5]/60 text-[#102C57]"
                   }`}
                 >
-                  <div className="text-sm font-semibold">{semester.name}</div>
-                  <div className={`text-xs ${active ? "text-[#F8F0E5]/80" : "text-[#102C57]/60"}`}>
-                    {semester.courses.length} course(s) • {semesterCreditTotal} credits
-                  </div>
-                </button>
+                  <button
+                    onClick={() => setActiveSemesterId(semester.id)}
+                    className="flex-1 text-left"
+                  >
+                    <div className="text-sm font-semibold">{semester.name}</div>
+                    <div className={`text-xs ${active ? "text-[#F8F0E5]/80" : "text-[#102C57]/60"}`}>
+                      {semester.courses.length} course(s) • {semesterCreditTotal} credits
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => removeSemester(semester.id)}
+                    className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border ${
+                      active
+                        ? "border-[#F8F0E5]/25 bg-[#F8F0E5]/10 text-[#F8F0E5]"
+                        : "border-red-200 bg-white text-red-500"
+                    }`}
+                    aria-label={`Delete ${semester.name}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               );
             })}
           </div>

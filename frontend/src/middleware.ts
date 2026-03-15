@@ -31,6 +31,7 @@ export async function middleware(req: NextRequest) {
   const isProtectedRoute = req.nextUrl.pathname.startsWith('/dashboard')
   const isAuthRoute = req.nextUrl.pathname.startsWith('/auth')
   const isOnboardingRoute = req.nextUrl.pathname.startsWith('/dashboard/onboarding')
+  const isVerifyEmailRoute = req.nextUrl.pathname.startsWith('/auth/verify-email')
 
   if (isProtectedRoute && !session) {
     const redirectUrl = new URL('/login', req.url)
@@ -64,7 +65,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  if (isAuthRoute && session && !req.nextUrl.pathname.includes('callback')) {
+  if (isAuthRoute && session && !req.nextUrl.pathname.includes('callback') && !isVerifyEmailRoute) {
     const redirectUrl = new URL(needsOnboarding ? '/dashboard/onboarding' : '/dashboard', req.url)
     return NextResponse.redirect(redirectUrl)
   }

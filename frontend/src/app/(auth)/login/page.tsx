@@ -36,7 +36,8 @@ export default function SignIn() {
           },
         });
         if (error) throw error;
-        // Show success message for email confirmation
+        router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
+        return;
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,

@@ -38,7 +38,7 @@ export default function ResetPassword() {
         className="w-full max-w-md"
       >
         <Link 
-          href="/signin"
+          href="/login"
           className="inline-flex items-center gap-2 text-[#102C57]/60 hover:text-[#102C57] mb-8 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />

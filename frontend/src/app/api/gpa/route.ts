@@ -53,6 +53,7 @@ export async function GET() {
       supabase
         .from("student_courses")
         .select(`
+          course_id,
           status,
           grade,
           grade_points,
@@ -91,6 +92,12 @@ export async function GET() {
           course.grade_points !== undefined &&
           getCreditHours(course.courses) > 0,
       ) ?? [];
+
+    const completedCourseIds = new Set(
+      completedCourses
+        .map((course) => course.course_id)
+        .filter((courseId): courseId is string => Boolean(courseId)),
+    );
 
     const completedCredits = (courses ?? [])
       .filter((course) => course.status === "completed")
@@ -152,7 +159,8 @@ export async function GET() {
           name: course.name,
           code: course.code ?? "N/A",
           creditHours: Number(course.credit_hours ?? 0),
-        })) ?? [],
+        }))
+          .filter((course) => !completedCourseIds.has(course.id)) ?? [],
       gradeScale: [
         { label: "A+", points: 4 },
         { label: "A", points: 4 },

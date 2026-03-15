@@ -191,6 +191,10 @@ export default function GpaPage() {
     );
   };
 
+  const selectedCourseIds = new Set(
+    courses.map((course) => course.courseId).filter((courseId) => courseId.length > 0),
+  );
+
   if (loading) {
     return <Loading />;
   }
@@ -285,6 +289,10 @@ export default function GpaPage() {
               const selectedCourse = availableCourses.find(
                 (catalogCourse) => catalogCourse.id === course.courseId,
               );
+              const selectableCourses = availableCourses.filter(
+                (catalogCourse) =>
+                  catalogCourse.id === course.courseId || !selectedCourseIds.has(catalogCourse.id),
+              );
 
               return (
               <div
@@ -301,7 +309,7 @@ export default function GpaPage() {
                     className="w-full rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-2.5 text-[#102C57] outline-none focus:border-[#102C57]/35"
                   >
                     <option value="">Select a course</option>
-                    {availableCourses.map((catalogCourse) => (
+                    {selectableCourses.map((catalogCourse) => (
                       <option key={catalogCourse.id} value={catalogCourse.id}>
                         {catalogCourse.code} - {catalogCourse.name}
                       </option>

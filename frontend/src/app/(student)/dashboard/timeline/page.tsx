@@ -224,9 +224,9 @@ export default function TimelinePage() {
             <motion.div
               key={semester.id}
               variants={listItemVariants}
-              className="relative lg:grid lg:grid-cols-[minmax(0,1fr)_120px_minmax(0,1fr)] lg:items-center"
+              className="relative lg:grid lg:grid-cols-2 lg:items-center lg:gap-x-24"
             >
-              <div className={`${index % 2 === 0 ? "lg:col-start-1" : "lg:col-start-3"}`}>
+              <div className={`${index % 2 === 0 ? "lg:col-start-1" : "lg:col-start-2"}`}>
                 <div className="overflow-hidden rounded-[1.75rem] border border-[#d7cec0] bg-white shadow-[0_18px_45px_rgba(16,44,87,0.08)]">
                   <div className="border-b border-[#efe5d7] bg-[#fffdfa] px-6 py-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -271,18 +271,16 @@ export default function TimelinePage() {
                 </div>
               </div>
 
-              <div className="relative hidden h-full items-center justify-center lg:flex">
-                <div className={`relative z-10 flex h-14 w-14 items-center justify-center rounded-full border-4 border-[#f8f0e5] bg-gradient-to-br ${semesterAccent(index)} text-sm font-bold text-white shadow-[0_10px_25px_rgba(16,44,87,0.16)]`}>
+              <div className="pointer-events-none absolute left-1/2 top-1/2 z-20 hidden -translate-x-1/2 -translate-y-1/2 lg:block">
+                <div className={`relative flex h-14 w-14 items-center justify-center rounded-full border-4 border-[#f8f0e5] bg-gradient-to-br ${semesterAccent(index)} text-sm font-bold text-white shadow-[0_10px_25px_rgba(16,44,87,0.16)]`}>
                   {semester.cumulativeGpa !== null ? semester.cumulativeGpa.toFixed(2) : "--"}
                 </div>
-                <div className="absolute top-1/2 left-1/2 z-10 hidden -translate-x-1/2 translate-y-12 xl:block">
+                <div className="absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 translate-y-12 xl:block">
                   {/* <div className="rounded-full bg-white/95 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-[#6c7a8d] shadow-sm ring-1 ring-[#e6d7c2]">
                     CGPA {semester.cumulativeGpa !== null ? semester.cumulativeGpa.toFixed(3) : "N/A"}
                   </div> */}
                 </div>
               </div>
-
-              <div className={`${index % 2 === 0 ? "lg:col-start-3" : "lg:col-start-1"} hidden lg:block`} />
             </motion.div>
           ))}
         </motion.section>

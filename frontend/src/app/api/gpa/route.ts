@@ -39,7 +39,7 @@ export async function GET() {
 
     const userId = user.id;
 
-    const [profileResult, cgpaResult, coursesResult] = await Promise.all([
+    const [profileResult, cgpaResult, coursesResult, catalogResult] = await Promise.all([
       supabase
         .from("profiles")
         .select("full_name, total_required_hours")
@@ -64,14 +64,23 @@ export async function GET() {
         `)
         .eq("user_id", userId)
         .order("created_at", { ascending: false }),
+      supabase
+        .from("courses")
+        .select("id, name, code, credit_hours")
+        .order("code", { ascending: true }),
     ]);
 
     const profile = profileResult.data;
     const cgpaData = cgpaResult.data;
     const { data: courses, error: coursesError } = coursesResult;
+    const { data: catalogCourses, error: catalogError } = catalogResult;
 
     if (coursesError) {
       console.error("GPA courses error:", coursesError);
+    }
+
+    if (catalogError) {
+      console.error("GPA catalog error:", catalogError);
     }
 
     const completedCourses =
@@ -137,6 +146,13 @@ export async function GET() {
         lastUpdated: cgpaData?.updated_at ?? null,
       },
       recentCompletedCourses,
+      availableCourses:
+        catalogCourses?.map((course) => ({
+          id: course.id,
+          name: course.name,
+          code: course.code ?? "N/A",
+          creditHours: Number(course.credit_hours ?? 0),
+        })) ?? [],
       gradeScale: [
         { label: "A+", points: 4 },
         { label: "A", points: 4 },

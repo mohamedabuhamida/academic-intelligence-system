@@ -23,9 +23,16 @@ type GradeScaleItem = {
   points: number;
 };
 
-type CalculatorCourse = {
+type AvailableCourse = {
   id: string;
   name: string;
+  code: string;
+  creditHours: number;
+};
+
+type CalculatorCourse = {
+  id: string;
+  courseId: string;
   creditHours: number;
   grade: string;
 };
@@ -50,14 +57,15 @@ type GpaData = {
     grade: string;
     gradePoints: number;
   }>;
+  availableCourses?: AvailableCourse[];
   gradeScale?: GradeScaleItem[];
 };
 
 function createEmptyCourse(): CalculatorCourse {
   return {
     id: crypto.randomUUID(),
-    name: "",
-    creditHours: 3,
+    courseId: "",
+    creditHours: 0,
     grade: "A",
   };
 }
@@ -94,6 +102,7 @@ export default function GpaPage() {
   }, []);
 
   const academic = data?.academic;
+  const availableCourses = data?.availableCourses ?? [];
   const gradeScale = data?.gradeScale ?? [
     { label: "A+", points: 4 },
     { label: "A", points: 4 },
@@ -160,16 +169,25 @@ export default function GpaPage() {
   const removeCourse = (id: string) =>
     setCourses((prev) => (prev.length === 1 ? prev : prev.filter((course) => course.id !== id)));
 
-  const updateCourse = (id: string, field: keyof Omit<CalculatorCourse, "id">, value: string | number) => {
+  const updateCourseSelection = (id: string, courseId: string) => {
+    const selectedCourse = availableCourses.find((course) => course.id === courseId);
+
     setCourses((prev) =>
       prev.map((course) =>
         course.id === id
           ? {
               ...course,
-              [field]: field === "creditHours" ? Number(value) || 0 : value,
+              courseId,
+              creditHours: selectedCourse?.creditHours ?? 0,
             }
           : course,
       ),
+    );
+  };
+
+  const updateCourseGrade = (id: string, grade: string) => {
+    setCourses((prev) =>
+      prev.map((course) => (course.id === id ? { ...course, grade } : course)),
     );
   };
 
@@ -263,36 +281,42 @@ export default function GpaPage() {
           </div>
 
           <div className="space-y-4">
-            {courses.map((course, index) => (
+            {courses.map((course, index) => {
+              const selectedCourse = availableCourses.find(
+                (catalogCourse) => catalogCourse.id === course.courseId,
+              );
+
+              return (
               <div
                 key={course.id}
-                className="grid grid-cols-1 gap-3 rounded-2xl border border-[#DAC0A3]/20 bg-[#F8F0E5]/70 p-4 md:grid-cols-[1.5fr,120px,120px,auto]"
+                className="grid grid-cols-1 gap-3 rounded-2xl border border-[#DAC0A3]/20 bg-[#F8F0E5]/70 p-4 md:grid-cols-[1.7fr,140px,120px,auto]"
               >
                 <label className="space-y-2">
                   <span className="text-xs font-medium uppercase tracking-wide text-[#102C57]/55">
                     Course {index + 1}
                   </span>
-                  <input
-                    value={course.name}
-                    onChange={(e) => updateCourse(course.id, "name", e.target.value)}
-                    placeholder="Data Structures"
+                  <select
+                    value={course.courseId}
+                    onChange={(e) => updateCourseSelection(course.id, e.target.value)}
                     className="w-full rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-2.5 text-[#102C57] outline-none focus:border-[#102C57]/35"
-                  />
+                  >
+                    <option value="">Select a course</option>
+                    {availableCourses.map((catalogCourse) => (
+                      <option key={catalogCourse.id} value={catalogCourse.id}>
+                        {catalogCourse.code} - {catalogCourse.name}
+                      </option>
+                    ))}
+                  </select>
                 </label>
 
-                <label className="space-y-2">
+                <div className="space-y-2">
                   <span className="text-xs font-medium uppercase tracking-wide text-[#102C57]/55">
                     Credits
                   </span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={course.creditHours}
-                    onChange={(e) => updateCourse(course.id, "creditHours", e.target.value)}
-                    className="w-full rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-2.5 text-[#102C57] outline-none focus:border-[#102C57]/35"
-                  />
-                </label>
+                  <div className="rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-2.5 text-[#102C57]">
+                    {selectedCourse ? `${selectedCourse.creditHours} hrs` : "--"}
+                  </div>
+                </div>
 
                 <label className="space-y-2">
                   <span className="text-xs font-medium uppercase tracking-wide text-[#102C57]/55">
@@ -300,7 +324,7 @@ export default function GpaPage() {
                   </span>
                   <select
                     value={course.grade}
-                    onChange={(e) => updateCourse(course.id, "grade", e.target.value)}
+                    onChange={(e) => updateCourseGrade(course.id, e.target.value)}
                     className="w-full rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-2.5 text-[#102C57] outline-none focus:border-[#102C57]/35"
                   >
                     {gradeScale.map((grade) => (
@@ -320,8 +344,15 @@ export default function GpaPage() {
                   </button>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
+
+          {availableCourses.length === 0 && (
+            <p className="mt-4 text-sm text-[#102C57]/60">
+              No courses were returned from the `courses` table yet.
+            </p>
+          )}
 
           <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-[#DAC0A3]/20 bg-white p-4">

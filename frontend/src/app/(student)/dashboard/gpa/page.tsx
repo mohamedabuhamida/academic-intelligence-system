@@ -61,15 +61,6 @@ type GpaData = {
   gradeScale?: GradeScaleItem[];
 };
 
-function createEmptyCourse(): CalculatorCourse {
-  return {
-    id: crypto.randomUUID(),
-    courseId: "",
-    creditHours: 0,
-    grade: "A",
-  };
-}
-
 export default function GpaPage() {
   const [data, setData] = useState<GpaData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -312,15 +303,18 @@ export default function GpaPage() {
               No courses selected yet. Choose one course above, then add it to the table.
             </div>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-[#DAC0A3]/20 bg-[#F8F0E5]/60">
-              <div className="grid grid-cols-[1.8fr,110px,140px,80px] gap-3 border-b border-[#DAC0A3]/20 bg-white/70 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[#102C57]/55">
-                <span>Course</span>
-                <span>Credits</span>
-                <span>Grade</span>
-                <span>Action</span>
-              </div>
+            <div className="overflow-x-auto rounded-2xl border border-[#DAC0A3]/20 bg-[#F8F0E5]/60">
+              <table className="min-w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-[#DAC0A3]/20 bg-white/70 text-left text-xs font-semibold uppercase tracking-wide text-[#102C57]/55">
+                    <th className="px-4 py-3">Course</th>
+                    <th className="px-4 py-3 w-[120px]">Credits</th>
+                    <th className="px-4 py-3 w-[170px]">Grade</th>
+                    <th className="px-4 py-3 w-[90px] text-center">Action</th>
+                  </tr>
+                </thead>
 
-              <div className="divide-y divide-[#DAC0A3]/20">
+                <tbody className="divide-y divide-[#DAC0A3]/20">
                 {courses.map((course) => {
                   const selectedCourse = availableCourses.find(
                     (catalogCourse) => catalogCourse.id === course.courseId,
@@ -331,44 +325,46 @@ export default function GpaPage() {
                   }
 
                   return (
-                    <div
-                      key={course.id}
-                      className="grid grid-cols-[1.8fr,110px,140px,80px] gap-3 px-4 py-4 items-center"
-                    >
-                      <div className="text-sm text-[#102C57]">
-                        <div className="font-medium">
+                    <tr key={course.id} className="align-middle">
+                      <td className="px-4 py-4 text-sm text-[#102C57]">
+                        <div className="font-medium leading-6">
                           {selectedCourse.code} - {selectedCourse.name}
                         </div>
-                      </div>
+                      </td>
 
-                      <div className="rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-2.5 text-sm text-[#102C57]">
-                        {selectedCourse.creditHours} hrs
-                      </div>
+                      <td className="px-4 py-4">
+                        <div className="rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-2.5 text-sm text-[#102C57]">
+                          {selectedCourse.creditHours} hrs
+                        </div>
+                      </td>
 
-                      <select
-                        value={course.grade}
-                        onChange={(e) => updateCourseGrade(course.id, e.target.value)}
-                        className="w-full rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-2.5 text-[#102C57] outline-none focus:border-[#102C57]/35"
-                      >
-                        {gradeScale.map((grade) => (
-                          <option key={grade.label} value={grade.label}>
-                            {grade.label} ({grade.points.toFixed(1)})
-                          </option>
-                        ))}
-                      </select>
+                      <td className="px-4 py-4">
+                        <select
+                          value={course.grade}
+                          onChange={(e) => updateCourseGrade(course.id, e.target.value)}
+                          className="w-full rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-2.5 text-[#102C57] outline-none focus:border-[#102C57]/35"
+                        >
+                          {gradeScale.map((grade) => (
+                            <option key={grade.label} value={grade.label}>
+                              {grade.label} ({grade.points.toFixed(1)})
+                            </option>
+                          ))}
+                        </select>
+                      </td>
 
-                      <div className="flex items-center justify-center">
+                      <td className="px-4 py-4 text-center">
                         <button
                           onClick={() => removeCourse(course.id)}
                           className="inline-flex h-[44px] w-[44px] items-center justify-center rounded-xl border border-red-200 bg-white text-red-500 hover:bg-red-50"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
-                      </div>
-                    </div>
+                      </td>
+                    </tr>
                   );
                 })}
-              </div>
+                </tbody>
+              </table>
             </div>
           )}
 

@@ -32,8 +32,7 @@ const navItems = [
   { icon: Calendar, label: "Study Planner", href: "/dashboard/planner" },
   { icon: TrendingUp, label: "GPA Calculator", href: "/dashboard/gpa" },
   { icon: CalendarRange, label: "Timeline", href: "/dashboard/timeline" },
-  { icon: BookOpen, label: "Courses", href: "/dashboard/courses" },
-  { icon: Award, label: "Achievements", href: "/dashboard/achievements" },
+
 ];
 
 const bottomItems = [

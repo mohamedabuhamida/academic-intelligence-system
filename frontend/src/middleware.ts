@@ -33,7 +33,7 @@ export async function middleware(req: NextRequest) {
   const isOnboardingRoute = req.nextUrl.pathname.startsWith('/dashboard/onboarding')
 
   if (isProtectedRoute && !session) {
-    const redirectUrl = new URL('/signin', req.url)
+    const redirectUrl = new URL('/login', req.url)
     return NextResponse.redirect(redirectUrl)
   }
 

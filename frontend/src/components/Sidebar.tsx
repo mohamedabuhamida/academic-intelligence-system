@@ -8,6 +8,7 @@ import {
   Brain,
   MessageSquare,
   Calendar,
+  CalendarRange,
   TrendingUp,
   Settings,
   LogOut,
@@ -30,6 +31,7 @@ const navItems = [
   { icon: MessageSquare, label: "AI Chat", href: "/dashboard/chat" },
   { icon: Calendar, label: "Study Planner", href: "/dashboard/planner" },
   { icon: TrendingUp, label: "GPA Calculator", href: "/dashboard/gpa" },
+  { icon: CalendarRange, label: "Timeline", href: "/dashboard/timeline" },
   { icon: BookOpen, label: "Courses", href: "/dashboard/courses" },
   { icon: Award, label: "Achievements", href: "/dashboard/achievements" },
 ];

@@ -74,11 +74,8 @@ export default function GpaPage() {
   const [data, setData] = useState<GpaData | null>(null);
   const [loading, setLoading] = useState(true);
   const [targetCgpa, setTargetCgpa] = useState("");
-  const [courses, setCourses] = useState<CalculatorCourse[]>([
-    createEmptyCourse(),
-    createEmptyCourse(),
-    createEmptyCourse(),
-  ]);
+  const [pendingCourseId, setPendingCourseId] = useState("");
+  const [courses, setCourses] = useState<CalculatorCourse[]>([]);
 
   useEffect(() => {
     async function loadGpaData() {
@@ -164,26 +161,26 @@ export default function GpaPage() {
     return Number(neededThisSemester.toFixed(3));
   }, [academic, semesterTotals.totalCredits, targetCgpa]);
 
-  const addCourse = () => setCourses((prev) => [...prev, createEmptyCourse()]);
+  const addCourse = () => {
+    if (!pendingCourseId) return;
+
+    const selectedCourse = availableCourses.find((course) => course.id === pendingCourseId);
+    if (!selectedCourse) return;
+
+    setCourses((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        courseId: selectedCourse.id,
+        creditHours: selectedCourse.creditHours,
+        grade: "A",
+      },
+    ]);
+    setPendingCourseId("");
+  };
 
   const removeCourse = (id: string) =>
-    setCourses((prev) => (prev.length === 1 ? prev : prev.filter((course) => course.id !== id)));
-
-  const updateCourseSelection = (id: string, courseId: string) => {
-    const selectedCourse = availableCourses.find((course) => course.id === courseId);
-
-    setCourses((prev) =>
-      prev.map((course) =>
-        course.id === id
-          ? {
-              ...course,
-              courseId,
-              creditHours: selectedCourse?.creditHours ?? 0,
-            }
-          : course,
-      ),
-    );
-  };
+    setCourses((prev) => prev.filter((course) => course.id !== id));
 
   const updateCourseGrade = (id: string, grade: string) => {
     setCourses((prev) =>
@@ -193,6 +190,9 @@ export default function GpaPage() {
 
   const selectedCourseIds = new Set(
     courses.map((course) => course.courseId).filter((courseId) => courseId.length > 0),
+  );
+  const selectableCourses = availableCourses.filter(
+    (catalogCourse) => !selectedCourseIds.has(catalogCourse.id),
   );
 
   if (loading) {
@@ -273,79 +273,78 @@ export default function GpaPage() {
           <div className="mb-5 flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-[#102C57]">Semester Projection</h2>
-              <p className="text-sm text-[#102C57]/60">Add expected courses and grades for this term.</p>
+              <p className="text-sm text-[#102C57]/60">Choose a course once, add it, then adjust its expected grade in the table.</p>
             </div>
+          </div>
+
+          <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-[#DAC0A3]/20 bg-[#F8F0E5]/60 p-4 md:flex-row">
+            <select
+              value={pendingCourseId}
+              onChange={(e) => setPendingCourseId(e.target.value)}
+              className="w-full rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-3 text-[#102C57] outline-none focus:border-[#102C57]/35"
+            >
+              <option value="">Select a course to add</option>
+              {selectableCourses.map((catalogCourse) => (
+                <option key={catalogCourse.id} value={catalogCourse.id}>
+                  {catalogCourse.code} - {catalogCourse.name} ({catalogCourse.creditHours} hrs)
+                </option>
+              ))}
+            </select>
+
             <button
               onClick={addCourse}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#102C57] px-4 py-2 text-sm font-medium text-[#F8F0E5]"
+              disabled={!pendingCourseId}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#102C57] px-4 py-3 text-sm font-medium text-[#F8F0E5] disabled:cursor-not-allowed disabled:opacity-50 md:min-w-[150px]"
             >
               <Plus className="h-4 w-4" />
               Add Course
             </button>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-[#DAC0A3]/20 bg-[#F8F0E5]/60">
-            <div className="hidden grid-cols-[72px,1.8fr,120px,140px,80px] gap-3 border-b border-[#DAC0A3]/20 bg-white/70 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[#102C57]/55 md:grid">
-              <span>Row</span>
-              <span>Course</span>
-              <span>Credits</span>
-              <span>Grade</span>
-              <span>Action</span>
+          {availableCourses.length === 0 && (
+            <p className="mt-4 text-sm text-[#102C57]/60">
+              No courses were returned from the `courses` table yet.
+            </p>
+          )}
+
+          {courses.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-[#DAC0A3]/35 bg-white/70 px-4 py-8 text-center text-sm text-[#102C57]/60">
+              No courses selected yet. Choose one course above, then add it to the table.
             </div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-[#DAC0A3]/20 bg-[#F8F0E5]/60">
+              <div className="grid grid-cols-[1.8fr,110px,140px,80px] gap-3 border-b border-[#DAC0A3]/20 bg-white/70 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[#102C57]/55">
+                <span>Course</span>
+                <span>Credits</span>
+                <span>Grade</span>
+                <span>Action</span>
+              </div>
 
-            <div className="divide-y divide-[#DAC0A3]/20">
-              {courses.map((course, index) => {
-                const selectedCourse = availableCourses.find(
-                  (catalogCourse) => catalogCourse.id === course.courseId,
-                );
-                const selectableCourses = availableCourses.filter(
-                  (catalogCourse) =>
-                    catalogCourse.id === course.courseId || !selectedCourseIds.has(catalogCourse.id),
-                );
+              <div className="divide-y divide-[#DAC0A3]/20">
+                {courses.map((course) => {
+                  const selectedCourse = availableCourses.find(
+                    (catalogCourse) => catalogCourse.id === course.courseId,
+                  );
 
-                return (
-                  <div
-                    key={course.id}
-                    className="grid grid-cols-1 gap-3 px-4 py-4 md:grid-cols-[72px,1.8fr,120px,140px,80px] md:items-center"
-                  >
-                    <div className="text-sm font-medium text-[#102C57]">
-                      <span className="md:hidden text-xs uppercase tracking-wide text-[#102C57]/55">
-                        Row
-                      </span>
-                      <div>{index + 1}</div>
-                    </div>
+                  if (!selectedCourse) {
+                    return null;
+                  }
 
-                    <label className="space-y-2 md:space-y-0">
-                      <span className="text-xs font-medium uppercase tracking-wide text-[#102C57]/55 md:hidden">
-                        Course
-                      </span>
-                      <select
-                        value={course.courseId}
-                        onChange={(e) => updateCourseSelection(course.id, e.target.value)}
-                        className="w-full rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-2.5 text-[#102C57] outline-none focus:border-[#102C57]/35"
-                      >
-                        <option value="">Select a course</option>
-                        {selectableCourses.map((catalogCourse) => (
-                          <option key={catalogCourse.id} value={catalogCourse.id}>
-                            {catalogCourse.code} - {catalogCourse.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <div className="text-sm text-[#102C57]">
-                      <span className="text-xs font-medium uppercase tracking-wide text-[#102C57]/55 md:hidden">
-                        Credits
-                      </span>
-                      <div className="rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-2.5">
-                        {selectedCourse ? `${selectedCourse.creditHours} hrs` : "--"}
+                  return (
+                    <div
+                      key={course.id}
+                      className="grid grid-cols-[1.8fr,110px,140px,80px] gap-3 px-4 py-4 items-center"
+                    >
+                      <div className="text-sm text-[#102C57]">
+                        <div className="font-medium">
+                          {selectedCourse.code} - {selectedCourse.name}
+                        </div>
                       </div>
-                    </div>
 
-                    <label className="space-y-2 md:space-y-0">
-                      <span className="text-xs font-medium uppercase tracking-wide text-[#102C57]/55 md:hidden">
-                        Grade
-                      </span>
+                      <div className="rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-2.5 text-sm text-[#102C57]">
+                        {selectedCourse.creditHours} hrs
+                      </div>
+
                       <select
                         value={course.grade}
                         onChange={(e) => updateCourseGrade(course.id, e.target.value)}
@@ -357,26 +356,20 @@ export default function GpaPage() {
                           </option>
                         ))}
                       </select>
-                    </label>
 
-                    <div className="flex items-center md:justify-center">
-                      <button
-                        onClick={() => removeCourse(course.id)}
-                        className="inline-flex h-[44px] w-full items-center justify-center rounded-xl border border-red-200 bg-white text-red-500 hover:bg-red-50 md:w-[44px]"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center justify-center">
+                        <button
+                          onClick={() => removeCourse(course.id)}
+                          className="inline-flex h-[44px] w-[44px] items-center justify-center rounded-xl border border-red-200 bg-white text-red-500 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-
-          {availableCourses.length === 0 && (
-            <p className="mt-4 text-sm text-[#102C57]/60">
-              No courses were returned from the `courses` table yet.
-            </p>
           )}
 
           <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">

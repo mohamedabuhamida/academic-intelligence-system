@@ -32,6 +32,7 @@ type TimelineSemester = {
   totalCredits: number;
   completedCredits: number;
   semesterGpa: number | null;
+  cumulativeGpa: number | null;
   statusCounts: {
     completed: number;
     current: number;
@@ -272,13 +273,11 @@ export default function TimelinePage() {
 
               <div className="relative hidden h-full items-center justify-center lg:flex">
                 <div className={`relative z-10 flex h-14 w-14 items-center justify-center rounded-full border-4 border-[#f8f0e5] bg-gradient-to-br ${semesterAccent(index)} text-sm font-bold text-white shadow-[0_10px_25px_rgba(16,44,87,0.16)]`}>
-                  {semester.semesterGpa !== null ? semester.semesterGpa.toFixed(2) : "--"}
+                  {semester.cumulativeGpa !== null ? semester.cumulativeGpa.toFixed(2) : "--"}
                 </div>
-                <div className={`absolute ${index % 2 === 0 ? "right-full" : "left-full"} top-1/2 hidden -translate-y-1/2 text-sm text-[#6c7a8d] xl:block`}>
-                  <div className={`flex items-center gap-2 ${index % 2 === 0 ? "pr-4" : "pl-4"}`}>
-                    {index % 2 !== 0 && <span>{semester.academicYear} {termLabel(semester.term)}</span>}
-                    <span className="h-px w-10 bg-[#d3c3ad]" />
-                    {index % 2 === 0 && <span>{semester.academicYear} {termLabel(semester.term)}</span>}
+                <div className="absolute top-1/2 left-1/2 z-10 hidden -translate-x-1/2 translate-y-12 xl:block">
+                  <div className="rounded-full bg-white/95 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-[#6c7a8d] shadow-sm ring-1 ring-[#e6d7c2]">
+                    CGPA {semester.cumulativeGpa !== null ? semester.cumulativeGpa.toFixed(3) : "N/A"}
                   </div>
                 </div>
               </div>

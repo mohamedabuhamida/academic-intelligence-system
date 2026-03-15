@@ -98,6 +98,7 @@ export async function GET() {
           totalCredits: 0,
           completedCredits: 0,
           semesterGpa: null as number | null,
+          cumulativeGpa: null as number | null,
           qualityPoints: 0,
           gpaCredits: 0,
           statusCounts: {
@@ -173,7 +174,23 @@ export async function GET() {
         return getTermOrder(a.term) - getTermOrder(b.term);
       });
 
-    const completedCreditsOverall = timeline.reduce(
+    let runningQualityPoints = 0;
+    let runningCredits = 0;
+
+    const timelineWithCumulative = timeline.map((semester) => {
+      runningQualityPoints += semester.qualityPoints;
+      runningCredits += semester.gpaCredits;
+
+      return {
+        ...semester,
+        cumulativeGpa:
+          runningCredits > 0
+            ? Number((runningQualityPoints / runningCredits).toFixed(3))
+            : null,
+      };
+    });
+
+    const completedCreditsOverall = timelineWithCumulative.reduce(
       (sum, semester) => sum + semester.completedCredits,
       0,
     );
@@ -190,9 +207,9 @@ export async function GET() {
           totalRequiredHours > 0
             ? Math.min(Math.round((completedCreditsOverall / totalRequiredHours) * 100), 100)
             : 0,
-        semesterCount: timeline.length,
+        semesterCount: timelineWithCumulative.length,
       },
-      timeline,
+      timeline: timelineWithCumulative,
     });
   } catch (error) {
     console.error("Timeline API error:", error);

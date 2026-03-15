@@ -38,7 +38,7 @@ export default function Header({ isSidebarExpanded }: HeaderProps) {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    window.location.href = '/auth/signin';
+    window.location.href = '/signin';
   };
 
   return (

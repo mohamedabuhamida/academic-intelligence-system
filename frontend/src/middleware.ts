@@ -30,14 +30,42 @@ export async function middleware(req: NextRequest) {
 
   const isProtectedRoute = req.nextUrl.pathname.startsWith('/dashboard')
   const isAuthRoute = req.nextUrl.pathname.startsWith('/auth')
+  const isOnboardingRoute = req.nextUrl.pathname.startsWith('/dashboard/onboarding')
 
   if (isProtectedRoute && !session) {
-    const redirectUrl = new URL('/auth/signin', req.url)
+    const redirectUrl = new URL('/signin', req.url)
+    return NextResponse.redirect(redirectUrl)
+  }
+
+  let needsOnboarding = false
+
+  if (session) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name,total_required_hours')
+      .eq('id', session.user.id)
+      .maybeSingle()
+
+    const { count: studentCoursesCount } = await supabase
+      .from('student_courses')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', session.user.id)
+
+    needsOnboarding = !profile?.full_name || !profile?.total_required_hours || !studentCoursesCount
+  }
+
+  if (session && needsOnboarding && isProtectedRoute && !isOnboardingRoute) {
+    const redirectUrl = new URL('/dashboard/onboarding', req.url)
+    return NextResponse.redirect(redirectUrl)
+  }
+
+  if (session && !needsOnboarding && isOnboardingRoute) {
+    const redirectUrl = new URL('/dashboard', req.url)
     return NextResponse.redirect(redirectUrl)
   }
 
   if (isAuthRoute && session && !req.nextUrl.pathname.includes('callback')) {
-    const redirectUrl = new URL('/dashboard', req.url)
+    const redirectUrl = new URL(needsOnboarding ? '/dashboard/onboarding' : '/dashboard', req.url)
     return NextResponse.redirect(redirectUrl)
   }
 

@@ -1,4 +1,4 @@
-// app/auth/signin/page.tsx
+// app/signin/page.tsx
 'use client';
 
 import { motion } from 'framer-motion';

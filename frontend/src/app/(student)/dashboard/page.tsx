@@ -10,11 +10,6 @@ import {
   GraduationCap,
   Target,
   AlertTriangle,
-  BookOpen,
-  Calendar,
-  Clock,
-  Award,
-  BarChart3,
 } from "lucide-react";
 
 import {
@@ -23,7 +18,6 @@ import {
   listItemVariants,
 } from "@/components/animations";
 import Loading from "@/components/Loading";
-
 type Activity = {
   action: string;
   detail: string;
@@ -31,40 +25,21 @@ type Activity = {
   icon?: string;
 };
 
-type AcademicData = {
-  cgpa: number;
-  totalCredits: number;
-  completedCredits: number;
-  requiredCredits: number;
-  progress: number;
-  activeCourses: number;
-  remainingCredits: number;
-  estimatedGraduation: string;
-};
-
-type CurrentSemester = {
-  name: string;
-  term: string;
-  academic_year: string;
-};
-
-type CourseDistribution = {
-  easy: number;
-  medium: number;
-  hard: number;
-};
-
 type DashboardData = {
-  user: {
-    id: string;
-    name: string;
-    email: string;
+  user?: {
+    name?: string;
   };
-  academic: AcademicData;
-  currentSemester: CurrentSemester | null;
-  courseDistribution: CourseDistribution;
-  recentActivity: Activity[];
-  timestamp: string;
+  academic?: {
+    cgpa: number;
+    activeCourses: number;
+    completedCredits: number;
+    requiredCredits: number;
+    progress: number;
+    remainingCredits: number;
+    estimatedGraduation: string;
+    totalCredits: number;
+  };
+  recentActivity?: Activity[];
 };
 
 export default function DashboardOverview() {
@@ -76,6 +51,7 @@ export default function DashboardOverview() {
       try {
         const res = await fetch("/api/dashboard", { cache: "no-store" });
         const json = await res.json();
+
         setData(json);
       } catch (err) {
         console.error("Dashboard API error", err);
@@ -91,53 +67,32 @@ export default function DashboardOverview() {
     return <Loading />;
   }
 
-  // Format term in Arabic
-  const getTermInArabic = (term: string) => {
-    switch(term?.toLowerCase()) {
-      case 'fall': return 'خريف';
-      case 'spring': return 'ربيع';
-      case 'summer': return 'صيف';
-      default: return term;
-    }
-  };
-
-  // Get icon component based on icon name
-  const getActivityIcon = (iconName?: string) => {
-    switch(iconName) {
-      case 'graduation': return <GraduationCap className="w-4 h-4 text-[#102C57]" />;
-      case 'credits': return <BookOpen className="w-4 h-4 text-[#102C57]" />;
-      case 'courses': return <Brain className="w-4 h-4 text-[#102C57]" />;
-      case 'active': return <Target className="w-4 h-4 text-[#102C57]" />;
-      default: return <Brain className="w-4 h-4 text-[#102C57]" />;
-    }
-  };
+  const academic = data?.academic;
 
   const stats = [
     {
       icon: GraduationCap,
-      label: "المعدل التراكمي",
-      value: data?.academic?.cgpa ? data.academic.cgpa.toFixed(3) : "0",
-      change: `من أصل ${data?.academic?.totalCredits || 0} ساعة معتمدة`,
+      label: "CGPA",
+      value: academic?.cgpa ? academic.cgpa.toFixed(3) : "0.000",
+      change: `Based on ${academic?.totalCredits ?? 0} graded credits`,
       color: "from-green-500 to-emerald-500",
       glow: "from-green-400/25 to-emerald-400/25",
       badge: "text-green-700 bg-green-100",
     },
     {
       icon: Target,
-      label: "المقررات الحالية",
-      value: data?.academic?.activeCourses ?? 0,
-      change: data?.currentSemester 
-        ? `${getTermInArabic(data.currentSemester.term)} ${data.currentSemester.academic_year}`
-        : "لا يوجد مقررات حالية",
+      label: "Active Courses",
+      value: academic?.activeCourses ?? 0,
+      change: academic?.activeCourses ? "In progress" : "No active courses",
       color: "from-indigo-500 to-sky-500",
       glow: "from-indigo-400/25 to-sky-400/25",
       badge: "text-indigo-700 bg-indigo-100",
     },
     {
       icon: TrendingUp,
-      label: "التقدم الدراسي",
-      value: `${data?.academic?.progress ?? 0}%`,
-      change: `${data?.academic?.completedCredits ?? 0} / ${data?.academic?.requiredCredits ?? 0} ساعة`,
+      label: "Graduation Progress",
+      value: `${academic?.progress ?? 0}%`,
+      change: `${academic?.completedCredits ?? 0} / ${academic?.requiredCredits ?? 0} credits`,
       color: "from-blue-500 to-cyan-500",
       glow: "from-blue-400/25 to-cyan-400/25",
       badge: "text-blue-700 bg-blue-100",
@@ -145,7 +100,7 @@ export default function DashboardOverview() {
   ];
 
   return (
-    <motion.div initial="initial" animate="animate" className="space-y-8" dir="rtl">
+    <motion.div initial="initial" animate="animate" className="space-y-8">
       {/* Welcome Section */}
       <motion.div
         variants={fadeInScale}
@@ -153,10 +108,11 @@ export default function DashboardOverview() {
       >
         <div>
           <h1 className="text-3xl font-bold text-[#102C57] mb-2">
-            مرحباً بعودتك، {data?.user?.name || "Student"}! 👋
+            Welcome back, {data?.user?.name || "Student"}!
           </h1>
+
           <p className="text-[#102C57]/60">
-            هذه نظرة عامة على أدائك الأكاديمي وتوصيات الذكاء الاصطناعي
+            Here's your academic intelligence overview
           </p>
         </div>
 
@@ -166,7 +122,7 @@ export default function DashboardOverview() {
           className="flex items-center gap-2 px-4 py-2 bg-[#102C57] text-[#F8F0E5] rounded-xl text-sm font-medium"
         >
           <Sparkles className="w-4 h-4" />
-          بدء جلسة ذكاء اصطناعي
+          Start AI Session
         </motion.button>
       </motion.div>
 
@@ -211,52 +167,6 @@ export default function DashboardOverview() {
         ))}
       </motion.div>
 
-      {/* Course Distribution Bar */}
-      {data?.courseDistribution && (
-        <motion.div
-          variants={fadeInScale}
-          className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-[#DAC0A3]/20 shadow-lg"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-[#102C57] flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              توزيع المقررات حسب مستوى الصعوبة
-            </h3>
-            <span className="text-xs text-[#102C57]/40">
-              إجمالي المقررات المكتملة: {data.courseDistribution.easy + data.courseDistribution.medium + data.courseDistribution.hard}
-            </span>
-          </div>
-          <div className="flex h-3 rounded-full overflow-hidden bg-[#F8F0E5]">
-            <div 
-              className="bg-green-500 h-full transition-all duration-500"
-              style={{ width: `${(data.courseDistribution.easy / (data.courseDistribution.easy + data.courseDistribution.medium + data.courseDistribution.hard)) * 100}%` }}
-            />
-            <div 
-              className="bg-yellow-500 h-full transition-all duration-500"
-              style={{ width: `${(data.courseDistribution.medium / (data.courseDistribution.easy + data.courseDistribution.medium + data.courseDistribution.hard)) * 100}%` }}
-            />
-            <div 
-              className="bg-red-500 h-full transition-all duration-500"
-              style={{ width: `${(data.courseDistribution.hard / (data.courseDistribution.easy + data.courseDistribution.medium + data.courseDistribution.hard)) * 100}%` }}
-            />
-          </div>
-          <div className="flex gap-4 mt-2 text-xs">
-            <span className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-green-500"></div>
-              <span className="text-[#102C57]/60">سهل ({data.courseDistribution.easy})</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-              <span className="text-[#102C57]/60">متوسط ({data.courseDistribution.medium})</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-red-500"></div>
-              <span className="text-[#102C57]/60">صعب ({data.courseDistribution.hard})</span>
-            </span>
-          </div>
-        </motion.div>
-      )}
-
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* AI Study Assistant */}
@@ -267,34 +177,34 @@ export default function DashboardOverview() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-[#102C57] flex items-center gap-2">
               <Brain className="w-5 h-5" />
-              المساعد الدراسي الذكي
+              AI Study Assistant
             </h2>
 
             <motion.button
-              whileHover={{ x: -4 }}
+              whileHover={{ x: 4 }}
               className="text-sm text-[#102C57]/40 hover:text-[#102C57] flex items-center gap-1"
             >
-              عرض الكل
+              View all
               <ChevronRight className="w-4 h-4" />
             </motion.button>
           </div>
 
           <div className="space-y-4">
             {[
-              { question: "بناء خطة الفصل القادم", time: "منذ دقيقتين" },
+              { question: "Build my next semester plan", time: "2 min ago" },
               {
-                question: "هل أنا معرض لتأخير التخرج؟",
-                time: "منذ ساعة",
+                question: "Am I at risk of delaying graduation?",
+                time: "1 hour ago",
               },
               {
-                question: "ما المقررات التي يجب أن أسجلها الفصل القادم؟",
-                time: "منذ 3 ساعات",
+                question: "What courses should I take next semester?",
+                time: "3 hours ago",
               },
             ].map((item, index) => (
               <motion.div
                 key={index}
                 variants={listItemVariants}
-                whileHover={{ x: -4 }}
+                whileHover={{ x: 4 }}
                 className="flex items-center justify-between p-4 rounded-xl bg-[#F8F0E5] border border-[#DAC0A3]/10 cursor-pointer"
               >
                 <div className="flex items-center gap-3">
@@ -321,7 +231,7 @@ export default function DashboardOverview() {
             <div className="flex items-center gap-3">
               <input
                 type="text"
-                placeholder="اسأل الذكاء الاصطناعي عن أي شيء يتعلق بدراستك..."
+                placeholder="Ask AI anything about your studies..."
                 className="flex-1 bg-transparent border-none outline-none text-sm text-[#102C57] placeholder-[#102C57]/40"
               />
 
@@ -330,7 +240,7 @@ export default function DashboardOverview() {
                 whileTap={{ scale: 0.95 }}
                 className="px-4 py-2 bg-[#102C57] text-[#F8F0E5] rounded-xl text-sm font-medium"
               >
-                إرسال
+                Send
               </motion.button>
             </div>
           </motion.div>
@@ -343,33 +253,27 @@ export default function DashboardOverview() {
         >
           <h2 className="text-lg font-semibold text-[#102C57] flex items-center gap-2 mb-6">
             <AlertTriangle className="w-5 h-5" />
-            توصيات الذكاء الاصطناعي
+            AI Advisor Insight
           </h2>
 
           <div className="space-y-4">
             <div className="p-4 rounded-xl bg-[#F8F0E5] border border-[#DAC0A3]/10">
               <p className="text-sm text-[#102C57]">
-                معدلك التراكمي {data?.academic?.cgpa?.toFixed(3)} جيد جداً. يمكنك تحسينه بالتركيز على المقررات ذات الصعوبة المتوسطة.
+                Your GPA is strong, but taking <b>Machine Learning</b> and
+                <b> Computer Networks</b> together may increase workload.
               </p>
             </div>
 
             <div className="p-4 rounded-xl bg-[#F8F0E5] border border-[#DAC0A3]/10">
               <p className="text-sm text-[#102C57]">
-                أنت بحاجة إلى <b>{data?.academic?.remainingCredits} ساعة</b> لإكمال متطلبات التخرج.
-                {data?.academic?.estimatedGraduation && (
-                  <> التقدير المتوقع للتخرج: <b>{data.academic.estimatedGraduation}</b></>
-                )}
+                You have completed{" "}
+                <b>
+                  {academic?.completedCredits ?? 0} / {academic?.requiredCredits ?? 0} credits
+                </b>
+                . Estimated graduation status:{" "}
+                <b>{academic?.estimatedGraduation ?? "Unavailable"}</b>.
               </p>
             </div>
-
-            {data?.currentSemester && (
-              <div className="p-4 rounded-xl bg-[#F8F0E5] border border-[#DAC0A3]/10">
-                <p className="text-sm text-[#102C57] flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  الفصل الحالي: {getTermInArabic(data.currentSemester.term)} {data.currentSemester.academic_year}
-                </p>
-              </div>
-            )}
           </div>
         </motion.div>
       </div>
@@ -379,15 +283,9 @@ export default function DashboardOverview() {
         variants={fadeInScale}
         className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-[#DAC0A3]/20 shadow-lg"
       >
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-[#102C57] flex items-center gap-2">
-            <Clock className="w-5 h-5" />
-            النشاطات الأخيرة
-          </h2>
-          <span className="text-xs text-[#102C57]/40">
-            آخر تحديث: {new Date(data?.timestamp || "").toLocaleString('ar-SA')}
-          </span>
-        </div>
+        <h2 className="text-lg font-semibold text-[#102C57] mb-6">
+          Recent Activity
+        </h2>
 
         <div className="space-y-4">
           {data?.recentActivity?.map((item, index) => (
@@ -397,7 +295,7 @@ export default function DashboardOverview() {
               className="flex items-start gap-4"
             >
               <div className="w-8 h-8 rounded-lg bg-[#102C57]/10 flex items-center justify-center">
-                {getActivityIcon(item.icon)}
+                <Brain className="w-4 h-4 text-[#102C57]" />
               </div>
 
               <div className="flex-1">

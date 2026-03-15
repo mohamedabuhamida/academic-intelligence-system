@@ -276,9 +276,9 @@ export default function TimelinePage() {
                   {semester.cumulativeGpa !== null ? semester.cumulativeGpa.toFixed(2) : "--"}
                 </div>
                 <div className="absolute top-1/2 left-1/2 z-10 hidden -translate-x-1/2 translate-y-12 xl:block">
-                  <div className="rounded-full bg-white/95 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-[#6c7a8d] shadow-sm ring-1 ring-[#e6d7c2]">
+                  {/* <div className="rounded-full bg-white/95 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-[#6c7a8d] shadow-sm ring-1 ring-[#e6d7c2]">
                     CGPA {semester.cumulativeGpa !== null ? semester.cumulativeGpa.toFixed(3) : "N/A"}
-                  </div>
+                  </div> */}
                 </div>
               </div>
 

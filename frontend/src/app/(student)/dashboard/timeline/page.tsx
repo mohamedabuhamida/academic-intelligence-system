@@ -282,7 +282,7 @@ export default function TimelinePage() {
                 </div>
               </div>
 
-              <div className={`${index % 2 === 0 ? "lg:col-start-3" : "lg:col-start-1"} hidden lg:block`} />
+              {/* <div className={`${index % 2 === 0 ? "lg:col-start-3" : "lg:col-start-1"} hidden lg:block`} /> */}
             </motion.div>
           ))}
         </motion.section>

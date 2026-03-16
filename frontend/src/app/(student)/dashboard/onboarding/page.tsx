@@ -70,7 +70,8 @@ export default function OnboardingPage() {
   const [department, setDepartment] = useState("");
   const [universityId, setUniversityId] = useState("");
   const [totalRequiredHours, setTotalRequiredHours] = useState("142");
-  const [historyRows, setHistoryRows] = useState<HistoryRow[]>([createHistoryRow()]);
+  const [historyRows, setHistoryRows] = useState<HistoryRow[]>([]);
+  const [pendingHistoryRow, setPendingHistoryRow] = useState<HistoryRow>(createHistoryRow());
 
   useEffect(() => {
     async function loadOnboarding() {
@@ -115,7 +116,23 @@ export default function OnboardingPage() {
     [gradeScale],
   );
 
-  const addHistoryRow = () => setHistoryRows((prev) => [...prev, createHistoryRow()]);
+  const addHistoryRow = () => {
+    const needsGrade =
+      pendingHistoryRow.status === "completed" || pendingHistoryRow.status === "failed";
+
+    if (
+      !pendingHistoryRow.semesterId ||
+      !pendingHistoryRow.courseId ||
+      (needsGrade && !pendingHistoryRow.grade)
+    ) {
+      setError("Please complete the history entry before adding it to the table.");
+      return;
+    }
+
+    setHistoryRows((prev) => [...prev, { ...pendingHistoryRow, id: crypto.randomUUID() }]);
+    setPendingHistoryRow(createHistoryRow());
+    setError("");
+  };
 
   const updateHistoryRow = (id: string, field: keyof Omit<HistoryRow, "id">, value: string) => {
     setHistoryRows((prev) =>
@@ -134,7 +151,7 @@ export default function OnboardingPage() {
   };
 
   const removeHistoryRow = (id: string) => {
-    setHistoryRows((prev) => (prev.length > 1 ? prev.filter((row) => row.id !== id) : prev));
+    setHistoryRows((prev) => prev.filter((row) => row.id !== id));
   };
 
   const validateCurrentStep = () => {
@@ -146,10 +163,22 @@ export default function OnboardingPage() {
       return Number(totalRequiredHours) > 0;
     }
 
-    return historyRows.every((row) => {
+    return historyRows.length > 0 && historyRows.every((row) => {
       const needsGrade = row.status === "completed" || row.status === "failed";
       return row.semesterId && row.courseId && (!needsGrade || row.grade);
     });
+  };
+
+  const getSemesterLabel = (semesterId: string) => {
+    const semester = (data?.semesters ?? []).find((item) => item.id === semesterId);
+    if (!semester) return "Unknown semester";
+    return [semester.academic_year, semester.term, semester.name].filter(Boolean).join(" - ");
+  };
+
+  const getCourseLabel = (courseId: string) => {
+    const course = (data?.courses ?? []).find((item) => item.id === courseId);
+    if (!course) return "Unknown course";
+    return `${course.code ?? "N/A"} - ${course.name}`;
   };
 
   const saveOnboarding = async () => {
@@ -336,93 +365,158 @@ export default function OnboardingPage() {
                 </button>
               </div>
 
-              <div className="space-y-4">
-                {historyRows.map((row, index) => {
-                  const gradeNeeded = row.status === "completed" || row.status === "failed";
-
-                  return (
-                    <div
-                      key={row.id}
-                      className="rounded-2xl border border-[#DAC0A3]/20 bg-[#F8F0E5]/55 p-4"
+              <div className="rounded-2xl border border-[#DAC0A3]/20 bg-[#F8F0E5]/55 p-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[1.2fr,1.2fr,0.9fr,0.9fr,auto]">
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.14em] text-[#102C57]/55">Semester</span>
+                    <select
+                      value={pendingHistoryRow.semesterId}
+                      onChange={(e) => setPendingHistoryRow((prev) => ({ ...prev, semesterId: e.target.value }))}
+                      className="w-full rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-3 text-[#102C57] outline-none focus:border-[#102C57]/35"
                     >
-                      <div className="mb-3 flex items-center justify-between">
-                        <p className="text-sm font-semibold text-[#102C57]">Entry {index + 1}</p>
-                        <button
-                          onClick={() => removeHistoryRow(row.id)}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 bg-white text-red-500"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+                      <option value="">Select semester</option>
+                      {(data?.semesters ?? []).map((semester) => (
+                        <option key={semester.id} value={semester.id}>
+                          {[semester.academic_year, semester.term, semester.name].filter(Boolean).join(" - ")}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-                        <label className="space-y-2">
-                          <span className="text-xs uppercase tracking-[0.14em] text-[#102C57]/55">Semester</span>
-                          <select
-                            value={row.semesterId}
-                            onChange={(e) => updateHistoryRow(row.id, "semesterId", e.target.value)}
-                            className="w-full rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-3 text-[#102C57] outline-none focus:border-[#102C57]/35"
-                          >
-                            <option value="">Select semester</option>
-                            {(data?.semesters ?? []).map((semester) => (
-                              <option key={semester.id} value={semester.id}>
-                                {[semester.academic_year, semester.term, semester.name].filter(Boolean).join(" - ")}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.14em] text-[#102C57]/55">Course</span>
+                    <select
+                      value={pendingHistoryRow.courseId}
+                      onChange={(e) => setPendingHistoryRow((prev) => ({ ...prev, courseId: e.target.value }))}
+                      className="w-full rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-3 text-[#102C57] outline-none focus:border-[#102C57]/35"
+                    >
+                      <option value="">Select course</option>
+                      {(data?.courses ?? []).map((course) => (
+                        <option key={course.id} value={course.id}>
+                          {course.code ?? "N/A"} - {course.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-                        <label className="space-y-2">
-                          <span className="text-xs uppercase tracking-[0.14em] text-[#102C57]/55">Course</span>
-                          <select
-                            value={row.courseId}
-                            onChange={(e) => updateHistoryRow(row.id, "courseId", e.target.value)}
-                            className="w-full rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-3 text-[#102C57] outline-none focus:border-[#102C57]/35"
-                          >
-                            <option value="">Select course</option>
-                            {(data?.courses ?? []).map((course) => (
-                              <option key={course.id} value={course.id}>
-                                {course.code ?? "N/A"} - {course.name}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.14em] text-[#102C57]/55">Status</span>
+                    <select
+                      value={pendingHistoryRow.status}
+                      onChange={(e) =>
+                        setPendingHistoryRow((prev) => ({
+                          ...prev,
+                          status: e.target.value as HistoryRow["status"],
+                          grade:
+                            e.target.value === "current" || e.target.value === "planned"
+                              ? ""
+                              : prev.grade || "A",
+                        }))
+                      }
+                      className="w-full rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-3 text-[#102C57] outline-none focus:border-[#102C57]/35"
+                    >
+                      <option value="completed">Completed</option>
+                      <option value="failed">Failed</option>
+                      <option value="current">Current</option>
+                      <option value="planned">Planned</option>
+                    </select>
+                  </label>
 
-                        <label className="space-y-2">
-                          <span className="text-xs uppercase tracking-[0.14em] text-[#102C57]/55">Status</span>
-                          <select
-                            value={row.status}
-                            onChange={(e) => updateHistoryRow(row.id, "status", e.target.value)}
-                            className="w-full rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-3 text-[#102C57] outline-none focus:border-[#102C57]/35"
-                          >
-                            <option value="completed">Completed</option>
-                            <option value="failed">Failed</option>
-                            <option value="current">Current</option>
-                            <option value="planned">Planned</option>
-                          </select>
-                        </label>
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.14em] text-[#102C57]/55">Grade</span>
+                    <select
+                      value={pendingHistoryRow.grade}
+                      disabled={pendingHistoryRow.status === "current" || pendingHistoryRow.status === "planned"}
+                      onChange={(e) => setPendingHistoryRow((prev) => ({ ...prev, grade: e.target.value }))}
+                      className="w-full rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-3 text-[#102C57] outline-none focus:border-[#102C57]/35 disabled:opacity-50"
+                    >
+                      <option value="">No grade</option>
+                      {gradeScale.map((grade) => (
+                        <option key={grade.grade} value={grade.grade}>
+                          {grade.grade} ({grade.points.toFixed(1)})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-                        <label className="space-y-2">
-                          <span className="text-xs uppercase tracking-[0.14em] text-[#102C57]/55">Grade</span>
-                          <select
-                            value={row.grade}
-                            disabled={!gradeNeeded}
-                            onChange={(e) => updateHistoryRow(row.id, "grade", e.target.value)}
-                            className="w-full rounded-xl border border-[#DAC0A3]/35 bg-white px-4 py-3 text-[#102C57] outline-none focus:border-[#102C57]/35 disabled:opacity-50"
-                          >
-                            <option value="">No grade</option>
-                            {gradeScale.map((grade) => (
-                              <option key={grade.grade} value={grade.grade}>
-                                {grade.grade} ({grade.points.toFixed(1)})
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                      </div>
-                    </div>
-                  );
-                })}
+                  <div className="flex items-end">
+                    <button
+                      onClick={addHistoryRow}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#102C57] px-4 py-3 text-sm font-medium text-[#F8F0E5] xl:w-auto"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Row
+                    </button>
+                  </div>
+                </div>
               </div>
+
+              {historyRows.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-[#DAC0A3]/35 bg-white/70 px-4 py-8 text-center text-sm text-[#102C57]/60">
+                  No academic history added yet. Use the form above to add rows to the table.
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-2xl border border-[#DAC0A3]/20 bg-white">
+                  <table className="min-w-full border-collapse">
+                    <thead>
+                      <tr className="border-b border-[#DAC0A3]/15 bg-[#F8F0E5]/70 text-left text-xs uppercase tracking-[0.14em] text-[#102C57]/55">
+                        <th className="px-4 py-3">Semester</th>
+                        <th className="px-4 py-3">Course</th>
+                        <th className="px-4 py-3 w-[150px]">Status</th>
+                        <th className="px-4 py-3 w-[150px]">Grade</th>
+                        <th className="px-4 py-3 w-[80px] text-center">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#DAC0A3]/15">
+                      {historyRows.map((row) => {
+                        const gradeNeeded = row.status === "completed" || row.status === "failed";
+
+                        return (
+                          <tr key={row.id}>
+                            <td className="px-4 py-4 text-sm text-[#102C57]">{getSemesterLabel(row.semesterId)}</td>
+                            <td className="px-4 py-4 text-sm text-[#102C57]">{getCourseLabel(row.courseId)}</td>
+                            <td className="px-4 py-4">
+                              <select
+                                value={row.status}
+                                onChange={(e) => updateHistoryRow(row.id, "status", e.target.value)}
+                                className="w-full rounded-xl border border-[#DAC0A3]/35 bg-[#F8F0E5] px-3 py-2.5 text-sm text-[#102C57] outline-none focus:border-[#102C57]/35"
+                              >
+                                <option value="completed">Completed</option>
+                                <option value="failed">Failed</option>
+                                <option value="current">Current</option>
+                                <option value="planned">Planned</option>
+                              </select>
+                            </td>
+                            <td className="px-4 py-4">
+                              <select
+                                value={row.grade}
+                                disabled={!gradeNeeded}
+                                onChange={(e) => updateHistoryRow(row.id, "grade", e.target.value)}
+                                className="w-full rounded-xl border border-[#DAC0A3]/35 bg-[#F8F0E5] px-3 py-2.5 text-sm text-[#102C57] outline-none focus:border-[#102C57]/35 disabled:opacity-50"
+                              >
+                                <option value="">No grade</option>
+                                {gradeScale.map((grade) => (
+                                  <option key={grade.grade} value={grade.grade}>
+                                    {grade.grade} ({grade.points.toFixed(1)})
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="px-4 py-4 text-center">
+                              <button
+                                onClick={() => removeHistoryRow(row.id)}
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 bg-white text-red-500"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 

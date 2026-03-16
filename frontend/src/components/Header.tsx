@@ -69,7 +69,7 @@ export default function Header({ isSidebarExpanded }: HeaderProps) {
               animate={{ scale: 1 }}
               className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 bg-[#102C57]/10 rounded-lg text-[#102C57] text-xs font-medium"
             >
-              ⌘ K
+              Ctrl K
             </motion.div>
           </div>
         </motion.div>

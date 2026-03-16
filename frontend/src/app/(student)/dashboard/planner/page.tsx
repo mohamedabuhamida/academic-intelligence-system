@@ -17,9 +17,10 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { createClient } from "@/lib/supabase/client";
+import { getBackendUrl } from "@/lib/backend";
 import { fadeInScale, listItemVariants, staggerContainer } from "@/components/animations";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
+const BACKEND_URL = getBackendUrl();
 
 type EligibleCourse = {
   id: string;

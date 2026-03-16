@@ -42,17 +42,37 @@ type DashboardData = {
   recentActivity?: Activity[];
 };
 
+type AdvisorInsight = {
+  id: string;
+  tone: "success" | "warning" | "info";
+  title: string;
+  message: string;
+};
+
+type AdvisorData = {
+  insights?: AdvisorInsight[];
+};
+
 export default function DashboardOverview() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [advisorData, setAdvisorData] = useState<AdvisorData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const res = await fetch("/api/dashboard", { cache: "no-store" });
-        const json = await res.json();
+        const [dashboardRes, advisorRes] = await Promise.all([
+          fetch("/api/dashboard", { cache: "no-store" }),
+          fetch("/api/advisor", { cache: "no-store" }),
+        ]);
 
-        setData(json);
+        const dashboardJson = await dashboardRes.json();
+        const advisorJson = await advisorRes.json();
+
+        setData(dashboardJson);
+        if (advisorRes.ok) {
+          setAdvisorData(advisorJson);
+        }
       } catch (err) {
         console.error("Dashboard API error", err);
       } finally {
@@ -68,6 +88,7 @@ export default function DashboardOverview() {
   }
 
   const academic = data?.academic;
+  const advisorInsights = advisorData?.insights ?? [];
 
   const stats = [
     {
@@ -257,23 +278,40 @@ export default function DashboardOverview() {
           </h2>
 
           <div className="space-y-4">
-            <div className="p-4 rounded-xl bg-[#F8F0E5] border border-[#DAC0A3]/10">
-              <p className="text-sm text-[#102C57]">
-                Your GPA is strong, but taking <b>Machine Learning</b> and
-                <b> Computer Networks</b> together may increase workload.
-              </p>
-            </div>
+            {advisorInsights.length > 0 ? (
+              advisorInsights.map((insight) => {
+                const toneClasses =
+                  insight.tone === "warning"
+                    ? "border-amber-200 bg-amber-50/70"
+                    : insight.tone === "success"
+                      ? "border-green-200 bg-green-50/70"
+                      : "border-[#DAC0A3]/10 bg-[#F8F0E5]";
 
-            <div className="p-4 rounded-xl bg-[#F8F0E5] border border-[#DAC0A3]/10">
-              <p className="text-sm text-[#102C57]">
-                You have completed{" "}
-                <b>
-                  {academic?.completedCredits ?? 0} / {academic?.requiredCredits ?? 0} credits
-                </b>
-                . Estimated graduation status:{" "}
-                <b>{academic?.estimatedGraduation ?? "Unavailable"}</b>.
-              </p>
-            </div>
+                return (
+                  <div
+                    key={insight.id}
+                    className={`rounded-xl border p-4 ${toneClasses}`}
+                  >
+                    <p className="text-sm font-semibold text-[#102C57]">
+                      {insight.title}
+                    </p>
+                    <p className="mt-2 text-sm text-[#102C57]/80">
+                      {insight.message}
+                    </p>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="p-4 rounded-xl bg-[#F8F0E5] border border-[#DAC0A3]/10">
+                <p className="text-sm text-[#102C57]">
+                  Advisor insights are not available yet. Your current progress is{" "}
+                  <b>
+                    {academic?.completedCredits ?? 0} / {academic?.requiredCredits ?? 0} credits
+                  </b>
+                  .
+                </p>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>

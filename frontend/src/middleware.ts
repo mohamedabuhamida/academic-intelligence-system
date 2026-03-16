@@ -5,6 +5,7 @@ import type { NextRequest } from 'next/server'
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
+  const pathname = req.nextUrl.pathname
   
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,7 +30,7 @@ export async function middleware(req: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession()
 
   const isProtectedRoute = req.nextUrl.pathname.startsWith('/dashboard')
-  const isAuthRoute = req.nextUrl.pathname.startsWith('/auth')
+  const isAuthRoute = pathname === '/login' || req.nextUrl.pathname.startsWith('/auth')
   const isOnboardingRoute = req.nextUrl.pathname.startsWith('/dashboard/onboarding')
   const isVerifyEmailRoute = req.nextUrl.pathname.startsWith('/auth/verify-email')
 
@@ -74,5 +75,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/auth/:path*']
+  matcher: ['/login', '/dashboard/:path*', '/auth/:path*']
 }

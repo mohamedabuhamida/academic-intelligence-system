@@ -17,7 +17,7 @@ export default function VerifyEmailPage() {
         className="w-full max-w-lg"
       >
         <Link
-          href="/auth/login"
+          href="/login"
           className="inline-flex items-center gap-2 text-[#102C57]/60 hover:text-[#102C57] mb-8 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -50,7 +50,7 @@ export default function VerifyEmailPage() {
 
             <div className="mt-8">
               <Link
-                href="/auth/login"
+                href="/login"
                 className="inline-flex items-center justify-center rounded-xl bg-[#102C57] px-5 py-3 text-sm font-semibold text-[#F8F0E5]"
               >
                 Go to sign in

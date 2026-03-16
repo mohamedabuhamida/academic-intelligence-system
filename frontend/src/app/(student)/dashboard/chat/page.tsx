@@ -29,6 +29,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { getBackendUrl } from "@/lib/backend";
 
 interface Message {
   id: string;
@@ -97,6 +98,7 @@ function extractAssistantAnswer(raw: string): string {
 }
 
 export default function ChatPage() {
+  const backendUrl = getBackendUrl();
   const supabase = createClient();
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -363,7 +365,7 @@ export default function ChatPage() {
       setMessages(prev => [...prev, aiMessage]);
 
       // Call API with streaming support
-      const response = await fetch(`http://127.0.0.1:8000/api/ask`, {
+      const response = await fetch(`${backendUrl}/api/ask`, {
         method: "POST",
         headers: {
           accept: "application/json",

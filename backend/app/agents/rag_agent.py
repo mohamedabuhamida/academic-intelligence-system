@@ -83,14 +83,14 @@ async def ask_academic_mentor(query: str, user_id: str) -> str:
     try:
         retriever, llm = get_rag_components()
 
-        # 1️⃣ Retrieve Relevant Policy Context (RAG)
+        # Retrieve relevant policy context from the vector store.
         docs = await asyncio.to_thread(retriever.invoke, query)
         regulation_context = format_docs(docs)
 
-        # 2️⃣ Retrieve Conversational Memory
+        # Retrieve conversational memory for continuity.
         memory_context = await asyncio.to_thread(retrieve_memory, user_id, query)
 
-        # 3️⃣ The "Super" System Prompt (English Core, Arabic Output)
+        # Build the grounded system prompt.
         final_prompt = f"""
 You are the "Policy & Regulation Expert Agent", a core component of the Multi-Agent Academic Decision Intelligence System for the Faculty of AI at Delta University.
 
@@ -120,11 +120,11 @@ Student Question:
 Accurate Arabic Answer:
 """
 
-        # 4️⃣ LLM Execution
+        # Generate the grounded response.
         response = await llm.ainvoke(final_prompt)
         response_text = normalize_text(response)
 
-        # 5️⃣ Memory Storage
+        # Store conversation memory.
         await asyncio.to_thread(store_memory, user_id, "user", query)
         await asyncio.to_thread(store_memory, user_id, "ai", response_text)
 

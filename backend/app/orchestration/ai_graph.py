@@ -97,7 +97,7 @@ graph = builder.compile()
 async def run_ai_graph(question, user_id):
     try:
         result = await graph.ainvoke({"question": question, "user_id": user_id})
-        return result.get("answer", "?????? ??? ??? ??? ????? ?? ????? ????.")
+        return result.get("answer", "عذراً، لم أتمكن من توليد إجابة مناسبة حالياً.")
     except Exception as exc:
         logger.exception("AI graph failed; fallback to planner node: %s", exc)
         return await ask_planner_agent(question, user_id)

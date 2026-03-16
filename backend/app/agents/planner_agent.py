@@ -59,7 +59,7 @@ Return exactly one word: direct_cgpa OR planner
 
 def _build_cgpa_answer(cgpa_data: dict) -> str:
     cgpa = cgpa_data.get("cgpa")
-    return f"????? ???????? ?????? (CGPA): **{float(cgpa):.3f}**"
+    return f"معدلك التراكمي الحالي (CGPA): **{float(cgpa):.3f}**"
 
 
 async def ask_planner_agent(query: str, user_id: str) -> str:
@@ -170,4 +170,4 @@ async def ask_planner_agent(query: str, user_id: str) -> str:
 
     except Exception as e:
         logger.error(f"CRITICAL ERROR in Planner Agent: {str(e)}", exc_info=True)
-        return "?????? ??? ??? ??? ????? ???????. ???? ???????? ??? ????."
+        return "عذراً، حدث خطأ أثناء تجهيز الخطة الدراسية. يرجى المحاولة مرة أخرى."

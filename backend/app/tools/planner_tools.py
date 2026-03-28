@@ -46,23 +46,25 @@ def check_course_eligibility(user_id: str, target_course_code: str) -> str:
         supabase = get_supabase()
         target_course = target_course_code.strip().upper()
         
-        # 1. هات الـ ID بتاع المادة بناءً على الكود
-        course_res = supabase.table("courses").select("id").eq("code", target_course).execute()
+        # 1. هات الـ ID بتاع المادة واسمها بناءً على الكود
+        course_res = supabase.table("courses").select("id, name").eq("code", target_course).execute()
         if not course_res.data:
             return f"Course {target_course} not found in the database."
         target_course_id = course_res.data[0]["id"]
+        target_course_name = course_res.data[0]["name"]
         
-        # 2. هات الـ IDs بتاعة المتطلبات السابقة للمادة دي
+        # 2. هات الـ IDs بتاعة المتطلبات السابقة للمادة دي من الجدول الوسيط
         prereq_res = supabase.table("course_prerequisites").select("prerequisite_id").eq("course_id", target_course_id).execute()
         required_prereq_ids = [item["prerequisite_id"] for item in prereq_res.data]
         
         # لو مفيش متطلبات
         if not required_prereq_ids:
-            return f"Course {target_course} has NO prerequisites. The student is ELIGIBLE to register."
+            return f"Course {target_course} ({target_course_name}) has NO prerequisites. The student is ELIGIBLE to register."
             
-        # نجيب أكواد المتطلبات عشان نكتبها للطالب في الرسالة
-        codes_res = supabase.table("courses").select("id, code").in_("id", required_prereq_ids).execute()
-        prereq_id_to_code = {c["id"]: c["code"] for c in codes_res.data}
+        # نجيب أكواد وأسماء المتطلبات عشان نكتبها للطالب في الرسالة
+        codes_res = supabase.table("courses").select("id, code, name").in_("id", required_prereq_ids).execute()
+        # هنا التعديل السحري: دمجنا الكود مع الاسم
+        prereq_id_to_details = {c["id"]: f"{c['code']} ({c['name']})" for c in codes_res.data}
         
         # 3. هات المواد اللي الطالب خلصها ونجح فيها
         passed_res = supabase.table("student_courses").select("course_id, grade, status").eq("user_id", user_id).execute()
@@ -76,11 +78,11 @@ def check_course_eligibility(user_id: str, target_course_code: str) -> str:
         missing_ids = [pid for pid in required_prereq_ids if pid not in passed_course_ids]
         
         if missing_ids:
-            missing_codes = [prereq_id_to_code[pid] for pid in missing_ids]
-            return f"NOT ELIGIBLE. The student cannot register for {target_course}. Missing prerequisites: {', '.join(missing_codes)}."
+            missing_details = [prereq_id_to_details[pid] for pid in missing_ids if pid in prereq_id_to_details]
+            return f"NOT ELIGIBLE. The student cannot register for {target_course} ({target_course_name}). Missing prerequisites: {', '.join(missing_details)}."
         else:
-            required_codes = [prereq_id_to_code[pid] for pid in required_prereq_ids]
-            return f"ELIGIBLE. The student has met all prerequisites ({', '.join(required_codes)}) and can register for {target_course}."
+            required_details = [prereq_id_to_details[pid] for pid in required_prereq_ids if pid in prereq_id_to_details]
+            return f"ELIGIBLE. The student has met all prerequisites ({', '.join(required_details)}) and can register for {target_course} ({target_course_name})."
             
     except Exception as e:
         logger.error(f"Error checking eligibility for {target_course_code}: {str(e)}")

@@ -1,4 +1,5 @@
 import io
+import os
 import re
 import uuid
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -164,16 +165,33 @@ def chunk_and_store_text(document_id: str, content: str, metadata: dict | None =
     return inserted
 
 
-def extract_text_from_uploaded_file(file) -> tuple[str, str]:
-    filename = file.filename or f"upload-{uuid.uuid4().hex}.txt"
+def _study_material_bucket() -> str:
+    return os.getenv("SUPABASE_STUDY_MATERIALS_BUCKET", "study-materials")
+
+
+def upload_study_material_bytes(file_bytes: bytes, user_id: str, course_id: str, filename: str, content_type: str | None = None) -> str:
+    supabase = get_supabase()
+    bucket = _study_material_bucket()
+    storage_path = f"{user_id}/{course_id}/{uuid.uuid4().hex}-{filename}"
+
+    options = {"content-type": content_type or "application/octet-stream"}
+    storage_client = supabase.storage.from_(bucket)
+    try:
+        storage_client.upload(storage_path, file_bytes, options)
+    except TypeError:
+        storage_client.upload(storage_path, file_bytes, file_options=options)
+
+    return f"storage://{bucket}/{storage_path}"
+
+
+def extract_text_from_uploaded_bytes(file_bytes: bytes, filename: str) -> tuple[str, str]:
     lower_name = filename.lower()
-    content_bytes = file.file.read()
 
     if lower_name.endswith((".md", ".markdown", ".txt")):
-        return content_bytes.decode("utf-8", errors="ignore"), filename
+        return file_bytes.decode("utf-8", errors="ignore"), filename
 
     if lower_name.endswith(".pdf"):
-        reader = PdfReader(io.BytesIO(content_bytes))
+        reader = PdfReader(io.BytesIO(file_bytes))
         pages_text = [page.extract_text() or "" for page in reader.pages]
         return "\n\n".join(pages_text), filename
 
@@ -182,13 +200,20 @@ def extract_text_from_uploaded_file(file) -> tuple[str, str]:
 
 def ingest_study_material(file, user_id: str, course_id: str, course_code: str | None, course_name: str | None):
     supabase = get_supabase()
-
-    content, filename = extract_text_from_uploaded_file(file)
+    filename = file.filename or f"upload-{uuid.uuid4().hex}.txt"
+    file_bytes = file.file.read()
+    content, filename = extract_text_from_uploaded_bytes(file_bytes, filename)
     if not content.strip():
         raise ValueError("Could not extract readable text from the uploaded file.")
 
     document_id = str(uuid.uuid4())
-    file_url = f"study://{user_id}/{course_id}/{document_id}/{filename}"
+    file_url = upload_study_material_bytes(
+        file_bytes=file_bytes,
+        user_id=user_id,
+        course_id=course_id,
+        filename=filename,
+        content_type=getattr(file, "content_type", None),
+    )
 
     supabase.table("documents").insert({
         "id": document_id,

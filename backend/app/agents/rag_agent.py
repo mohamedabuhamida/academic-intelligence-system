@@ -175,19 +175,26 @@ async def ask_study_assistant(
     try:
         llm = get_llm()
         vector_store = get_vector_store()
-        retriever = vector_store.as_retriever(
-            search_type="similarity",
-            search_kwargs={
-                "k": 6,
-                "filter": {
-                    "scope": "study_material",
-                    "uploaded_by": user_id,
-                    "course_id": course_id,
-                },
-            },
+        embeddings = get_embedding_model()
+        query_vector = await asyncio.to_thread(embeddings.embed_query, query)
+        raw_results = await asyncio.to_thread(
+            vector_store.similarity_search_by_vector_with_relevance_scores,
+            query_vector,
+            24,
         )
 
-        docs = await asyncio.to_thread(retriever.invoke, query)
+        docs: List[Document] = []
+        for doc, _score in raw_results:
+            metadata = doc.metadata or {}
+            if (
+                metadata.get("scope") == "study_material"
+                and str(metadata.get("uploaded_by")) == str(user_id)
+                and str(metadata.get("course_id")) == str(course_id)
+            ):
+                docs.append(doc)
+            if len(docs) >= 6:
+                break
+
         if not docs:
             return (
                 "لم يتم العثور على مصادر مذاكرة مرفوعة لهذه المادة بعد.\n\n"

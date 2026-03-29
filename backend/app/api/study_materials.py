@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from app.core.auth import AuthUser, get_current_user
@@ -8,13 +10,52 @@ from app.services.embeddings_service import ingest_study_material
 router = APIRouter()
 
 
+def study_material_bucket() -> str:
+    return os.getenv("SUPABASE_STUDY_MATERIALS_BUCKET", "study-materials")
+
+
+def parse_storage_uri(file_url: str | None) -> tuple[str | None, str | None]:
+    if not file_url or not file_url.startswith("storage://"):
+        return None, None
+
+    value = file_url.removeprefix("storage://")
+    bucket, _, path = value.partition("/")
+    if not bucket or not path:
+        return None, None
+
+    return bucket, path
+
+
+def build_signed_url(file_url: str | None) -> str | None:
+    bucket, path = parse_storage_uri(file_url)
+    if not bucket or not path:
+        return None
+
+    supabase = get_supabase()
+    result = supabase.storage.from_(bucket).create_signed_url(path, 3600)
+
+    signed = None
+    if isinstance(result, dict):
+        signed = result.get("signedURL") or result.get("signedUrl")
+
+    if not signed:
+        return None
+
+    if signed.startswith("http://") or signed.startswith("https://"):
+        return signed
+
+    return f"{supabase.supabase_url}{signed}"
+
+
 @router.get("/api/study-materials")
 def list_study_materials(
     course_id: str,
     current_user: AuthUser = Depends(get_current_user),
 ):
     supabase = get_supabase()
-    file_prefix = f"study://{current_user.user_id}/{course_id}/%"
+    bucket = study_material_bucket()
+    file_prefix = f"storage://{bucket}/{current_user.user_id}/{course_id}/%"
+    legacy_prefix = f"study://{current_user.user_id}/{course_id}/%"
 
     response = (
         supabase.table("documents")
@@ -25,9 +66,26 @@ def list_study_materials(
         .execute()
     )
 
-    return {
-        "documents": response.data or [],
-    }
+    documents = response.data or []
+    if not documents:
+        legacy_response = (
+            supabase.table("documents")
+            .select("id, title, file_url, uploaded_at")
+            .eq("uploaded_by", current_user.user_id)
+            .like("file_url", legacy_prefix)
+            .order("uploaded_at", desc=True)
+            .execute()
+        )
+        documents = legacy_response.data or []
+    enriched_documents = [
+        {
+            **document,
+            "signed_url": build_signed_url(document.get("file_url")),
+        }
+        for document in documents
+    ]
+
+    return {"documents": enriched_documents}
 
 
 @router.post("/api/study-materials/upload")
@@ -61,7 +119,7 @@ def delete_study_material(
 
     document_response = (
         supabase.table("documents")
-        .select("id, uploaded_by")
+        .select("id, uploaded_by, file_url")
         .eq("id", document_id)
         .maybe_single()
         .execute()
@@ -70,6 +128,13 @@ def delete_study_material(
     document = document_response.data
     if not document or document.get("uploaded_by") != current_user.user_id:
         raise HTTPException(status_code=404, detail="Study material not found.")
+
+    bucket, path = parse_storage_uri(document.get("file_url"))
+    if bucket and path:
+        try:
+            supabase.storage.from_(bucket).remove([path])
+        except Exception:
+            pass
 
     (
         supabase.table("document_chunks")

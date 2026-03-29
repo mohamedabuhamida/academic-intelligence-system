@@ -654,3 +654,209 @@ Expected deliverables:
 - secure user loading and protected routing support
 
 ---
+
+### Member 3: Study Chat / Course Learning Experience
+Primary role:
+
+- own the student-facing study assistant
+- build the NotebookLM-like study experience
+- connect uploaded course materials to the AI study flow
+
+Main responsibilities:
+
+- Study Chat page and interactions
+- per-course chat sessions
+- quick study modes such as summary, quiz, flashcards, expected questions, and study plan
+- source selection and course library UX
+- citations and source cards shown under AI responses
+
+Strict ownership boundary:
+
+- owns Study Chat frontend experience
+- does not own embeddings generation
+- does not own vector database logic
+- collaborates with Member 4 for API and retrieval integration
+
+Main files:
+
+- [frontend/src/app/(student)/dashboard/study-chat/page.tsx](/e:/academic-intelligence-system/frontend/src/app/(student)/dashboard/study-chat/page.tsx)
+- [frontend/src/app/api/study/courses/route.ts](/e:/academic-intelligence-system/frontend/src/app/api/study/courses/route.ts)
+
+Related integration files:
+
+- [backend/app/api/chat.py](/e:/academic-intelligence-system/backend/app/api/chat.py)
+- [backend/app/models/chat_models.py](/e:/academic-intelligence-system/backend/app/models/chat_models.py)
+
+Expected deliverables:
+
+- complete study chat user flow
+- course-specific material selection
+- usable AI learning outputs from uploaded sources
+
+---
+
+### Member 4: Backend AI / RAG / Document Processing
+Primary role:
+
+- own the AI backend that powers retrieval and responses
+- process uploaded files into searchable chunks
+- keep the system grounded on student-uploaded material
+
+Main responsibilities:
+
+- study material ingestion
+- chunking and embeddings
+- vector retrieval and filtering
+- study-mode-aware prompting
+- citations and structured source output
+- AI grounding quality and response traceability
+
+Strict ownership boundary:
+
+- owns AI orchestration, embeddings, retrieval, and vector-storage-facing logic
+- owns document-processing pipelines
+- does not own main dashboard analytics
+- collaborates with Member 3 for Study Chat integration and Member 5 for backend consistency
+
+Database ownership:
+
+- primary owner of AI-oriented tables and retrieval metadata
+- responsible for `documents` and `document_chunks` data contracts
+
+Main files:
+
+- [backend/app/agents/rag_agent.py](/e:/academic-intelligence-system/backend/app/agents/rag_agent.py)
+- [backend/app/api/study_materials.py](/e:/academic-intelligence-system/backend/app/api/study_materials.py)
+- [backend/app/services/embeddings_service.py](/e:/academic-intelligence-system/backend/app/services/embeddings_service.py)
+- [backend/app/api/chat.py](/e:/academic-intelligence-system/backend/app/api/chat.py)
+- [backend/app/models/chat_models.py](/e:/academic-intelligence-system/backend/app/models/chat_models.py)
+- [backend/requirements.txt](/e:/academic-intelligence-system/backend/requirements.txt)
+
+Expected deliverables:
+
+- working Study RAG pipeline
+- PDF/Markdown/TXT ingestion
+- retrieval filtered by course, user, and selected source
+
+---
+
+### Member 5: Academic Intelligence / Planner / Analytics / QA & Integration
+Primary role:
+
+- own academic planning and system-level integration
+- connect dashboard analytics with planner and recommendation logic
+- perform final integration testing and project readiness checks
+
+Main responsibilities:
+
+- dashboard backend metrics
+- advisor insights and analytics
+- profile freshness backend logic
+- planner, GPA, and timeline support
+- final QA across the full student journey
+- system contract verification between frontend and backend
+
+Strict ownership boundary:
+
+- owns APIs, analytics, and backend decision-support logic
+- owns integration-level validation
+- does not own pure frontend rendering
+- does not own the AI retrieval pipeline internals
+
+Database ownership:
+
+- co-owner of analytics-facing and planning-related database usage
+- owner of data consistency across dashboard, advisor, planner, and alert APIs
+
+Main files:
+
+- [frontend/src/app/api/dashboard/route.ts](/e:/academic-intelligence-system/frontend/src/app/api/dashboard/route.ts)
+- [frontend/src/app/api/advisor/route.ts](/e:/academic-intelligence-system/frontend/src/app/api/advisor/route.ts)
+- [frontend/src/app/api/profile-freshness/route.ts](/e:/academic-intelligence-system/frontend/src/app/api/profile-freshness/route.ts)
+- [frontend/src/app/(student)/dashboard/planner/page.tsx](/e:/academic-intelligence-system/frontend/src/app/(student)/dashboard/planner/page.tsx)
+- [frontend/src/app/(student)/dashboard/gpa/page.tsx](/e:/academic-intelligence-system/frontend/src/app/(student)/dashboard/gpa/page.tsx)
+- [frontend/src/app/(student)/dashboard/timeline/page.tsx](/e:/academic-intelligence-system/frontend/src/app/(student)/dashboard/timeline/page.tsx)
+- [frontend/src/lib/advisor.ts](/e:/academic-intelligence-system/frontend/src/lib/advisor.ts)
+- [docker-compose.yml](/e:/academic-intelligence-system/docker-compose.yml)
+
+Expected deliverables:
+
+- dashboard analytics and alerts
+- planner-related logic
+- testing checklist and final system stabilization
+
+---
+
+## Ownership Boundaries
+
+To avoid ambiguity, ownership must be enforced at both the feature level and the file level.
+
+### Fully Owned Areas
+
+- Member 1:
+  dashboard presentation and shared UI shell
+- Member 2:
+  onboarding, profile management, academic history validation
+- Member 3:
+  Study Chat frontend experience
+- Member 4:
+  AI retrieval, embeddings, chunking, and vector-based study intelligence
+- Member 5:
+  analytics APIs, planning logic, alerts backend, and integration QA
+
+### Shared Resources
+The following files or modules are shared and require coordination:
+
+- [frontend/src/components/Header.tsx](/e:/academic-intelligence-system/frontend/src/components/Header.tsx)
+- [frontend/src/components/Sidebar.tsx](/e:/academic-intelligence-system/frontend/src/components/Sidebar.tsx)
+- [backend/app/api/chat.py](/e:/academic-intelligence-system/backend/app/api/chat.py)
+- [backend/app/models/chat_models.py](/e:/academic-intelligence-system/backend/app/models/chat_models.py)
+- [docker-compose.yml](/e:/academic-intelligence-system/docker-compose.yml)
+
+### Shared Resource Rules
+
+- Member 1 controls shared UI structure and visual consistency
+- Member 4 controls AI-related contract changes in chat payloads
+- Member 5 controls integration consistency and API compatibility
+- Member 2 must approve any changes affecting profile or academic history semantics
+
+No shared file should be modified without:
+
+- notifying the owner
+- confirming impact scope
+- re-running validation after merge
+
+---
+
+## Suggested Ownership Model
+To avoid conflicts, each team member should have a main ownership area:
+
+- Member 1: shared UI shell and dashboard presentation
+- Member 2: profile and academic record CRUD
+- Member 3: student learning UX and Study Chat frontend
+- Member 4: backend AI, ingestion, retrieval, and chat integration
+- Member 5: planner/analytics/backend integration and QA
+
+Shared files should only be edited after coordination:
+
+- [frontend/src/components/Header.tsx](/e:/academic-intelligence-system/frontend/src/components/Header.tsx)
+- [frontend/src/components/Sidebar.tsx](/e:/academic-intelligence-system/frontend/src/components/Sidebar.tsx)
+- [backend/app/api/chat.py](/e:/academic-intelligence-system/backend/app/api/chat.py)
+- [backend/app/models/chat_models.py](/e:/academic-intelligence-system/backend/app/models/chat_models.py)
+- [docker-compose.yml](/e:/academic-intelligence-system/docker-compose.yml)
+
+---
+
+## Logging and Monitoring
+
+Although this is an academic project, basic operational observability is still required.
+
+### Backend Logging
+The backend should maintain structured or semi-structured logs for:
+
+- incoming API requests
+- authentication failures
+- file upload operations
+- study material processing steps
+- AI/RAG execution outcomes
+- unexpected exceptions

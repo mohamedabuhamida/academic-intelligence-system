@@ -36,9 +36,9 @@ At a business level, the system combines traditional academic information manage
 
 ---
 
-## Project Features
+## Current Implemented Features
 
-The Academic Intelligence System includes a set of integrated product features designed to support both day-to-day student operations and AI-assisted academic decision-making.
+The Academic Intelligence System currently includes a set of integrated product features designed to support both day-to-day student operations and AI-assisted academic decision-making.
 
 ### 1. Student Onboarding
 The onboarding module allows a student to initialize the system with their academic identity and history.
@@ -281,6 +281,251 @@ Business value:
 
 - creates a coherent academic intelligence platform
 - ensures features reinforce each other instead of operating independently
+
+---
+
+## Future Features and Planned Enhancements
+
+The following items represent the recommended next-stage roadmap for the Academic Intelligence System. These features are not only useful for future development, but also important to mention in graduation documentation to show the extensibility of the project.
+
+### 1. Doctor/Admin Upload for Official Course Materials
+Planned goal:
+
+- allow instructors or administrators to upload official course resources
+
+Expected value:
+
+- combine student-uploaded materials with trusted official sources
+- improve answer quality and course coverage
+- reduce dependence on student-side uploads only
+
+Potential scope:
+
+- role-based upload permissions
+- official source badge in Study Chat
+- separation between personal sources and institutional sources
+
+### 2. Advanced Semester Planner
+Planned goal:
+
+- expand the planner from a simple planning page into a semester decision engine
+
+Expected value:
+
+- recommend suitable next-semester course combinations
+- consider prerequisites, difficulty, and workload
+- support smarter academic scheduling
+
+Potential scope:
+
+- semester simulation
+- recommended course bundles
+- max/min credit load suggestions
+
+### 3. What-If Simulation Engine
+Planned goal:
+
+- allow the student to simulate academic decisions before committing to them
+
+Expected value:
+
+- answer questions such as:
+  - what happens if I take this course next term
+  - what if I delay this course
+  - what GPA do I need next semester
+
+Potential scope:
+
+- GPA impact simulation
+- graduation delay estimation
+- alternate semester path generation
+
+### 4. Course Recommendation Engine
+Planned goal:
+
+- generate AI-assisted course recommendations tailored to the student profile
+
+Expected value:
+
+- personalize course planning
+- identify better next steps based on performance and progress
+- improve the transition from dashboard insight to actual action
+
+Potential scope:
+
+- recommendation scoring
+- course suitability ranking
+- prerequisite-aware recommendations
+
+### 5. Risk Analysis and Early Warning Expansion
+Planned goal:
+
+- improve the system’s ability to detect academic risk earlier
+
+Expected value:
+
+- identify overload, poor progression, or GPA risk
+- alert students before academic problems become severe
+- support advisor-like intervention logic
+
+Potential scope:
+
+- academic risk score dashboard
+- delayed graduation warnings
+- high-difficulty semester detection
+
+### 6. Smarter Study Chat Memory and Saved Outputs
+Planned goal:
+
+- improve continuity and persistence inside Study Chat
+
+Expected value:
+
+- let students preserve summaries, flashcards, and generated quizzes
+- improve long-term study workflows across multiple sessions
+
+Potential scope:
+
+- saved notes per course
+- reusable flashcards
+- stored quiz history
+- pinned answers
+
+### 7. Richer Citation and Source Inspection
+Planned goal:
+
+- expand citations into a deeper evidence-viewing system
+
+Expected value:
+
+- improve explainability of AI responses
+- let students inspect why a response was generated
+
+Potential scope:
+
+- chunk-level preview panels
+- in-answer citation anchors
+- side-by-side response and source inspection
+
+### 8. Support for More File Types
+Planned goal:
+
+- expand study material support beyond PDF, Markdown, and TXT
+
+Expected value:
+
+- improve usability for real-world classroom content
+- support broader lecturer and student workflows
+
+Potential scope:
+
+- PPTX
+- DOCX
+- scanned document OCR
+- image-based lecture note support
+
+### 9. Notification Center and Action History
+Planned goal:
+
+- move notifications from simple alerts into a richer activity and action layer
+
+Expected value:
+
+- improve dashboard usefulness
+- give the student a record of what changed and what needs attention
+
+Potential scope:
+
+- read/unread alerts
+- grouped notifications
+- academic activity log
+
+### 10. Analytics for Study Behavior
+Planned goal:
+
+- extend the system from academic record analysis into study behavior analysis
+
+Expected value:
+
+- identify which courses need more attention
+- track interaction with uploaded study materials
+- support smarter prioritization of study effort
+
+Potential scope:
+
+- study frequency per course
+- source usage analytics
+- engagement metrics for Study Chat sessions
+
+### 11. Production Monitoring and Operational Readiness
+Planned goal:
+
+- move the platform toward production-grade reliability
+
+Expected value:
+
+- better debugging
+- better issue detection
+- improved maintainability after deployment
+
+Potential scope:
+
+- structured logs
+- tracing
+- performance monitoring
+- upload and AI failure alerts
+
+### 12. Role Expansion Beyond Students
+Planned goal:
+
+- support multiple user types in the future
+
+Expected value:
+
+- make the system usable by:
+  - students
+  - instructors
+  - coordinators
+  - academic advisors
+
+Potential scope:
+
+- separate dashboards by role
+- role-based permissions
+- advisor-facing student analytics
+
+### 13. Mobile and Accessibility Improvements
+Planned goal:
+
+- strengthen usability across devices and user needs
+
+Expected value:
+
+- improve adoption and real-world usability
+- make the platform more inclusive and reliable
+
+Potential scope:
+
+- mobile-first refinements
+- keyboard-friendly navigation
+- accessibility improvements for forms and chat
+
+### 14. Deployment and Real-World Release Readiness
+Planned goal:
+
+- prepare the project for deployment beyond local development
+
+Expected value:
+
+- move the system closer to a real production environment
+- support demonstration, pilot usage, or institutional adoption
+
+Potential scope:
+
+- deployment documentation
+- environment hardening
+- secret and config management
+- backup and rollback strategy
 
 ---
 

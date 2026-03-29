@@ -28,6 +28,8 @@ async def ask_chat(
                 course_id=request.course_id,
                 course_code=request.course_code,
                 course_name=request.course_name,
+                selected_document_ids=request.selected_document_ids,
+                study_mode=request.study_mode,
             )
             return {
                 "status": "success",

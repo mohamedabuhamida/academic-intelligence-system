@@ -36,7 +36,10 @@ class SupabaseVectorStoreCompat(SupabaseVectorStore):
         return [
             (
                 Document(
-                    metadata=search.get("metadata", {}),
+                    metadata={
+                        **(search.get("metadata", {}) or {}),
+                        "document_id": search.get("document_id"),
+                    },
                     page_content=search.get("content", ""),
                 ),
                 search.get("similarity", 0.0),
@@ -171,6 +174,8 @@ async def ask_study_assistant(
     course_id: str,
     course_code: str | None = None,
     course_name: str | None = None,
+    selected_document_ids: List[str] | None = None,
+    study_mode: str | None = None,
 ) -> str:
     try:
         llm = get_llm()
@@ -190,6 +195,10 @@ async def ask_study_assistant(
                 metadata.get("scope") == "study_material"
                 and str(metadata.get("uploaded_by")) == str(user_id)
                 and str(metadata.get("course_id")) == str(course_id)
+                and (
+                    not selected_document_ids
+                    or str(metadata.get("document_id")) in {str(item) for item in selected_document_ids}
+                )
             ):
                 docs.append(doc)
             if len(docs) >= 6:
@@ -205,6 +214,17 @@ async def ask_study_assistant(
         study_context = format_docs(docs)
         sources = format_doc_sources(docs)
         course_label = " - ".join(part for part in [course_code, course_name] if part) or course_id
+        mode = (study_mode or "chat").strip().lower()
+
+        mode_instruction_map = {
+            "summary": "Start with a concise structured summary, then list the key takeaways.",
+            "quiz": "Generate a short quiz from the materials with questions first, then provide a separate answer key.",
+            "flashcards": "Produce flashcards in a clear Q/A format covering the most important concepts.",
+            "expected_questions": "List the most likely exam or oral questions based on the uploaded materials and provide brief model answers.",
+            "study_plan": "Create a short practical study plan using the uploaded materials, ordered by priority and difficulty.",
+            "chat": "Answer naturally and helpfully based on the materials.",
+        }
+        mode_instruction = mode_instruction_map.get(mode, mode_instruction_map["chat"])
 
         final_prompt = f"""
 You are the "Study Materials Assistant" for a university academic platform.
@@ -222,12 +242,20 @@ STRICT RULES:
    - bullet summary
    - key takeaways
    - short quiz when requested
+5. Respect the requested study mode exactly.
 5. Final response must be in clear Arabic.
 6. End the answer with a short "المصادر المستخدمة" section using the provided source names when available.
 
 ----------------------------------------
 Selected Course:
 {course_label}
+
+----------------------------------------
+Requested Study Mode:
+{mode}
+
+Mode-specific Instruction:
+{mode_instruction}
 
 ----------------------------------------
 Retrieved Study Materials Context:

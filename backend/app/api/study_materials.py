@@ -10,6 +10,20 @@ from app.services.embeddings_service import ingest_study_material
 router = APIRouter()
 
 
+def extract_document_metadata(document_id: str) -> dict:
+    supabase = get_supabase()
+    response = (
+        supabase.table("document_chunks")
+        .select("metadata")
+        .eq("document_id", document_id)
+        .limit(1)
+        .execute()
+    )
+    rows = response.data or []
+    metadata = rows[0].get("metadata") if rows else None
+    return metadata if isinstance(metadata, dict) else {}
+
+
 def study_material_bucket() -> str:
     return os.getenv("SUPABASE_STUDY_MATERIALS_BUCKET", "study-materials")
 
@@ -81,6 +95,7 @@ def list_study_materials(
         {
             **document,
             "signed_url": build_signed_url(document.get("file_url")),
+            "metadata": extract_document_metadata(document.get("id")),
         }
         for document in documents
     ]
@@ -93,6 +108,10 @@ def upload_study_material(
     course_id: str = Form(...),
     course_code: str | None = Form(default=None),
     course_name: str | None = Form(default=None),
+    source_type: str | None = Form(default="lecture"),
+    topic: str | None = Form(default=None),
+    week: str | None = Form(default=None),
+    lecture_number: str | None = Form(default=None),
     file: UploadFile = File(...),
     current_user: AuthUser = Depends(get_current_user),
 ):
@@ -103,6 +122,10 @@ def upload_study_material(
             course_id=course_id,
             course_code=course_code,
             course_name=course_name,
+            source_type=source_type,
+            topic=topic,
+            week=week,
+            lecture_number=lecture_number,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

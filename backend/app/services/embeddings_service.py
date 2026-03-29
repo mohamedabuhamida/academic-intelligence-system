@@ -198,7 +198,17 @@ def extract_text_from_uploaded_bytes(file_bytes: bytes, filename: str) -> tuple[
     raise ValueError("Unsupported file type. Please upload PDF, Markdown, or TXT files.")
 
 
-def ingest_study_material(file, user_id: str, course_id: str, course_code: str | None, course_name: str | None):
+def ingest_study_material(
+    file,
+    user_id: str,
+    course_id: str,
+    course_code: str | None,
+    course_name: str | None,
+    source_type: str | None = None,
+    topic: str | None = None,
+    week: str | None = None,
+    lecture_number: str | None = None,
+):
     supabase = get_supabase()
     filename = file.filename or f"upload-{uuid.uuid4().hex}.txt"
     file_bytes = file.file.read()
@@ -228,6 +238,10 @@ def ingest_study_material(file, user_id: str, course_id: str, course_code: str |
         "course_id": course_id,
         "course_code": course_code,
         "course_name": course_name,
+        "source_type": source_type or "lecture",
+        "topic": topic,
+        "week": week,
+        "lecture_number": lecture_number,
         "document_title": filename,
         "file_name": filename,
     }

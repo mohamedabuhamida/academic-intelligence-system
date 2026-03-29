@@ -40,12 +40,26 @@ type StudyDocument = {
   file_url: string | null;
   signed_url?: string | null;
   uploaded_at: string | null;
+  metadata?: {
+    source_type?: string | null;
+    topic?: string | null;
+    week?: string | null;
+    lecture_number?: string | null;
+  } | null;
+};
+
+type StudyConversation = {
+  id: string;
+  title: string;
+  created_at: string;
+  message_count?: number;
 };
 
 type Message = {
   id: string;
   type: "user" | "ai";
   content: string;
+  timestamp?: string;
 };
 
 function termLabel(term: string | null | undefined) {
@@ -73,6 +87,29 @@ function extractSourceNames(content: string): string[] {
     .filter(Boolean);
 }
 
+function sourceTypeLabel(sourceType: string | null | undefined) {
+  if (sourceType === "lecture") return "Lecture";
+  if (sourceType === "section") return "Section";
+  if (sourceType === "notes") return "Notes";
+  if (sourceType === "assignment") return "Assignment";
+  if (sourceType === "exam") return "Exam";
+  return "Source";
+}
+
+function buildStudyConversationPrefix(courseId: string) {
+  return `study::${courseId}::`;
+}
+
+function buildStudyConversationTitle(course: StudyCourse, title: string) {
+  return `${buildStudyConversationPrefix(course.id)}${course.code}::${title}`;
+}
+
+function displayStudyConversationTitle(rawTitle: string, fallbackCourseCode?: string) {
+  if (!rawTitle.startsWith("study::")) return rawTitle;
+  const parts = rawTitle.split("::");
+  return parts[3] || parts[2] || fallbackCourseCode || "Study session";
+}
+
 export default function StudyChatPage() {
   const supabase = createClient();
   const backendUrl = getBackendUrl();
@@ -84,12 +121,21 @@ export default function StudyChatPage() {
   const [currentSemester, setCurrentSemester] = useState<SemesterInfo>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [documents, setDocuments] = useState<StudyDocument[]>([]);
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
+  const [uploadSourceType, setUploadSourceType] = useState("lecture");
+  const [uploadTopic, setUploadTopic] = useState("");
+  const [uploadWeek, setUploadWeek] = useState("");
+  const [uploadLectureNumber, setUploadLectureNumber] = useState("");
+  const [conversations, setConversations] = useState<StudyConversation[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [studyMode, setStudyMode] = useState<"chat" | "summary" | "quiz" | "flashcards" | "expected_questions" | "study_plan">("chat");
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
       type: "ai",
       content:
         "## Study Chat\nارفع محاضرات المادة أو ملفات المراجعة، ثم اسألني عنها مثل NotebookLM بشكل مبسط داخل نفس المقرر.",
+      timestamp: new Date().toLocaleTimeString(),
     },
   ]);
   const [input, setInput] = useState("");
@@ -141,6 +187,30 @@ export default function StudyChatPage() {
     [courses, selectedCourseId],
   );
 
+  const studyModes = useMemo(
+    () => [
+      { id: "chat", label: "Chat" },
+      { id: "summary", label: "Summary" },
+      { id: "quiz", label: "Quiz" },
+      { id: "flashcards", label: "Flashcards" },
+      { id: "expected_questions", label: "Expected Questions" },
+      { id: "study_plan", label: "Study Plan" },
+    ] as const,
+    [],
+  );
+
+  const welcomeMessage = useMemo(
+    () => ({
+      id: `welcome-${selectedCourseId || "study"}`,
+      type: "ai" as const,
+      content: selectedCourse
+        ? `## ${selectedCourse.code}\nهذه جلسة مذاكرة مستقلة للمادة **${selectedCourse.name}**. اختر المصادر التي تريد الاعتماد عليها ثم ابدأ بالسؤال أو اختر mode جاهز.`
+        : "## Study Chat\nاختر مادة أولًا لبدء جلسة مذاكرة مستقلة.",
+      timestamp: new Date().toLocaleTimeString(),
+    }),
+    [selectedCourse, selectedCourseId],
+  );
+
   useEffect(() => {
     async function loadDocuments() {
       if (!selectedCourse) {
@@ -163,6 +233,7 @@ export default function StudyChatPage() {
         }
 
         setDocuments(payload.documents ?? []);
+        setSelectedDocumentIds((payload.documents ?? []).map((item: StudyDocument) => item.id));
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load study materials");
       } finally {
@@ -172,6 +243,55 @@ export default function StudyChatPage() {
 
     void loadDocuments();
   }, [backendUrl, selectedCourse, supabase]);
+
+  useEffect(() => {
+    async function loadCourseConversations() {
+      if (!selectedCourse) {
+        setConversations([]);
+        setConversationId(null);
+        setMessages([welcomeMessage]);
+        return;
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      const prefix = `${buildStudyConversationPrefix(selectedCourse.id)}%`;
+      const { data: convs } = await supabase
+        .from("conversations")
+        .select(`
+          id,
+          title,
+          created_at,
+          messages(count)
+        `)
+        .eq("user_id", user.id)
+        .like("title", prefix)
+        .order("created_at", { ascending: false });
+
+      const mapped = ((convs as StudyConversation[]) ?? []).map((conv: any) => ({
+        id: String(conv.id),
+        title: String(conv.title),
+        created_at: String(conv.created_at),
+        message_count: Array.isArray(conv.messages) ? conv.messages[0]?.count : conv.message_count,
+      }));
+
+      setConversations(mapped);
+
+      if (mapped.length > 0) {
+        setConversationId(mapped[0].id);
+        await loadMessages(mapped[0].id);
+        return;
+      }
+
+      await createNewConversation(selectedCourse, user.id);
+    }
+
+    void loadCourseConversations();
+  }, [selectedCourse, supabase, welcomeMessage]);
 
   const quickPrompts = useMemo(() => {
     if (!selectedCourse) return [];
@@ -183,6 +303,53 @@ export default function StudyChatPage() {
       `استخرج أهم الأسئلة المتوقعة من محاضرات ${selectedCourse.name}`,
     ];
   }, [selectedCourse]);
+
+  async function createNewConversation(course: StudyCourse, userId: string) {
+    const { data: newConv } = await supabase
+      .from("conversations")
+      .insert([
+        {
+          user_id: userId,
+          title: buildStudyConversationTitle(course, "New study session"),
+          created_at: new Date().toISOString(),
+        },
+      ])
+      .select("id, title, created_at")
+      .single();
+
+    if (newConv) {
+      const conversation = {
+        id: String(newConv.id),
+        title: String(newConv.title),
+        created_at: String(newConv.created_at),
+        message_count: 0,
+      };
+      setConversationId(conversation.id);
+      setConversations((prev) => [conversation, ...prev]);
+      setMessages([welcomeMessage]);
+    }
+  }
+
+  async function loadMessages(convId: string) {
+    const { data: msgs } = await supabase
+      .from("messages")
+      .select("id, role, content, created_at")
+      .eq("conversation_id", convId)
+      .order("created_at", { ascending: true });
+
+    if (msgs && msgs.length > 0) {
+      setMessages(
+        msgs.map((msg: any) => ({
+          id: String(msg.id),
+          type: msg.role === "user" ? "user" : "ai",
+          content: String(msg.content ?? ""),
+          timestamp: new Date(msg.created_at).toLocaleTimeString(),
+        })),
+      );
+    } else {
+      setMessages([welcomeMessage]);
+    }
+  }
 
   async function getAccessToken(forceRefresh = false) {
     const nowInSeconds = Math.floor(Date.now() / 1000);
@@ -258,6 +425,66 @@ export default function StudyChatPage() {
     }
 
     setDocuments(payload.documents ?? []);
+    setSelectedDocumentIds((payload.documents ?? []).map((item: StudyDocument) => item.id));
+  }
+
+  async function handleNewStudySession() {
+    if (!selectedCourse) return;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    await createNewConversation(selectedCourse, user.id);
+  }
+
+  async function handleSelectConversation(convId: string) {
+    setConversationId(convId);
+    await loadMessages(convId);
+  }
+
+  async function handleDeleteConversation(convId: string) {
+    if (!confirm("Delete this study session for the selected course?")) {
+      return;
+    }
+
+    await supabase.from("messages").delete().eq("conversation_id", convId);
+    await supabase.from("conversations").delete().eq("id", convId);
+
+    const remaining = conversations.filter((item) => item.id !== convId);
+    setConversations(remaining);
+
+    if (convId === conversationId) {
+      if (remaining.length > 0) {
+        setConversationId(remaining[0].id);
+        await loadMessages(remaining[0].id);
+      } else if (selectedCourse) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          await createNewConversation(selectedCourse, user.id);
+        }
+      }
+    }
+  }
+
+  function toggleDocumentSelection(documentId: string) {
+    setSelectedDocumentIds((prev) =>
+      prev.includes(documentId)
+        ? prev.filter((item) => item !== documentId)
+        : [...prev, documentId],
+    );
+  }
+
+  function selectAllDocuments() {
+    setSelectedDocumentIds(documents.map((item) => item.id));
+  }
+
+  function clearDocumentSelection() {
+    setSelectedDocumentIds([]);
   }
 
   async function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
@@ -272,6 +499,16 @@ export default function StudyChatPage() {
       formData.append("course_id", selectedCourse.id);
       formData.append("course_code", selectedCourse.code);
       formData.append("course_name", selectedCourse.name);
+      formData.append("source_type", uploadSourceType);
+      if (uploadTopic.trim()) {
+        formData.append("topic", uploadTopic.trim());
+      }
+      if (uploadWeek.trim()) {
+        formData.append("week", uploadWeek.trim());
+      }
+      if (uploadLectureNumber.trim()) {
+        formData.append("lecture_number", uploadLectureNumber.trim());
+      }
       formData.append("file", file);
 
       const response = await authorizedFetch(`${backendUrl}/api/study-materials/upload`, {
@@ -300,6 +537,9 @@ export default function StudyChatPage() {
       if (uploadInputRef.current) {
         uploadInputRef.current.value = "";
       }
+      setUploadTopic("");
+      setUploadWeek("");
+      setUploadLectureNumber("");
     }
   }
 
@@ -327,13 +567,14 @@ export default function StudyChatPage() {
   }
 
   async function handleSend() {
-    if (!input.trim() || !selectedCourse || isSending) return;
+    if (!input.trim() || !selectedCourse || !conversationId || isSending) return;
 
     const question = input.trim();
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       type: "user",
       content: question,
+      timestamp: new Date().toLocaleTimeString(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -342,6 +583,32 @@ export default function StudyChatPage() {
     setError(null);
 
     try {
+      const { data: savedUserMsg } = await supabase
+        .from("messages")
+        .insert([
+          {
+            conversation_id: conversationId,
+            role: "user",
+            content: question,
+          },
+        ])
+        .select("id, created_at")
+        .single();
+
+      if (savedUserMsg) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === userMessage.id
+              ? {
+                  ...msg,
+                  id: String(savedUserMsg.id),
+                  timestamp: new Date(savedUserMsg.created_at).toLocaleTimeString(),
+                }
+              : msg,
+          ),
+        );
+      }
+
       const response = await authorizedFetch(`${backendUrl}/api/ask`, {
         method: "POST",
         headers: {
@@ -354,6 +621,9 @@ export default function StudyChatPage() {
           course_id: selectedCourse.id,
           course_code: selectedCourse.code,
           course_name: selectedCourse.name,
+          selected_document_ids: selectedDocumentIds.length > 0 ? selectedDocumentIds : null,
+          study_mode: studyMode,
+          conversation_id: conversationId,
         }),
       });
 
@@ -362,14 +632,54 @@ export default function StudyChatPage() {
         throw new Error(payload?.answer || payload?.detail || "Study chat request failed");
       }
 
+      const aiContent = String(payload?.answer ?? "No answer returned.");
+      const tempAiId = `ai-${Date.now()}`;
       setMessages((prev) => [
         ...prev,
         {
-          id: `ai-${Date.now()}`,
+          id: tempAiId,
           type: "ai",
-          content: String(payload?.answer ?? "No answer returned."),
+          content: aiContent,
+          timestamp: new Date().toLocaleTimeString(),
         },
       ]);
+
+      const { data: savedAiMsg } = await supabase
+        .from("messages")
+        .insert([
+          {
+            conversation_id: conversationId,
+            role: "ai",
+            content: aiContent,
+          },
+        ])
+        .select("id, created_at")
+        .single();
+
+      if (savedAiMsg) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === tempAiId
+              ? {
+                  ...msg,
+                  id: String(savedAiMsg.id),
+                  timestamp: new Date(savedAiMsg.created_at).toLocaleTimeString(),
+                }
+              : msg,
+          ),
+        );
+      }
+
+      if (messages.length <= 1) {
+        const nextTitle = buildStudyConversationTitle(
+          selectedCourse,
+          question.slice(0, 36) + (question.length > 36 ? "..." : ""),
+        );
+        await supabase.from("conversations").update({ title: nextTitle }).eq("id", conversationId);
+        setConversations((prev) =>
+          prev.map((conv) => (conv.id === conversationId ? { ...conv, title: nextTitle } : conv)),
+        );
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "حدث خطأ أثناء إرسال السؤال.";
       setError(message);
@@ -419,6 +729,70 @@ export default function StudyChatPage() {
 
       <section className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
         <aside className="space-y-6">
+          <div className="rounded-[24px] border border-[#DAC0A3]/30 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-[#102C57]">جلسات المادة</h2>
+                <p className="text-xs text-[#102C57]/55">كل مادة لها history مستقل وجلسات منفصلة.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void handleNewStudySession()}
+                disabled={!selectedCourse}
+                className="rounded-xl bg-[#102C57] px-3 py-2 text-xs font-semibold text-[#F8F0E5] disabled:opacity-50"
+              >
+                New Session
+              </button>
+            </div>
+
+            {conversations.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-[#DAC0A3]/35 bg-[#FCFAF7] px-4 py-4 text-sm text-[#102C57]/60">
+                لا توجد جلسات لهذه المادة بعد.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {conversations.map((conv) => {
+                  const active = conv.id === conversationId;
+                  return (
+                    <div
+                      key={conv.id}
+                      className={`flex items-center justify-between gap-2 rounded-2xl border px-3 py-3 ${
+                        active
+                          ? "border-[#102C57] bg-[#102C57] text-[#F8F0E5]"
+                          : "border-[#DAC0A3]/25 bg-[#FCFAF7] text-[#102C57]"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => void handleSelectConversation(conv.id)}
+                        className="min-w-0 flex-1 text-right"
+                      >
+                        <div className="truncate text-sm font-medium">
+                          {displayStudyConversationTitle(conv.title, selectedCourse?.code)}
+                        </div>
+                        <div className={`mt-1 text-[11px] ${active ? "text-[#F8F0E5]/70" : "text-[#102C57]/45"}`}>
+                          {new Date(conv.created_at).toLocaleDateString()} {conv.message_count ? `• ${conv.message_count} msgs` : ""}
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleDeleteConversation(conv.id)}
+                        className={`rounded-lg border p-2 ${
+                          active
+                            ? "border-white/20 bg-white/10 text-white"
+                            : "border-red-200 bg-white text-red-500"
+                        }`}
+                        title="Delete session"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           <div className="rounded-[24px] border border-[#DAC0A3]/30 bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <div>
@@ -495,6 +869,53 @@ export default function StudyChatPage() {
               onChange={handleUpload}
             />
 
+            <div className="mb-4 grid gap-3 md:grid-cols-2">
+              <label className="space-y-1">
+                <span className="text-[11px] font-medium text-[#102C57]/60">Source type</span>
+                <select
+                  value={uploadSourceType}
+                  onChange={(event) => setUploadSourceType(event.target.value)}
+                  className="w-full rounded-2xl border border-[#DAC0A3]/30 bg-[#FCFAF7] px-3 py-2 text-sm text-[#102C57] outline-none"
+                >
+                  <option value="lecture">Lecture</option>
+                  <option value="section">Section</option>
+                  <option value="notes">Notes</option>
+                  <option value="assignment">Assignment</option>
+                  <option value="exam">Exam</option>
+                </select>
+              </label>
+              <label className="space-y-1">
+                <span className="text-[11px] font-medium text-[#102C57]/60">Topic</span>
+                <input
+                  type="text"
+                  value={uploadTopic}
+                  onChange={(event) => setUploadTopic(event.target.value)}
+                  placeholder="Neural networks, DB basics..."
+                  className="w-full rounded-2xl border border-[#DAC0A3]/30 bg-[#FCFAF7] px-3 py-2 text-sm text-[#102C57] outline-none"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-[11px] font-medium text-[#102C57]/60">Week</span>
+                <input
+                  type="text"
+                  value={uploadWeek}
+                  onChange={(event) => setUploadWeek(event.target.value)}
+                  placeholder="Week 3"
+                  className="w-full rounded-2xl border border-[#DAC0A3]/30 bg-[#FCFAF7] px-3 py-2 text-sm text-[#102C57] outline-none"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-[11px] font-medium text-[#102C57]/60">Lecture no.</span>
+                <input
+                  type="text"
+                  value={uploadLectureNumber}
+                  onChange={(event) => setUploadLectureNumber(event.target.value)}
+                  placeholder="1"
+                  className="w-full rounded-2xl border border-[#DAC0A3]/30 bg-[#FCFAF7] px-3 py-2 text-sm text-[#102C57] outline-none"
+                />
+              </label>
+            </div>
+
             <button
               type="button"
               disabled={!selectedCourse || isUploading}
@@ -504,6 +925,28 @@ export default function StudyChatPage() {
               {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               <span>{isUploading ? "Uploading..." : "Upload lecture or notes"}</span>
             </button>
+
+            {documents.length > 0 ? (
+              <div className="mb-4 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={selectAllDocuments}
+                  className="rounded-full bg-[#F8F0E5] px-3 py-1 text-[11px] font-medium text-[#102C57]"
+                >
+                  Select all
+                </button>
+                <button
+                  type="button"
+                  onClick={clearDocumentSelection}
+                  className="rounded-full bg-[#F8F0E5] px-3 py-1 text-[11px] font-medium text-[#102C57]"
+                >
+                  Clear
+                </button>
+                <span className="text-[11px] text-[#102C57]/45">
+                  {selectedDocumentIds.length} selected
+                </span>
+              </div>
+            ) : null}
 
             {isLoadingDocuments ? (
               <div className="flex items-center gap-2 rounded-2xl bg-[#FCFAF7] px-4 py-4 text-sm text-[#102C57]/65">
@@ -523,6 +966,12 @@ export default function StudyChatPage() {
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 text-sm font-medium text-[#102C57]">
+                        <input
+                          type="checkbox"
+                          checked={selectedDocumentIds.includes(document.id)}
+                          onChange={() => toggleDocumentSelection(document.id)}
+                          className="h-4 w-4 rounded border-[#DAC0A3]"
+                        />
                         <FileText className="h-4 w-4 shrink-0" />
                         <span className="truncate">{document.title ?? "Untitled file"}</span>
                       </div>
@@ -531,6 +980,26 @@ export default function StudyChatPage() {
                           ? new Date(document.uploaded_at).toLocaleString()
                           : "Recently uploaded"}
                       </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <span className="rounded-full bg-[#F8F0E5] px-2.5 py-1 text-[10px] font-medium text-[#102C57]">
+                          {sourceTypeLabel(document.metadata?.source_type)}
+                        </span>
+                        {document.metadata?.lecture_number ? (
+                          <span className="rounded-full bg-[#F8F0E5] px-2.5 py-1 text-[10px] font-medium text-[#102C57]">
+                            Lecture {document.metadata.lecture_number}
+                          </span>
+                        ) : null}
+                        {document.metadata?.week ? (
+                          <span className="rounded-full bg-[#F8F0E5] px-2.5 py-1 text-[10px] font-medium text-[#102C57]">
+                            {document.metadata.week}
+                          </span>
+                        ) : null}
+                        {document.metadata?.topic ? (
+                          <span className="rounded-full bg-[#F8F0E5] px-2.5 py-1 text-[10px] font-medium text-[#102C57]">
+                            {document.metadata.topic}
+                          </span>
+                        ) : null}
+                      </div>
                       {document.signed_url ? (
                         <a
                           href={document.signed_url}
@@ -591,6 +1060,26 @@ export default function StudyChatPage() {
                 ))}
               </div>
             ) : null}
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {studyModes.map((mode) => {
+                const active = studyMode === mode.id;
+                return (
+                  <button
+                    key={mode.id}
+                    type="button"
+                    onClick={() => setStudyMode(mode.id)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                      active
+                        ? "bg-[#102C57] text-[#F8F0E5]"
+                        : "border border-[#DAC0A3]/30 bg-[#FCFAF7] text-[#102C57]"
+                    }`}
+                  >
+                    {mode.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">

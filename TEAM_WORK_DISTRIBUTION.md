@@ -583,6 +583,18 @@ Purpose:
 - split files into chunks for semantic retrieval
 - associate chunk metadata with course, uploader, topic, lecture number, and source type
 
+### Vector Storage Implementation
+
+The system uses `pgvector` extension inside PostgreSQL, via Supabase, to store and query embeddings.
+
+Each record in `document_chunks` includes:
+
+- chunk text
+- embedding vector
+- metadata such as `course_id`, `document_id`, `topic`, and related retrieval context
+
+Similarity search is performed using vector similarity operations such as cosine similarity or inner product, depending on the retrieval strategy configured at the application layer.
+
 #### 5. Chat and Session Continuity
 Main entities:
 
@@ -609,6 +621,44 @@ The relationships below describe the system at a conceptual level:
 - one `document` is split into many `document_chunks`
 - each `document_chunk` belongs to one `document`
 - each study `document` is logically associated with one course and one uploader
+
+## Database ER Diagram
+
+The following high-level ER-style diagram describes the most important project relationships:
+
+```text
+profiles
+  |
+  | 1-to-many
+  v
+student_courses ---- many-to-1 ---- courses
+  |
+  | many-to-1
+  v
+semesters
+
+profiles
+  |
+  | 1-to-many
+  v
+documents
+  |
+  | 1-to-many
+  v
+document_chunks
+
+profiles
+  |
+  | 1-to-many
+  v
+conversations
+  |
+  | 1-to-many
+  v
+messages
+```
+
+This diagram is intentionally simplified for documentation and presentation use. It highlights ownership and feature flow rather than low-level schema detail.
 
 ### Database Ownership and Management
 Database design and ownership should be explicit:

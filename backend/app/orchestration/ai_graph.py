@@ -8,7 +8,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import END, StateGraph
 
 from app.agents.planner_agent import ask_planner_agent
-from app.agents.rag_agent import ask_academic_mentor
+from app.agents.rag_agent import ask_academic_mentor, get_raw_rag_context
 from app.core.config import get_llm
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,23 @@ async def rag_node(state: AgentState):
 
 
 async def planner_node(state: AgentState):
-    response = await ask_planner_agent(state["question"], state["user_id"])
+    question = state["question"]
+    user_id = state["user_id"]
+
+    # --- THE MAGIC INJECTION (Phase 2) ---
+    # هنا هنسحب القوانين في صمت
+    rag_context = await get_raw_rag_context(question)
+    
+    # وهندمجها مع سؤال الطالب عشان الـ Planner ميهبدش في القوانين
+    enriched_question = f"""
+{question}
+
+[SYSTEM NOTE - OFFICIAL RULES PULLED FOR YOUR CONTEXT]:
+If the student is asking for a plan or hours limit, strictly follow these rules extracted from the handbook:
+{rag_context}
+"""
+
+    response = await ask_planner_agent(enriched_question, user_id)
     return {"answer": response}
 
 
@@ -38,10 +54,16 @@ async def router(state: AgentState):
         prompt = ChatPromptTemplate.from_template(
             """
 You are the central intelligent routing assistant for a university academic system.
-Classify the following user question into EXACTLY ONE of these categories:
+Your ONLY job is to route the user's question to the correct agent.
 
-- rag: general university rules/policies not tied to a specific student record.
-- planner: personal academic data, GPA, grades, registration, planning, risk, or personalized advice.
+CATEGORIES:
+1. 'rag': PURELY general university rules, policies, or definitions (e.g., "what are the withdrawal rules?", "how is GPA calculated?", "what are the AI department tracks?"). NO personal data involved.
+2. 'planner':
+   - Personal academic data (e.g., "what is my GPA?", "what did I get in CS101?").
+   - Course planning & risk evaluation (e.g., "plan my next semester", "is it risky to take 6 courses?").
+   - MIXED QUESTIONS (e.g., "based on my GPA, how many credits can I register for?", "am I allowed to graduate?").
+
+CRITICAL RULE: If the question mentions "my GPA", "my grades", "my registration", "I", "my", or requires looking up the student's personal database record, YOU MUST CHOOSE 'planner'.
 
 Question: {question}
 
@@ -62,16 +84,8 @@ Respond with exactly one word only: rag OR planner.
 
     q = question.lower()
     personal_keywords = [
-        "my",
-        "me",
-        "gpa",
-        "grade",
-        "grades",
-        "register",
-        "registration",
-        "courses i",
-        "plan",
-        "risk",
+        "my", "me", "gpa", "grade", "grades", "register", "registration",
+        "courses i", "plan", "risk", "cgpa", "سجل", "معدلي", "درجاتي", "موادي", "خطة"
     ]
     return "planner" if any(k in q for k in personal_keywords) else "rag"
 

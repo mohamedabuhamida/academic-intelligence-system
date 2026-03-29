@@ -133,3 +133,14 @@ Accurate Arabic Answer:
     except Exception as e:
         logger.error(f"Error in RAG Agent: {str(e)}")
         return "عذراً، حدث خطأ فني أثناء البحث في اللائحة. يرجى المحاولة مرة أخرى."
+
+# --- الإضافة السحرية الجديدة ---
+async def get_raw_rag_context(query: str) -> str:
+    """Helper function to fetch raw academic rules for the Planner Agent silently."""
+    try:
+        retriever, _ = get_rag_components()
+        docs = await asyncio.to_thread(retriever.invoke, query)
+        return format_docs(docs)
+    except Exception as e:
+        logger.error(f"Error fetching raw RAG context: {str(e)}")
+        return ""

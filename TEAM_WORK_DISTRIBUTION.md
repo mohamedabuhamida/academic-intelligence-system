@@ -357,7 +357,7 @@ Potential scope:
 - scanned document OCR
 - image-based lecture note support
 
-### 9. Notification Center and Action History
+### 5. Notification Center and Action History
 Planned goal:
 
 - move notifications from simple alerts into a richer activity and action layer
@@ -373,7 +373,7 @@ Potential scope:
 - grouped notifications
 - academic activity log
 
-### 10. Analytics for Study Behavior
+### 6. Analytics for Study Behavior
 Planned goal:
 
 - extend the system from academic record analysis into study behavior analysis

@@ -626,6 +626,59 @@ The relationships below describe the system at a conceptual level:
 
 The following high-level ER-style diagram describes the most important project relationships:
 
+### Mermaid ER Diagram
+
+```mermaid
+erDiagram
+
+PROFILES ||--o{ STUDENT_COURSES : has
+PROFILES ||--o{ DOCUMENTS : uploads
+PROFILES ||--o{ CONVERSATIONS : owns
+PROFILES ||--o{ GPA_HISTORY : tracks
+PROFILES ||--o{ SEMESTER_PLANS : plans
+PROFILES ||--o{ RISK_ANALYSIS : analyzed
+
+COURSES ||--o{ STUDENT_COURSES : enrolled_in
+COURSES ||--o{ COURSE_PREREQUISITES : has
+COURSES ||--o{ SEMESTER_PLAN_COURSES : included_in
+
+SEMESTERS ||--o{ STUDENT_COURSES : contains
+SEMESTERS ||--o{ GPA_HISTORY : records
+
+CONVERSATIONS ||--o{ MESSAGES : contains
+
+DOCUMENTS ||--o{ DOCUMENT_CHUNKS : split_into
+
+UNIVERSITIES ||--o{ PROFILES : has
+UNIVERSITIES ||--o{ FACULTIES : has
+
+FACULTIES ||--o{ PROGRAMS : has
+
+PROGRAMS ||--o{ COURSES : includes
+
+SEMESTER_PLANS ||--o{ SEMESTER_PLAN_COURSES : contains
+
+%% AI + Vector
+DOCUMENT_CHUNKS {
+    uuid id
+    text content
+    vector embedding
+}
+
+DOCUMENTS {
+    uuid id
+    uuid uploaded_by
+}
+
+MESSAGES {
+    uuid id
+    text role
+    text content
+}
+```
+
+### Simplified Text Diagram
+
 ```text
 profiles
   |

@@ -1094,7 +1094,7 @@ This division is designed to:
 
 - reduce overlap between team members
 - make accountability clear
-- simplify presentation of each person’s role
+- simplify presentation of each person's role
 - show both technical ownership and feature ownership
 
 If needed, this document can be converted into:

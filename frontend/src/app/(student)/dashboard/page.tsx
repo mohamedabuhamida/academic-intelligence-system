@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import {
   Brain,
   TrendingUp,
@@ -10,6 +11,7 @@ import {
   GraduationCap,
   Target,
   AlertTriangle,
+  BellRing,
 } from "lucide-react";
 
 import {
@@ -53,25 +55,44 @@ type AdvisorData = {
   insights?: AdvisorInsight[];
 };
 
+type DashboardAlert = {
+  id: string;
+  tone: "warning" | "info" | "success";
+  title: string;
+  message: string;
+  ctaLabel: string;
+  ctaHref: string;
+};
+
+type FreshnessData = {
+  alerts?: DashboardAlert[];
+};
+
 export default function DashboardOverview() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [advisorData, setAdvisorData] = useState<AdvisorData | null>(null);
+  const [freshnessData, setFreshnessData] = useState<FreshnessData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const [dashboardRes, advisorRes] = await Promise.all([
+        const [dashboardRes, advisorRes, freshnessRes] = await Promise.all([
           fetch("/api/dashboard", { cache: "no-store" }),
           fetch("/api/advisor", { cache: "no-store" }),
+          fetch("/api/profile-freshness", { cache: "no-store" }),
         ]);
 
         const dashboardJson = await dashboardRes.json();
         const advisorJson = await advisorRes.json();
+        const freshnessJson = await freshnessRes.json();
 
         setData(dashboardJson);
         if (advisorRes.ok) {
           setAdvisorData(advisorJson);
+        }
+        if (freshnessRes.ok) {
+          setFreshnessData(freshnessJson);
         }
       } catch (err) {
         console.error("Dashboard API error", err);
@@ -89,6 +110,8 @@ export default function DashboardOverview() {
 
   const academic = data?.academic;
   const advisorInsights = advisorData?.insights ?? [];
+  const profileAlerts = freshnessData?.alerts ?? [];
+  const primaryAlert = profileAlerts[0] ?? null;
 
   const stats = [
     {
@@ -146,6 +169,61 @@ export default function DashboardOverview() {
           Start AI Session
         </motion.button>
       </motion.div>
+
+      {profileAlerts.length > 0 ? (
+        <motion.section
+          variants={fadeInScale}
+          className="rounded-[2rem] border border-[#DAC0A3]/25 bg-gradient-to-r from-[#FFFDF9] to-[#F8F0E5] p-6 shadow-lg"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-[#102C57]/8 px-3 py-1 text-xs font-semibold text-[#102C57]">
+                <BellRing className="h-3.5 w-3.5" />
+                Profile freshness alerts
+              </div>
+              <h2 className="mt-3 text-xl font-semibold text-[#102C57]">
+                Keep your academic setup aligned with your current progress
+              </h2>
+              <p className="mt-1 text-sm text-[#102C57]/60">
+                These reminders help keep planning, Study Chat, and academic insights accurate.
+              </p>
+            </div>
+            {primaryAlert ? (
+              <Link
+                href={primaryAlert.ctaHref}
+                className="rounded-xl bg-[#102C57] px-4 py-2 text-sm font-medium text-[#F8F0E5]"
+              >
+                {primaryAlert.ctaLabel}
+              </Link>
+            ) : null}
+          </div>
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            {profileAlerts.map((alert) => {
+              const toneClasses =
+                alert.tone === "warning"
+                  ? "border-amber-200 bg-amber-50/80"
+                  : alert.tone === "success"
+                    ? "border-green-200 bg-green-50/80"
+                    : "border-blue-200 bg-blue-50/80";
+
+              return (
+                <div key={alert.id} className={`rounded-2xl border p-4 ${toneClasses}`}>
+                  <p className="text-sm font-semibold text-[#102C57]">{alert.title}</p>
+                  <p className="mt-2 text-sm leading-6 text-[#102C57]/75">{alert.message}</p>
+                  <Link
+                    href={alert.ctaHref}
+                    className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-[#102C57] underline underline-offset-4"
+                  >
+                    {alert.ctaLabel}
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        </motion.section>
+      ) : null}
 
       {/* Stats Grid */}
       <motion.div

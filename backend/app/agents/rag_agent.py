@@ -99,6 +99,49 @@ def build_study_sources(docs: List[Document]) -> List[Dict[str, Any]]:
     return sources
 
 
+def fetch_selected_document_chunks(
+    user_id: str,
+    course_id: str,
+    selected_document_ids: List[str],
+    limit: int = 6,
+) -> List[Document]:
+    if not selected_document_ids:
+        return []
+
+    supabase = get_supabase()
+    response = (
+        supabase.table("document_chunks")
+        .select("document_id, content, metadata")
+        .in_("document_id", [str(item) for item in selected_document_ids])
+        .limit(limit * 3)
+        .execute()
+    )
+
+    docs: List[Document] = []
+    for row in response.data or []:
+        metadata = row.get("metadata") or {}
+        if not isinstance(metadata, dict):
+            continue
+        if (
+            metadata.get("scope") == "study_material"
+            and str(metadata.get("uploaded_by")) == str(user_id)
+            and str(metadata.get("course_id")) == str(course_id)
+        ):
+            docs.append(
+                Document(
+                    metadata={
+                        **metadata,
+                        "document_id": row.get("document_id"),
+                    },
+                    page_content=row.get("content") or "",
+                )
+            )
+        if len(docs) >= limit:
+            break
+
+    return docs
+
+
 def get_vector_store():
     embeddings = get_embedding_model()
     supabase = get_supabase()
@@ -213,6 +256,23 @@ async def ask_study_assistant(
         llm = get_llm()
         vector_store = get_vector_store()
         embeddings = get_embedding_model()
+        allowed_document_ids = {str(item) for item in (selected_document_ids or [])}
+        allowed_document_titles: set[str] = set()
+
+        if selected_document_ids:
+            supabase = get_supabase()
+            selected_documents_response = (
+                supabase.table("documents")
+                .select("id, title")
+                .in_("id", list(allowed_document_ids))
+                .eq("uploaded_by", user_id)
+                .execute()
+            )
+            for item in selected_documents_response.data or []:
+                title = item.get("title")
+                if title:
+                    allowed_document_titles.add(str(title))
+
         query_vector = await asyncio.to_thread(embeddings.embed_query, query)
         raw_results = await asyncio.to_thread(
             vector_store.similarity_search_by_vector_with_relevance_scores,
@@ -223,18 +283,32 @@ async def ask_study_assistant(
         docs: List[Document] = []
         for doc, _score in raw_results:
             metadata = doc.metadata or {}
+            metadata_document_id = str(metadata.get("document_id") or "")
+            metadata_document_title = str(
+                metadata.get("document_title") or metadata.get("file_name") or ""
+            )
             if (
                 metadata.get("scope") == "study_material"
                 and str(metadata.get("uploaded_by")) == str(user_id)
                 and str(metadata.get("course_id")) == str(course_id)
                 and (
                     not selected_document_ids
-                    or str(metadata.get("document_id")) in {str(item) for item in selected_document_ids}
+                    or metadata_document_id in allowed_document_ids
+                    or metadata_document_title in allowed_document_titles
                 )
             ):
                 docs.append(doc)
             if len(docs) >= 6:
                 break
+
+        if not docs and selected_document_ids:
+            docs = await asyncio.to_thread(
+                fetch_selected_document_chunks,
+                user_id,
+                course_id,
+                selected_document_ids,
+                6,
+            )
 
         if not docs:
             return {

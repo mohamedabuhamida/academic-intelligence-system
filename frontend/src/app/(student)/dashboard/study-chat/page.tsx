@@ -55,11 +55,22 @@ type StudyConversation = {
   message_count?: number;
 };
 
+type StudySource = {
+  document_id?: string | null;
+  title: string;
+  excerpt?: string | null;
+  source_type?: string | null;
+  topic?: string | null;
+  week?: string | null;
+  lecture_number?: string | null;
+};
+
 type Message = {
   id: string;
   type: "user" | "ai";
   content: string;
   timestamp?: string;
+  sources?: StudySource[];
 };
 
 function termLabel(term: string | null | undefined) {
@@ -94,6 +105,32 @@ function sourceTypeLabel(sourceType: string | null | undefined) {
   if (sourceType === "assignment") return "Assignment";
   if (sourceType === "exam") return "Exam";
   return "Source";
+}
+
+function buildMessageSources(message: Message, documents: StudyDocument[]): Array<StudySource & { signed_url?: string | null }> {
+  if (message.sources && message.sources.length > 0) {
+    return message.sources.map((source) => {
+      const matchingDocument = documents.find((document) => document.id === source.document_id);
+      return {
+        ...source,
+        signed_url: matchingDocument?.signed_url ?? null,
+      };
+    });
+  }
+
+  const fallbackNames = extractSourceNames(message.content);
+  return documents
+    .filter((document) => fallbackNames.includes(document.title ?? ""))
+    .map((document) => ({
+      document_id: document.id,
+      title: document.title ?? "Untitled source",
+      excerpt: null,
+      source_type: document.metadata?.source_type,
+      topic: document.metadata?.topic,
+      week: document.metadata?.week,
+      lecture_number: document.metadata?.lecture_number,
+      signed_url: document.signed_url ?? null,
+    }));
 }
 
 function buildStudyConversationPrefix(courseId: string) {
@@ -633,6 +670,7 @@ export default function StudyChatPage() {
       }
 
       const aiContent = String(payload?.answer ?? "No answer returned.");
+      const aiSources = Array.isArray(payload?.sources) ? (payload.sources as StudySource[]) : [];
       const tempAiId = `ai-${Date.now()}`;
       setMessages((prev) => [
         ...prev,
@@ -641,6 +679,7 @@ export default function StudyChatPage() {
           type: "ai",
           content: aiContent,
           timestamp: new Date().toLocaleTimeString(),
+          sources: aiSources,
         },
       ]);
 
@@ -1086,11 +1125,7 @@ export default function StudyChatPage() {
             {messages.map((message) => {
               const dir = detectTextDirection(message.content);
               const isAi = message.type === "ai";
-              const linkedSources = isAi
-                ? documents.filter((document) =>
-                    extractSourceNames(message.content).includes(document.title ?? ""),
-                  )
-                : [];
+              const linkedSources = isAi ? buildMessageSources(message, documents) : [];
 
               return (
                 <div key={message.id} className={`flex ${isAi ? "justify-start" : "justify-end"}`}>
@@ -1107,21 +1142,58 @@ export default function StudyChatPage() {
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
                         </div>
                         {linkedSources.length > 0 ? (
-                          <div className="flex flex-wrap gap-2 border-t border-[#DAC0A3]/20 pt-3">
-                            {linkedSources.map((source) =>
-                              source.signed_url ? (
-                                <a
-                                  key={source.id}
-                                  href={source.signed_url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="inline-flex items-center gap-1 rounded-full bg-[#F8F0E5] px-3 py-1 text-xs font-medium text-[#102C57] hover:bg-[#efe3d2]"
+                          <div className="space-y-2 border-t border-[#DAC0A3]/20 pt-3">
+                            <div className="text-xs font-semibold text-[#102C57]/65">Sources</div>
+                            <div className="space-y-2">
+                              {linkedSources.map((source, index) => (
+                                <div
+                                  key={`${source.document_id ?? source.title}-${index}`}
+                                  className="rounded-2xl bg-[#F8F0E5] px-3 py-2 text-xs text-[#102C57]"
                                 >
-                                  <FileText className="h-3.5 w-3.5" />
-                                  <span>{source.title}</span>
-                                </a>
-                              ) : null,
-                            )}
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    {source.signed_url ? (
+                                      <a
+                                        href={source.signed_url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-1 font-semibold underline underline-offset-2"
+                                      >
+                                        <FileText className="h-3.5 w-3.5" />
+                                        <span>{source.title}</span>
+                                      </a>
+                                    ) : (
+                                      <div className="inline-flex items-center gap-1 font-semibold">
+                                        <FileText className="h-3.5 w-3.5" />
+                                        <span>{source.title}</span>
+                                      </div>
+                                    )}
+                                    {source.source_type ? (
+                                      <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-medium">
+                                        {sourceTypeLabel(source.source_type)}
+                                      </span>
+                                    ) : null}
+                                    {source.lecture_number ? (
+                                      <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-medium">
+                                        Lecture {source.lecture_number}
+                                      </span>
+                                    ) : null}
+                                    {source.week ? (
+                                      <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-medium">
+                                        {source.week}
+                                      </span>
+                                    ) : null}
+                                    {source.topic ? (
+                                      <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-medium">
+                                        {source.topic}
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                  {source.excerpt ? (
+                                    <p className="mt-2 leading-6 text-[#102C57]/75">{source.excerpt}</p>
+                                  ) : null}
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         ) : null}
                       </div>

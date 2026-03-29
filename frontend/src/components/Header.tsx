@@ -22,19 +22,39 @@ interface HeaderProps {
   isSidebarExpanded: boolean;
 }
 
+type HeaderAlert = {
+  id: string;
+  tone: "warning" | "info" | "success";
+  title: string;
+  message: string;
+  ctaLabel: string;
+  ctaHref: string;
+};
+
 export default function Header({ isSidebarExpanded }: HeaderProps) {
   const [user, setUser] = useState<any>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [alerts, setAlerts] = useState<HeaderAlert[]>([]);
   const supabase = createClient();
 
   useEffect(() => {
-    const getUser = async () => {
+    const loadHeaderData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
+
+      try {
+        const response = await fetch("/api/profile-freshness", { cache: "no-store" });
+        const payload = await response.json();
+        if (response.ok) {
+          setAlerts(payload.alerts ?? []);
+        }
+      } catch (error) {
+        console.error("Header alerts error", error);
+      }
     };
-    getUser();
+    loadHeaderData();
   }, []);
 
   const handleSignOut = async () => {
@@ -117,11 +137,13 @@ export default function Header({ isSidebarExpanded }: HeaderProps) {
               className="relative w-10 h-10 rounded-xl bg-[#F8F0E5] border border-[#DAC0A3]/20 flex items-center justify-center text-[#102C57] hover:border-[#102C57]/30 transition-all"
             >
               <Bell className="w-4 h-4" />
-              <motion.span 
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"
-              />
+              {alerts.length > 0 ? (
+                <motion.span 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"
+                />
+              ) : null}
             </motion.button>
 
             {/* Notifications Dropdown */}
@@ -136,29 +158,38 @@ export default function Header({ isSidebarExpanded }: HeaderProps) {
                   <h3 className="font-semibold text-[#102C57]">Notifications</h3>
                 </div>
                 <div className="max-h-96 overflow-y-auto">
-                  {[1, 2, 3].map((i) => (
-                    <motion.div
-                      key={i}
-                      whileHover={{ backgroundColor: '#F8F0E5' }}
-                      className="p-4 border-b border-[#DAC0A3]/10 cursor-pointer"
-                    >
-                      <div className="flex gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#102C57]/10 flex items-center justify-center">
-                          <Sparkles className="w-4 h-4 text-[#102C57]" />
+                  {alerts.length > 0 ? alerts.map((alert) => (
+                    <Link key={alert.id} href={alert.ctaHref} onClick={() => setShowNotifications(false)}>
+                      <motion.div
+                        whileHover={{ backgroundColor: '#F8F0E5' }}
+                        className="p-4 border-b border-[#DAC0A3]/10 cursor-pointer"
+                      >
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-[#102C57]/10 flex items-center justify-center">
+                            <Sparkles className="w-4 h-4 text-[#102C57]" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-[#102C57]">{alert.title}</p>
+                            <p className="text-xs text-[#102C57]/60">{alert.message}</p>
+                            <p className="text-xs text-[#102C57]/40 mt-1">{alert.ctaLabel}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-[#102C57]">AI Study Tip</p>
-                          <p className="text-xs text-[#102C57]/60">Your study efficiency improved by 15%</p>
-                          <p className="text-xs text-[#102C57]/40 mt-1">5 min ago</p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    </Link>
+                  )) : (
+                    <div className="p-4 text-sm text-[#102C57]/60">
+                      No new profile or semester alerts right now.
+                    </div>
+                  )}
                 </div>
                 <div className="p-3 text-center border-t border-[#DAC0A3]/20">
-                  <button className="text-sm text-[#102C57]/60 hover:text-[#102C57] transition-colors">
-                    View all notifications
-                  </button>
+                  <Link
+                    href="/dashboard/profile"
+                    onClick={() => setShowNotifications(false)}
+                    className="text-sm text-[#102C57]/60 hover:text-[#102C57] transition-colors"
+                  >
+                    Open academic profile
+                  </Link>
                 </div>
               </motion.div>
             )}

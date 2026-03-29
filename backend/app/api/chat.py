@@ -33,7 +33,8 @@ async def ask_chat(
             )
             return {
                 "status": "success",
-                "answer": response,
+                "answer": response.get("answer", ""),
+                "sources": response.get("sources", []),
             }
 
         question = request.question

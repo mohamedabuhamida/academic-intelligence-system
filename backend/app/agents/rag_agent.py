@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import List, Tuple, Optional, Dict
+from typing import Any, Dict, List, Optional, Tuple
 
 from langchain_core.documents import Document
 from langchain_community.vectorstores import SupabaseVectorStore
@@ -65,6 +65,38 @@ def format_doc_sources(docs: List[Document]) -> str:
         return ""
 
     return "\n".join(f"- {title}" for title in titles)
+
+
+def build_study_sources(docs: List[Document]) -> List[Dict[str, Any]]:
+    seen_keys: set[str] = set()
+    sources: List[Dict[str, Any]] = []
+
+    for doc in docs:
+        metadata = doc.metadata or {}
+        document_id = str(metadata.get("document_id") or "")
+        title = str(metadata.get("document_title") or metadata.get("file_name") or "Untitled source")
+        unique_key = document_id or title
+        if unique_key in seen_keys:
+            continue
+
+        seen_keys.add(unique_key)
+        excerpt = " ".join((doc.page_content or "").split())
+        if len(excerpt) > 220:
+            excerpt = f"{excerpt[:217].rstrip()}..."
+
+        sources.append(
+            {
+                "document_id": document_id or None,
+                "title": title,
+                "excerpt": excerpt or None,
+                "source_type": metadata.get("source_type"),
+                "topic": metadata.get("topic"),
+                "week": metadata.get("week"),
+                "lecture_number": metadata.get("lecture_number"),
+            }
+        )
+
+    return sources
 
 
 def get_vector_store():
@@ -176,7 +208,7 @@ async def ask_study_assistant(
     course_name: str | None = None,
     selected_document_ids: List[str] | None = None,
     study_mode: str | None = None,
-) -> str:
+) -> Dict[str, Any]:
     try:
         llm = get_llm()
         vector_store = get_vector_store()
@@ -205,14 +237,18 @@ async def ask_study_assistant(
                 break
 
         if not docs:
-            return (
-                "لم يتم العثور على مصادر مذاكرة مرفوعة لهذه المادة بعد.\n\n"
-                "- ارفع محاضرة أو ملخصًا أو ملف PDF للمادة أولًا.\n"
-                "- بعد ذلك اسأل عن الشرح أو التلخيص أو الاختبار."
-            )
+            return {
+                "answer": (
+                    "لم يتم العثور على مصادر مذاكرة مرفوعة لهذه المادة بعد.\n\n"
+                    "- ارفع محاضرة أو ملخصًا أو ملف PDF للمادة أولًا.\n"
+                    "- بعد ذلك اسأل عن الشرح أو التلخيص أو الاختبار."
+                ),
+                "sources": [],
+            }
 
         study_context = format_docs(docs)
         sources = format_doc_sources(docs)
+        structured_sources = build_study_sources(docs)
         course_label = " - ".join(part for part in [course_code, course_name] if part) or course_id
         mode = (study_mode or "chat").strip().lower()
 
@@ -282,7 +318,13 @@ Arabic Study Answer:
         await asyncio.to_thread(store_memory, user_id, "user", query)
         await asyncio.to_thread(store_memory, user_id, "ai", response_text)
 
-        return response_text
+        return {
+            "answer": response_text,
+            "sources": structured_sources,
+        }
     except Exception as e:
         logger.error(f"Error in Study RAG Agent: {str(e)}")
-        return "عذرًا، حدث خطأ أثناء البحث في ملفات المذاكرة. يرجى المحاولة مرة أخرى."
+        return {
+            "answer": "عذرًا، حدث خطأ أثناء البحث في ملفات المذاكرة. يرجى المحاولة مرة أخرى.",
+            "sources": [],
+        }

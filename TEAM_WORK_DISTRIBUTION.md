@@ -36,6 +36,254 @@ At a business level, the system combines traditional academic information manage
 
 ---
 
+## Project Features
+
+The Academic Intelligence System includes a set of integrated product features designed to support both day-to-day student operations and AI-assisted academic decision-making.
+
+### 1. Student Onboarding
+The onboarding module allows a student to initialize the system with their academic identity and history.
+
+Main capabilities:
+
+- enter personal and university information
+- define total required graduation hours
+- add semester-by-semester academic history
+- classify each course as completed, failed, current, or planned
+- validate duplicate course entries within the same semester
+
+Business value:
+
+- gives the system a reliable academic baseline
+- enables all downstream analytics and AI features
+
+### 2. Editable Academic Profile
+The profile module extends onboarding into a long-term academic record manager.
+
+Main capabilities:
+
+- edit personal information after initial setup
+- update academic history when a new semester starts
+- change course status from planned to current or completed
+- maintain a continuously accurate student profile
+
+Business value:
+
+- ensures the system stays useful after initial onboarding
+- keeps dashboard, Study Chat, and planner outputs current
+
+### 3. Dashboard Overview
+The dashboard gives the student a high-level academic snapshot.
+
+Main capabilities:
+
+- display CGPA
+- show active course count
+- show graduation progress
+- present recent academic activity
+- surface advisor insights and status summaries
+
+Business value:
+
+- gives students a fast understanding of their current standing
+- centralizes academic intelligence in one page
+
+### 4. Profile Freshness Alerts
+The system checks whether student data is current and actionable.
+
+Main capabilities:
+
+- detect missing profile fields
+- detect missing academic history
+- detect when a newer semester exists in the system
+- detect absence of current courses
+- suggest planning for the next term
+- warn about heavy current academic load
+
+Business value:
+
+- turns the dashboard into a proactive assistant
+- improves the quality of downstream AI recommendations
+
+### 5. General AI Academic Chat
+The platform provides an AI chat experience for academic guidance beyond a single course.
+
+Main capabilities:
+
+- answer academic and policy-related questions
+- support general academic guidance
+- connect to the backend AI orchestration layer
+- maintain conversation continuity through stored chat sessions
+
+Business value:
+
+- gives students a central AI assistant for academic support
+- reduces friction in navigating academic rules and general questions
+
+### 6. Study Chat
+Study Chat is the course-specific AI learning assistant in the platform.
+
+Main capabilities:
+
+- select one course from current-semester registered courses
+- create separate conversations per course
+- ask grounded questions only within the selected course context
+- choose one or multiple source documents before asking
+- receive citations under responses
+
+Business value:
+
+- transforms the system from a dashboard into an actual study companion
+- supports focused and explainable learning
+
+### 7. Study Material Upload and Library
+Students can upload course materials and build a reusable source library.
+
+Supported formats:
+
+- PDF
+- Markdown
+- TXT
+
+Main capabilities:
+
+- upload materials by course
+- store file metadata such as source type, topic, lecture number, and week
+- list, open, select, and delete uploaded materials
+- reuse uploaded files across course study sessions
+
+Business value:
+
+- creates a personalized knowledge base for each student and course
+- makes Study Chat grounded in actual lecture content
+
+### 8. Study Modes
+Study Chat supports several structured AI output modes.
+
+Main capabilities:
+
+- `Chat`
+- `Summary`
+- `Quiz`
+- `Flashcards`
+- `Expected Questions`
+- `Study Plan`
+
+Business value:
+
+- adapts one AI backend to multiple study workflows
+- improves usefulness for revision, active recall, and exam preparation
+
+### 9. Retrieval-Augmented Generation for Study Materials
+The system includes a full RAG pipeline for course-based studying.
+
+Main capabilities:
+
+- text extraction from uploaded files
+- chunking with metadata enrichment
+- embeddings generation
+- vector-based retrieval
+- filtered retrieval by course, user, and optionally selected documents
+- answer generation with source attribution
+
+Business value:
+
+- reduces hallucination risk
+- improves trust and academic usefulness of responses
+
+### 10. Dashboard Analytics and Advisor Insights
+The platform includes backend logic that converts academic data into insights.
+
+Main capabilities:
+
+- compute graduation progress
+- calculate completed and remaining credits
+- display course load context
+- show advisor insight cards based on current data
+- support future recommendation and risk analysis modules
+
+Business value:
+
+- supports informed student decision-making
+- bridges raw academic records and actionable guidance
+
+### 11. GPA and Progress Tracking
+The system supports academic performance tracking features.
+
+Main capabilities:
+
+- display cumulative GPA
+- calculate progress toward total required hours
+- expose graded-credit-based statistics
+- integrate GPA information into dashboard context
+
+Business value:
+
+- helps students monitor academic performance continuously
+- supports planning and early intervention
+
+### 12. Study Planner and Timeline Support
+The project includes planning-oriented modules to organize academic progress over time.
+
+Main capabilities:
+
+- planner page for term-level planning
+- timeline support for academic progress
+- preparation for next-semester decision support
+- integration with dashboard alerts and profile freshness logic
+
+Business value:
+
+- extends the system beyond reporting into planning
+- helps the student move from reactive to proactive academic management
+
+### 13. Authentication and Protected Routing
+The platform uses authenticated access control for student-specific data.
+
+Main capabilities:
+
+- authenticated user access with Supabase Auth
+- protected dashboard routes
+- secure backend token-based request handling
+- session refresh support in critical frontend flows
+
+Business value:
+
+- ensures each student only sees their own data
+- protects sensitive academic information
+
+### 14. File Storage and Citation Support
+Uploaded documents are stored and referenced back in the UI.
+
+Main capabilities:
+
+- store files in Supabase Storage
+- generate signed URLs for source access
+- show linked source cards in Study Chat answers
+- display short excerpts and metadata for retrieved sources
+
+Business value:
+
+- makes AI answers transparent and inspectable
+- improves confidence in system-generated outputs
+
+### 15. Multi-Module Integration
+A core feature of the project is that the modules are not isolated.
+
+Examples:
+
+- onboarding feeds profile and dashboard
+- profile data feeds Study Chat course selection
+- uploaded study materials feed Study Chat retrieval
+- profile freshness feeds dashboard alerts and notifications
+- dashboard analytics support planning and advisor logic
+
+Business value:
+
+- creates a coherent academic intelligence platform
+- ensures features reinforce each other instead of operating independently
+
+---
+
 ## System Architecture Overview
 
 The Academic Intelligence System is organized into five major architectural layers:

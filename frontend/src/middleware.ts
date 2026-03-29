@@ -27,46 +27,51 @@ export async function middleware(req: NextRequest) {
     }
   )
 
-  const { data: { session } } = await supabase.auth.getSession()
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+
+  const sessionUser = userError ? null : user
 
   const isProtectedRoute = req.nextUrl.pathname.startsWith('/dashboard')
   const isAuthRoute = pathname === '/login' || req.nextUrl.pathname.startsWith('/auth')
   const isOnboardingRoute = req.nextUrl.pathname.startsWith('/dashboard/onboarding')
   const isVerifyEmailRoute = req.nextUrl.pathname.startsWith('/auth/verify-email')
 
-  if (isProtectedRoute && !session) {
+  if (isProtectedRoute && !sessionUser) {
     const redirectUrl = new URL('/login', req.url)
     return NextResponse.redirect(redirectUrl)
   }
 
   let needsOnboarding = false
 
-  if (session) {
+  if (sessionUser) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('full_name,total_required_hours')
-      .eq('id', session.user.id)
+      .eq('id', sessionUser.id)
       .maybeSingle()
 
     const { count: studentCoursesCount } = await supabase
       .from('student_courses')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', session.user.id)
+      .eq('user_id', sessionUser.id)
 
     needsOnboarding = !profile?.full_name || !profile?.total_required_hours || !studentCoursesCount
   }
 
-  if (session && needsOnboarding && isProtectedRoute && !isOnboardingRoute) {
+  if (sessionUser && needsOnboarding && isProtectedRoute && !isOnboardingRoute) {
     const redirectUrl = new URL('/dashboard/onboarding', req.url)
     return NextResponse.redirect(redirectUrl)
   }
 
-  if (session && !needsOnboarding && isOnboardingRoute) {
+  if (sessionUser && !needsOnboarding && isOnboardingRoute) {
     const redirectUrl = new URL('/dashboard', req.url)
     return NextResponse.redirect(redirectUrl)
   }
 
-  if (isAuthRoute && session && !req.nextUrl.pathname.includes('callback') && !isVerifyEmailRoute) {
+  if (isAuthRoute && sessionUser && !req.nextUrl.pathname.includes('callback') && !isVerifyEmailRoute) {
     const redirectUrl = new URL(needsOnboarding ? '/dashboard/onboarding' : '/dashboard', req.url)
     return NextResponse.redirect(redirectUrl)
   }

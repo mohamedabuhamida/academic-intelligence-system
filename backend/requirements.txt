@@ -12,6 +12,7 @@ sentence-transformers
 markdown
 google-generativeai
 python-multipart
+pypdf
 sqlalchemy
 psycopg2-binary
 langgraph

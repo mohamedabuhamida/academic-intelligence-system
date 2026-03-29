@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import chat, embeddings
+from app.api import chat, embeddings, study_materials
 
 app = FastAPI(title="Academic AI Mentor API")
 
@@ -20,6 +20,7 @@ app.add_middleware(
 
 app.include_router(chat.router)
 app.include_router(embeddings.router)
+app.include_router(study_materials.router)
 
 
 @app.get("/")

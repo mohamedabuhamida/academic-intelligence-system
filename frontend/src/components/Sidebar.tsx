@@ -15,7 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   BookOpen,
-  Award,
+  User,
   Sparkles,
   HelpCircle,
 } from "lucide-react";
@@ -29,6 +29,7 @@ interface SidebarProps {
 const navItems = [
   { icon: Brain, label: "Overview", href: "/dashboard" },
   { icon: MessageSquare, label: "AI Chat", href: "/dashboard/chat" },
+  { icon: BookOpen, label: "Study Chat", href: "/dashboard/study-chat" },
   { icon: Calendar, label: "Study Planner", href: "/dashboard/planner" },
   { icon: TrendingUp, label: "GPA Calculator", href: "/dashboard/gpa" },
   { icon: CalendarRange, label: "Timeline", href: "/dashboard/timeline" },
@@ -36,6 +37,7 @@ const navItems = [
 ];
 
 const bottomItems = [
+  { icon: User, label: "Profile", href: "/dashboard/profile" },
   { icon: HelpCircle, label: "Help & Support", href: "/dashboard/support" },
   { icon: Settings, label: "Settings", href: "/dashboard/settings" },
 ];

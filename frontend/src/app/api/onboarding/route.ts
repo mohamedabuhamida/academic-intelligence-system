@@ -24,6 +24,10 @@ const gradePointsMap: Record<string, number> = {
   F: 0,
 };
 
+function buildHistoryKey(semesterId: string, courseId: string) {
+  return `${semesterId}::${courseId}`;
+}
+
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -110,6 +114,17 @@ export async function POST(request: Request) {
     if (!fullName || !department || !totalRequiredHours || academicHistory.length === 0) {
       return NextResponse.json(
         { error: "Please complete your profile details and add your academic history." },
+        { status: 400 },
+      );
+    }
+
+    const normalizedKeys = academicHistory.map((item) =>
+      buildHistoryKey(item.semesterId, item.courseId),
+    );
+
+    if (new Set(normalizedKeys).size !== normalizedKeys.length) {
+      return NextResponse.json(
+        { error: "Duplicate course detected in the same semester. Keep only one row per course per semester." },
         { status: 400 },
       );
     }

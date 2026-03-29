@@ -4,6 +4,7 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import Link from 'next/link';
 import { 
   Search, 
   Bell, 
@@ -197,17 +198,18 @@ export default function Header({ isSidebarExpanded }: HeaderProps) {
                 </div>
                 <div className="p-2">
                   {[
-                    { icon: User, label: 'Profile' },
-                    { icon: Settings, label: 'Settings' },
+                    { icon: User, label: 'Profile', href: '/dashboard/profile' },
+                    { icon: Settings, label: 'Settings', href: '/dashboard/settings' },
                   ].map((item) => (
-                    <motion.button
-                      key={item.label}
-                      whileHover={{ x: 4 }}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[#102C57]/60 hover:bg-[#F8F0E5] hover:text-[#102C57] transition-all"
-                    >
-                      <item.icon className="w-4 h-4" />
-                      <span className="text-sm">{item.label}</span>
-                    </motion.button>
+                    <Link key={item.label} href={item.href} onClick={() => setShowProfileMenu(false)}>
+                      <motion.div
+                        whileHover={{ x: 4 }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[#102C57]/60 hover:bg-[#F8F0E5] hover:text-[#102C57] transition-all"
+                      >
+                        <item.icon className="w-4 h-4" />
+                        <span className="text-sm">{item.label}</span>
+                      </motion.div>
+                    </Link>
                   ))}
                   <motion.button
                     whileHover={{ x: 4 }}

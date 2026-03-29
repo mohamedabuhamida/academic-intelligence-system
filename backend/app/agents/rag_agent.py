@@ -48,17 +48,36 @@ class SupabaseVectorStoreCompat(SupabaseVectorStore):
 def format_docs(docs: List[Document]) -> str:
     return "\n\n---\n\n".join(doc.page_content for doc in docs)
 
-def get_rag_components():
-    llm = get_llm()
+
+def format_doc_sources(docs: List[Document]) -> str:
+    titles: list[str] = []
+
+    for doc in docs:
+        metadata = doc.metadata or {}
+        title = metadata.get("document_title") or metadata.get("file_name") or "Untitled source"
+        if title not in titles:
+            titles.append(str(title))
+
+    if not titles:
+        return ""
+
+    return "\n".join(f"- {title}" for title in titles)
+
+
+def get_vector_store():
     embeddings = get_embedding_model()
     supabase = get_supabase()
 
-    vector_store = SupabaseVectorStoreCompat(
+    return SupabaseVectorStoreCompat(
         client=supabase,
         embedding=embeddings,
         table_name="document_chunks",
         query_name="match_documents",
     )
+
+def get_rag_components():
+    llm = get_llm()
+    vector_store = get_vector_store()
 
     retriever = vector_store.as_retriever(
         search_type="similarity",
@@ -144,3 +163,91 @@ async def get_raw_rag_context(query: str) -> str:
     except Exception as e:
         logger.error(f"Error fetching raw RAG context: {str(e)}")
         return ""
+
+
+async def ask_study_assistant(
+    query: str,
+    user_id: str,
+    course_id: str,
+    course_code: str | None = None,
+    course_name: str | None = None,
+) -> str:
+    try:
+        llm = get_llm()
+        vector_store = get_vector_store()
+        retriever = vector_store.as_retriever(
+            search_type="similarity",
+            search_kwargs={
+                "k": 6,
+                "filter": {
+                    "scope": "study_material",
+                    "uploaded_by": user_id,
+                    "course_id": course_id,
+                },
+            },
+        )
+
+        docs = await asyncio.to_thread(retriever.invoke, query)
+        if not docs:
+            return (
+                "لم يتم العثور على مصادر مذاكرة مرفوعة لهذه المادة بعد.\n\n"
+                "- ارفع محاضرة أو ملخصًا أو ملف PDF للمادة أولًا.\n"
+                "- بعد ذلك اسأل عن الشرح أو التلخيص أو الاختبار."
+            )
+
+        study_context = format_docs(docs)
+        sources = format_doc_sources(docs)
+        course_label = " - ".join(part for part in [course_code, course_name] if part) or course_id
+
+        final_prompt = f"""
+You are the "Study Materials Assistant" for a university academic platform.
+
+YOUR ROLE:
+- Answer the student's question using ONLY the retrieved study materials for the selected course.
+- Behave like a focused study notebook assistant similar to NotebookLM.
+
+STRICT RULES:
+1. Ground every explanation in the retrieved study materials.
+2. If the materials do not contain enough information, say so clearly and ask the student to upload more lectures or notes.
+3. Keep the answer focused on the selected course only: {course_label}.
+4. Prefer helpful study outputs such as:
+   - concise explanation
+   - bullet summary
+   - key takeaways
+   - short quiz when requested
+5. Final response must be in clear Arabic.
+6. End the answer with a short "المصادر المستخدمة" section using the provided source names when available.
+
+----------------------------------------
+Selected Course:
+{course_label}
+
+----------------------------------------
+Retrieved Study Materials Context:
+{study_context}
+
+----------------------------------------
+Student Question:
+{query}
+
+----------------------------------------
+Available Source Names:
+{sources or "- No source names available"}
+
+----------------------------------------
+Arabic Study Answer:
+"""
+
+        response = await llm.ainvoke(final_prompt)
+        response_text = normalize_text(response).strip()
+
+        if sources:
+            response_text = f"{response_text}\n\nالمصادر المستخدمة:\n{sources}"
+
+        await asyncio.to_thread(store_memory, user_id, "user", query)
+        await asyncio.to_thread(store_memory, user_id, "ai", response_text)
+
+        return response_text
+    except Exception as e:
+        logger.error(f"Error in Study RAG Agent: {str(e)}")
+        return "عذرًا، حدث خطأ أثناء البحث في ملفات المذاكرة. يرجى المحاولة مرة أخرى."

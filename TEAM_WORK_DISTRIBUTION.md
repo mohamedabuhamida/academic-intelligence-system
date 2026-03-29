@@ -15,6 +15,19 @@ You can replace `Member 1` to `Member 5` with the actual team names before submi
 
 ---
 
+## Tech Stack Summary
+
+| Layer | Technology |
+|------|-----------|
+| Frontend | Next.js (React) |
+| Backend | FastAPI |
+| Database | Supabase (PostgreSQL) |
+| Vector Search | pgvector |
+| Storage | Supabase Storage |
+| AI | RAG + Embeddings + LLM |
+
+---
+
 ## Project Overview
 The project is an academic intelligence platform that helps students with:
 
@@ -476,6 +489,18 @@ The standard request path is:
 For AI study interactions, the flow becomes:
 
 `User -> Study Chat UI -> Chat API -> Retrieval + Embeddings + LLM -> Database/Vector Chunks -> Answer with citations -> Frontend`
+
+---
+
+## Authentication Flow
+
+- user logs in via Supabase Auth
+- access token is stored on frontend
+- token is attached to every API request
+- backend validates token and extracts `user_id`
+- all queries are scoped to the authenticated user
+
+This authentication model is important because the platform operates on highly user-specific academic data, including profile details, academic history, uploaded study material, and personalized chat sessions.
 
 ---
 

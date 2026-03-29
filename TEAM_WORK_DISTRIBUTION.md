@@ -396,3 +396,261 @@ Response format:
   ]
 }
 ```
+
+Error format:
+
+```json
+{
+  "status": "error",
+  "answer": "Temporary internal error."
+}
+```
+
+---
+
+### 4. `/api/study/courses`
+
+#### GET
+Purpose:
+
+- load the student’s currently active courses for the Study Chat page
+
+Response format:
+
+```json
+{
+  "currentSemester": {
+    "id": "uuid",
+    "name": "Level 3",
+    "term": "spring",
+    "academic_year": "2025/2026"
+  },
+  "courses": [
+    {
+      "id": "uuid",
+      "code": "AI225",
+      "name": "Processing Formal and Natural Languages",
+      "creditHours": 3,
+      "difficultyLevel": 3,
+      "semesterId": "uuid"
+    }
+  ]
+}
+```
+
+---
+
+### 5. `/api/profile-freshness`
+
+#### GET
+Purpose:
+
+- evaluate whether the student profile and academic state are up to date
+- return dashboard alerts and notification items
+
+Response format:
+
+```json
+{
+  "summary": {
+    "missingProfileFields": [],
+    "hasAcademicHistory": true,
+    "activeCourses": 6,
+    "currentCredits": 18,
+    "latestUserSemester": {
+      "id": "uuid",
+      "name": "Level 3",
+      "term": "spring",
+      "academic_year": "2025/2026"
+    },
+    "latestSystemSemester": {
+      "id": "uuid",
+      "name": "Level 4",
+      "term": "fall",
+      "academic_year": "2026/2027"
+    }
+  },
+  "alerts": [
+    {
+      "id": "new-semester-available",
+      "tone": "info",
+      "title": "A newer semester is available",
+      "message": "The latest semester in the system is newer than your recorded semester.",
+      "ctaLabel": "Refresh profile",
+      "ctaHref": "/dashboard/profile"
+    }
+  ]
+}
+```
+
+---
+
+## Data Flow for Study Chat
+
+Study Chat is one of the most critical features in the system. The flow below describes how a study source becomes a grounded AI response.
+
+### Step 1. Student Selects a Course
+The student opens Study Chat and selects one of the courses currently marked as `current` in their academic record.
+
+Frontend role:
+
+- display available current-semester courses
+- create a per-course session context
+- show the relevant study library for the selected course
+
+### Step 2. Student Uploads Study Material
+The student uploads:
+
+- PDF
+- Markdown
+- TXT
+
+The upload is associated with:
+
+- student ID
+- course ID
+- source metadata such as source type, topic, week, and lecture number
+
+### Step 3. Backend Receives the File
+The backend validates the request, stores the file in Supabase Storage, and creates a document record.
+
+Backend actions:
+
+- validate uploader identity
+- store original file in storage bucket
+- create a `documents` record
+- prepare the file for text extraction
+
+### Step 4. Text Extraction and Chunking
+The backend extracts readable text from the file and splits it into chunks.
+
+Processing includes:
+
+- text extraction from PDF or plain text files
+- normalization and cleanup
+- chunking with overlap
+- metadata enrichment per chunk
+
+### Step 5. Embeddings Generation
+Each chunk is passed through the embedding model.
+
+Result:
+
+- a semantic vector representation is generated
+- the chunk plus embedding is stored in `document_chunks`
+
+This forms the vector-searchable knowledge base for Study Chat.
+
+### Step 6. Student Asks a Question
+The student submits a question in Study Chat, optionally with:
+
+- selected file filters
+- a study mode such as summary or quiz
+- a conversation/session context
+
+### Step 7. Retrieval Happens
+The backend:
+
+- embeds the student question
+- queries the vector store
+- filters by course and uploader
+- optionally filters by selected document IDs
+- falls back to direct chunk retrieval when vector filtering returns no valid chunk for the chosen source set
+
+### Step 8. LLM Generates the Answer
+The retrieved chunks are assembled into a grounded prompt.
+
+The LLM then produces:
+
+- an answer in Arabic
+- mode-specific formatting
+- source citations with metadata
+
+### Step 9. Frontend Displays the Response
+The frontend renders:
+
+- the answer body
+- source cards
+- file links
+- short excerpts from the retrieved material
+
+This ensures the answer is explainable and traceable to uploaded study materials.
+
+---
+
+## Team Structure
+
+### Member 1: Frontend Lead / Dashboard & User Experience
+Primary role:
+
+- own the main student dashboard experience
+- connect API data to UI cards, alerts, and overview widgets
+- maintain shared UX consistency across pages
+
+Main responsibilities:
+
+- dashboard overview page
+- top navigation and header interactions
+- sidebar navigation and page discoverability
+- alert presentation and profile freshness banners
+- overall visual consistency and interaction polish
+
+Strict ownership boundary:
+
+- UI only
+- no backend business logic ownership
+- no AI retrieval ownership
+- no persistence or analytics calculation ownership
+
+Main files:
+
+- [frontend/src/app/(student)/dashboard/page.tsx](/e:/academic-intelligence-system/frontend/src/app/(student)/dashboard/page.tsx)
+- [frontend/src/components/Header.tsx](/e:/academic-intelligence-system/frontend/src/components/Header.tsx)
+- [frontend/src/components/Sidebar.tsx](/e:/academic-intelligence-system/frontend/src/components/Sidebar.tsx)
+- [frontend/src/components/Loading.tsx](/e:/academic-intelligence-system/frontend/src/components/Loading.tsx)
+- [frontend/src/components/animations.tsx](/e:/academic-intelligence-system/frontend/src/components/animations.tsx)
+
+Expected deliverables:
+
+- polished dashboard UI
+- connected notification and freshness alerts
+- navigation consistency between major student pages
+
+---
+
+### Member 2: Academic Profile / Onboarding / Student Data Management
+Primary role:
+
+- manage student identity and academic record entry
+- maintain correctness of onboarding and editable profile flows
+- ensure semester and course history are stored consistently
+
+Main responsibilities:
+
+- onboarding flow
+- editable academic profile
+- academic history table
+- validation for duplicate course entries per semester
+- student course data submission and retrieval
+- profile data correctness in relation to the database schema
+
+Database ownership:
+
+- primary owner of profile-related and student academic record data structures
+- co-owner of schema decisions involving `profiles` and `student_courses`
+
+Main files:
+
+- [frontend/src/components/AcademicProfileEditor.tsx](/e:/academic-intelligence-system/frontend/src/components/AcademicProfileEditor.tsx)
+- [frontend/src/app/(student)/dashboard/onboarding/page.tsx](/e:/academic-intelligence-system/frontend/src/app/(student)/dashboard/onboarding/page.tsx)
+- [frontend/src/app/(student)/dashboard/profile/page.tsx](/e:/academic-intelligence-system/frontend/src/app/(student)/dashboard/profile/page.tsx)
+- [frontend/src/app/api/onboarding/route.ts](/e:/academic-intelligence-system/frontend/src/app/api/onboarding/route.ts)
+- [frontend/src/middleware.ts](/e:/academic-intelligence-system/frontend/src/middleware.ts)
+
+Expected deliverables:
+
+- onboarding and profile management flow
+- correct academic history validation
+- secure user loading and protected routing support
+
+---

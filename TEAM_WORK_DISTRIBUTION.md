@@ -1009,6 +1009,38 @@ The frontend renders:
 
 This ensures the answer is explainable and traceable to uploaded study materials.
 
+## Study Chat Sequence Diagram
+
+The end-to-end Study Chat request path can be represented as the following simplified sequence:
+
+```text
+User
+  -> Frontend
+  -> Backend
+  -> Embeddings
+  -> Vector DB
+  -> LLM
+  -> Response
+  -> Frontend
+  -> User
+```
+
+Expanded interaction flow:
+
+```text
+User
+  -> Study Chat UI
+  -> Chat API
+  -> Query Embedding Generation
+  -> pgvector / document_chunks retrieval
+  -> Prompt Assembly
+  -> LLM Inference
+  -> Structured Answer + Sources
+  -> Frontend Rendering
+```
+
+This sequence is useful for presentations because it clearly shows that Study Chat is not a direct LLM call; it is a grounded retrieval pipeline.
+
 ---
 
 ## Team Structure

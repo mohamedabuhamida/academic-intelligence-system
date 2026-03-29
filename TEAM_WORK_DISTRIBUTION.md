@@ -322,42 +322,7 @@ Potential scope:
 - recommended course bundles
 - max/min credit load suggestions
 
-### 3. What-If Simulation Engine
-Planned goal:
-
-- allow the student to simulate academic decisions before committing to them
-
-Expected value:
-
-- answer questions such as:
-  - what happens if I take this course next term
-  - what if I delay this course
-  - what GPA do I need next semester
-
-Potential scope:
-
-- GPA impact simulation
-- graduation delay estimation
-- alternate semester path generation
-
-### 4. Course Recommendation Engine
-Planned goal:
-
-- generate AI-assisted course recommendations tailored to the student profile
-
-Expected value:
-
-- personalize course planning
-- identify better next steps based on performance and progress
-- improve the transition from dashboard insight to actual action
-
-Potential scope:
-
-- recommendation scoring
-- course suitability ranking
-- prerequisite-aware recommendations
-
-### 5. Risk Analysis and Early Warning Expansion
+### 3. Risk Analysis and Early Warning Expansion
 Planned goal:
 
 - improve the system’s ability to detect academic risk earlier

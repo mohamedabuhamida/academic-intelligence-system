@@ -339,40 +339,8 @@ Potential scope:
 - delayed graduation warnings
 - high-difficulty semester detection
 
-### 6. Smarter Study Chat Memory and Saved Outputs
-Planned goal:
 
-- improve continuity and persistence inside Study Chat
-
-Expected value:
-
-- let students preserve summaries, flashcards, and generated quizzes
-- improve long-term study workflows across multiple sessions
-
-Potential scope:
-
-- saved notes per course
-- reusable flashcards
-- stored quiz history
-- pinned answers
-
-### 7. Richer Citation and Source Inspection
-Planned goal:
-
-- expand citations into a deeper evidence-viewing system
-
-Expected value:
-
-- improve explainability of AI responses
-- let students inspect why a response was generated
-
-Potential scope:
-
-- chunk-level preview panels
-- in-answer citation anchors
-- side-by-side response and source inspection
-
-### 8. Support for More File Types
+### 4. Support for More File Types
 Planned goal:
 
 - expand study material support beyond PDF, Markdown, and TXT

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from app.models.chat_models import ChatRequest
 from app.orchestration.ai_graph import run_ai_graph
 from app.core.auth import AuthUser, get_current_user
+from app.agents.rag_agent import ask_study_assistant
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -14,6 +15,25 @@ async def ask_chat(
     current_user: AuthUser = Depends(get_current_user),
 ):
     try:
+        if request.context_mode == "study":
+            if not request.course_id:
+                return {
+                    "status": "error",
+                    "answer": "يرجى اختيار المادة أولًا قبل بدء شات المذاكرة.",
+                }
+
+            response = await ask_study_assistant(
+                query=request.question,
+                user_id=current_user.user_id,
+                course_id=request.course_id,
+                course_code=request.course_code,
+                course_name=request.course_name,
+            )
+            return {
+                "status": "success",
+                "answer": response,
+            }
+
         question = request.question
 
         if request.context_mode == "study" and (request.course_code or request.course_name):

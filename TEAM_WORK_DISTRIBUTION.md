@@ -860,3 +860,246 @@ The backend should maintain structured or semi-structured logs for:
 - study material processing steps
 - AI/RAG execution outcomes
 - unexpected exceptions
+
+Typical logging targets:
+
+- request path
+- request method
+- user ID when available
+- endpoint success or failure
+- processing duration for file ingestion or chat retrieval
+
+### Error Handling Strategy
+The error handling policy should be:
+
+- validate early at the API boundary
+- return safe, user-friendly messages to the frontend
+- log the technical exception details on the backend
+- avoid exposing internal stack traces to end users
+
+Examples:
+
+- invalid onboarding payload -> return validation error
+- unauthorized request -> return `401`
+- failed file extraction -> return safe upload failure message
+- AI retrieval exception -> return fallback response and log backend details
+
+### AI Debug Logging
+For Study Chat and AI responses, optional debug logs should include:
+
+- selected course ID
+- selected document IDs
+- retrieval source count
+- fallback usage when vector search fails
+- timing for embeddings and retrieval stages
+
+These logs should be used for:
+
+- debugging empty-answer cases
+- diagnosing AI grounding issues
+- validating the citation pipeline
+
+### Monitoring Recommendations
+For a real production version, the following should be added:
+
+- request tracing
+- centralized logs
+- error-rate dashboards
+- alerting on failed uploads or failed AI requests
+
+---
+
+## Risks and Challenges
+
+The following risks are important from both engineering and delivery perspectives:
+
+### 1. API Integration Conflicts
+Risk:
+
+- frontend and backend payloads may diverge over time
+
+Impact:
+
+- broken forms
+- invalid AI requests
+- dashboard sections failing silently
+
+Mitigation:
+
+- document API contracts clearly
+- assign ownership to Member 5 for integration validation
+- retest shared contracts after changes
+
+### 2. Inconsistent Data Between Frontend and Backend
+Risk:
+
+- frontend assumptions may not match database state
+
+Examples:
+
+- no current courses despite academic history existing
+- new semester alerts appearing unexpectedly
+- duplicate semester and course combinations
+
+Mitigation:
+
+- stronger backend validation
+- explicit data freshness checks
+- profile and academic history normalization
+
+### 3. AI Hallucination or Ungrounded Answers
+Risk:
+
+- LLM may generate unsupported answers if retrieval is weak
+
+Impact:
+
+- incorrect academic guidance
+- poor trust in Study Chat
+
+Mitigation:
+
+- strict RAG prompting
+- source-only grounding
+- visible citations and excerpts
+- logging fallback cases
+
+### 4. Large File Processing Delays
+Risk:
+
+- large PDFs may slow extraction, chunking, or embeddings generation
+
+Impact:
+
+- delayed uploads
+- timeouts
+- poor user experience
+
+Mitigation:
+
+- chunking strategy with limits
+- file-size restrictions if required
+- progress feedback in frontend
+
+### 5. Shared File Merge Conflicts
+Risk:
+
+- common files such as chat models, header, sidebar, and shared APIs may become merge hotspots
+
+Mitigation:
+
+- strict ownership rules
+- branch-based workflow
+- coordination before editing shared files
+
+### 6. Authentication and Session Reliability
+Risk:
+
+- stale or invalid sessions may affect protected pages or backend requests
+
+Mitigation:
+
+- authenticated user retrieval from trusted auth calls
+- token refresh handling on the frontend
+- consistent protected-route middleware
+
+---
+
+## Recommended Workflow
+
+### Branching
+- each member should work on a separate branch
+- merge only after local verification
+- shared files should be merged carefully and reviewed by the owner
+
+### Minimum verification before merge
+- frontend changes: run `npx tsc --noEmit`
+- backend changes: run Python syntax checks or app startup checks
+- feature changes: test the relevant end-to-end flow manually
+
+### Coordination meetings
+- short sync every day or every 2 days
+- confirm integration blockers early
+- track which files are shared versus owned
+
+### Suggested merge gate
+Before merging any feature:
+
+- verify API contract compatibility
+- verify ownership impact
+- run targeted local testing
+- record what files changed and why
+
+---
+
+## Suggested Submission Narrative
+If you need to explain the team effort in a report or presentation, you can use this structure:
+
+### Member 1
+- designed and integrated the dashboard experience
+- improved alerts, navigation, and overall user flow
+- maintained consistency in shared frontend layout and interaction design
+
+### Member 2
+- built onboarding and academic profile management
+- handled academic history validation and profile updates
+- maintained correctness of student academic record storage
+
+### Member 3
+- implemented the Study Chat interface
+- added course sessions, source selection, and study modes
+- improved citation rendering and course-based study UX
+
+### Member 4
+- built the RAG pipeline and study material ingestion
+- connected uploaded documents to grounded AI responses
+- managed chunking, embeddings, retrieval filters, and AI source grounding
+
+### Member 5
+- implemented academic analytics, dashboard APIs, and planner support
+- handled final integration, alerts logic, and readiness validation
+- ensured system-wide consistency between frontend, backend, and data flow
+
+---
+
+## Optional Team Table
+Replace the names in this table before final use.
+
+| Team Member | Main Role | Main Modules | Main Files |
+|---|---|---|---|
+| Member 1 | Frontend Lead | Dashboard, Header, Sidebar, UX | dashboard page, Header, Sidebar |
+| Member 2 | Profile & Onboarding | Student profile, onboarding, academic history | AcademicProfileEditor, onboarding API |
+| Member 3 | Study Chat Frontend | Study Chat, sessions, materials library | study-chat page, study courses API |
+| Member 4 | AI Backend & RAG | retrieval, embeddings, ingestion, chat backend | rag_agent, study_materials, embeddings_service |
+| Member 5 | Planner, Analytics, QA | dashboard APIs, advisor, planner, alerts, QA | dashboard API, advisor API, profile-freshness API |
+
+---
+
+## Handoff Checklist
+
+Before delivery, the team should ensure the following:
+
+- all roles are assigned to actual team names
+- all shared files are reviewed
+- API contracts are consistent with implementation
+- Study Chat flow is tested end-to-end
+- onboarding and profile updates are verified
+- dashboard metrics match actual stored academic data
+- key risks and limitations are documented
+
+---
+
+## Final Note
+This division is designed to:
+
+- reduce overlap between team members
+- make accountability clear
+- simplify presentation of each person’s role
+- show both technical ownership and feature ownership
+
+If needed, this document can be converted into:
+
+- a presentation slide
+- a formal project report section
+- a grading appendix showing individual contribution
+- a technical handoff document for future maintainers

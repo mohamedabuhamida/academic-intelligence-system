@@ -4,15 +4,19 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
 import { Lock, CheckCircle } from 'lucide-react';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useLocale, useLocaleRouter } from '@/components/providers/LocaleProvider';
+import { getMessages } from '@/lib/i18n/messages';
 
 export default function UpdatePassword() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const router = useRouter();
+  const { locale } = useLocale();
+  const copy = getMessages(locale).auth;
+  const router = useLocaleRouter();
   const supabase = createClient();
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
@@ -46,6 +50,10 @@ export default function UpdatePassword() {
 
   return (
     <div className="min-h-screen bg-[#F8F0E5] flex items-center justify-center p-6">
+      <div className="absolute right-6 top-6">
+        <LanguageSwitcher />
+      </div>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -54,15 +62,15 @@ export default function UpdatePassword() {
         <div className="bg-white rounded-3xl p-8 shadow-xl border border-[#DAC0A3]/20">
           {!success ? (
             <>
-              <h1 className="text-2xl font-bold text-[#102C57] mb-2">Update password</h1>
+              <h1 className="text-2xl font-bold text-[#102C57] mb-2">{copy.updatePassword}</h1>
               <p className="text-[#102C57]/60 mb-6">
-                Enter your new password below.
+                {copy.updatePasswordDescription}
               </p>
 
               <form onSubmit={handleUpdatePassword} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-[#102C57]/70 mb-2">
-                    New Password
+                    {copy.newPassword}
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#102C57]/40" />
@@ -80,7 +88,7 @@ export default function UpdatePassword() {
 
                 <div>
                   <label className="block text-sm font-medium text-[#102C57]/70 mb-2">
-                    Confirm New Password
+                    {copy.confirmNewPassword}
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#102C57]/40" />
@@ -102,7 +110,7 @@ export default function UpdatePassword() {
                   disabled={loading}
                   className="w-full py-4 bg-[#102C57] text-[#F8F0E5] rounded-xl font-semibold disabled:opacity-50"
                 >
-                  {loading ? 'Updating...' : 'Update password'}
+                  {loading ? copy.updating : copy.updatePassword}
                 </motion.button>
               </form>
             </>
@@ -120,9 +128,9 @@ export default function UpdatePassword() {
               >
                 <CheckCircle className="w-8 h-8" />
               </motion.div>
-              <h2 className="text-2xl font-bold text-[#102C57] mb-2">Password updated!</h2>
+              <h2 className="text-2xl font-bold text-[#102C57] mb-2">{copy.passwordUpdated}</h2>
               <p className="text-[#102C57]/60">
-                Redirecting to dashboard...
+                {copy.redirectingDashboard}
               </p>
             </motion.div>
           )}

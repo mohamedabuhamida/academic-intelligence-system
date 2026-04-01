@@ -15,6 +15,8 @@ import {
   staggerContainer,
 } from "@/components/animations";
 import Loading from "@/components/Loading";
+import { useLocale } from "@/components/providers/LocaleProvider";
+import { getMessages } from "@/lib/i18n/messages";
 
 type TimelineCourse = {
   code: string;
@@ -56,18 +58,19 @@ type TimelineData = {
   timeline?: TimelineSemester[];
 };
 
-function statusLabel(status: string | null) {
+function statusLabel(status: string | null, locale: "en" | "ar") {
+  const copy = getMessages(locale).timeline;
   switch (status) {
     case "completed":
-      return "Completed";
+      return copy.completed;
     case "current":
-      return "Current";
+      return copy.current;
     case "planned":
-      return "Planned";
+      return copy.planned;
     case "failed":
-      return "Failed";
+      return copy.failed;
     default:
-      return "Unknown";
+      return copy.unknown;
   }
 }
 
@@ -86,8 +89,8 @@ function statusClasses(status: string | null) {
   }
 }
 
-function termLabel(term: string | null) {
-  if (!term) return "Term";
+function termLabel(term: string | null, locale: "en" | "ar") {
+  if (!term) return getMessages(locale).timeline.term;
   return term.charAt(0).toUpperCase() + term.slice(1);
 }
 
@@ -102,6 +105,8 @@ function semesterAccent(index: number) {
 }
 
 export default function TimelinePage() {
+  const { locale } = useLocale();
+  const copy = getMessages(locale).timeline;
   const [data, setData] = useState<TimelineData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -131,23 +136,23 @@ export default function TimelinePage() {
   const stats = [
     {
       icon: Layers3,
-      label: "Semesters",
+      label: copy.semesters,
       value: summary?.semesterCount ?? 0,
-      detail: "Tracked on your path",
+      detail: copy.trackedOnPath,
       color: "from-[#102C57] to-[#1c4f93]",
     },
     {
       icon: CheckCircle2,
-      label: "Completed Credits",
+      label: copy.completedCredits,
       value: summary?.completedCredits ?? 0,
-      detail: `${summary?.progress ?? 0}% of degree complete`,
+      detail: `${summary?.progress ?? 0}% ${copy.degreeComplete}`,
       color: "from-green-500 to-emerald-500",
     },
     {
       icon: Flag,
-      label: "Remaining Credits",
+      label: copy.remainingCredits,
       value: summary?.remainingCredits ?? 0,
-      detail: `${summary?.totalRequiredHours ?? 0} total required`,
+      detail: `${summary?.totalRequiredHours ?? 0} ${copy.totalRequired}`,
       color: "from-amber-500 to-orange-500",
     },
   ];
@@ -162,22 +167,22 @@ export default function TimelinePage() {
           <div className="max-w-2xl">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#102C57]/10 bg-white/70 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-[#102C57]/60">
               <CalendarRange className="h-3.5 w-3.5" />
-              Academic Journey
+              {copy.badge}
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-[#102C57] md:text-4xl">
-              Semester Timeline
+              {copy.title}
             </h1>
             <p className="mt-3 text-sm leading-7 text-[#102C57]/65 md:text-base">
-              Follow your academic path semester by semester, with course activity and credit progress in one place.
+              {copy.description}
             </p>
           </div>
 
           <div className="min-w-[240px] rounded-3xl border border-white/80 bg-white/75 p-5 text-sm text-[#102C57] shadow-sm backdrop-blur">
-            <p className="text-xs uppercase tracking-[0.18em] text-[#102C57]/45">Student</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-[#102C57]/45">{copy.student}</p>
             <p className="mt-2 text-lg font-semibold">{data?.user?.name ?? "Student"}</p>
             <div className="mt-4">
               <div className="mb-2 flex items-center justify-between text-xs text-[#102C57]/55">
-                <span>Degree Progress</span>
+                <span>{copy.degreeProgress}</span>
                 <span>{summary?.progress ?? 0}%</span>
               </div>
               <div className="h-3 overflow-hidden rounded-full bg-[#102C57]/10">
@@ -213,7 +218,7 @@ export default function TimelinePage() {
           variants={fadeInScale}
           className="rounded-3xl border border-dashed border-[#DAC0A3]/35 bg-white/70 px-4 py-12 text-center text-sm text-[#102C57]/60"
         >
-          No semester activity found yet.
+          {copy.noActivity}
         </motion.div>
       ) : (
         <motion.section
@@ -232,7 +237,7 @@ export default function TimelinePage() {
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <div className="text-xs uppercase tracking-[0.16em] text-[#102C57]/45">
-                          {semester.academicYear ?? "Academic Year"} {semester.term ? ` ${termLabel(semester.term)}` : ""}
+                          {semester.academicYear ?? copy.academicYear} {semester.term ? ` ${termLabel(semester.term, locale)}` : ""}
                         </div>
                         <h2 className="mt-1 text-xl font-semibold text-[#102C57]">{semester.name}</h2>
                       </div>
@@ -255,7 +260,7 @@ export default function TimelinePage() {
                             </p>
                           </div>
                           <span className={`shrink-0 rounded-full px-3 py-1 text-sm font-semibold ${statusClasses(course.status)}`}>
-                            {course.grade ?? statusLabel(course.status)}
+                            {course.grade ?? statusLabel(course.status, locale)}
                           </span>
                         </div>
                       ))}

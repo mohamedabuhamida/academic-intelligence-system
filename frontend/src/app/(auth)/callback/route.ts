@@ -2,6 +2,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { defaultLocale, isSupportedLocale, localeCookieName } from '@/lib/i18n/config'
+import { localizePath } from '@/lib/i18n/routing'
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
@@ -29,5 +31,17 @@ export async function GET(request: Request) {
     await supabase.auth.exchangeCodeForSession(code)
   }
 
-  return NextResponse.redirect(new URL('/dashboard', request.url))
+  const cookieStore = await cookies()
+  const cookieLocale = cookieStore.get(localeCookieName)?.value
+  const locale = isSupportedLocale(cookieLocale) ? cookieLocale : defaultLocale
+
+  const response = NextResponse.redirect(new URL(localizePath('/dashboard', locale), request.url))
+  response.cookies.set({
+    name: localeCookieName,
+    value: locale,
+    path: '/',
+    sameSite: 'lax',
+  })
+
+  return response
 }

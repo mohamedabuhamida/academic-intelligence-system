@@ -17,6 +17,8 @@ import {
   staggerContainer,
 } from "@/components/animations";
 import Loading from "@/components/Loading";
+import { useLocale } from "@/components/providers/LocaleProvider";
+import { getMessages } from "@/lib/i18n/messages";
 
 type GradeScaleItem = {
   label: string;
@@ -69,6 +71,8 @@ type GpaData = {
 };
 
 export default function GpaPage() {
+  const { locale } = useLocale();
+  const copy = getMessages(locale).gpa;
   const [data, setData] = useState<GpaData | null>(null);
   const [loading, setLoading] = useState(true);
   const [targetCgpa, setTargetCgpa] = useState("");
@@ -324,7 +328,7 @@ export default function GpaPage() {
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-[#102C57]">GPA Calculator</h1>
+            <h1 className="text-3xl font-bold text-[#102C57]">{copy.title}</h1>
             <p className="mt-2 text-[#102C57]/65">
               Model your semester, project your cumulative GPA, and check what it takes to reach a target.
             </p>
@@ -365,7 +369,7 @@ export default function GpaPage() {
         >
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-[#102C57]">Semester Projection</h2>
+              <h2 className="text-lg font-semibold text-[#102C57]">{copy.semesterProjection}</h2>
               <p className="text-sm text-[#102C57]/60">Build multiple semesters, then project your total GPA plan across all of them.</p>
             </div>
             <button
@@ -539,7 +543,7 @@ export default function GpaPage() {
             <div className="rounded-2xl border border-[#DAC0A3]/20 bg-white p-4">
               <div className="mb-3 flex items-center gap-2">
                 <Target className="h-4 w-4 text-[#102C57]" />
-                <p className="text-sm font-medium text-[#102C57]">Target CGPA Check</p>
+                <p className="text-sm font-medium text-[#102C57]">{copy.targetCgpaCheck}</p>
               </div>
               <input
                 value={targetCgpa}
@@ -567,7 +571,7 @@ export default function GpaPage() {
           className="space-y-6 rounded-2xl border border-[#DAC0A3]/25 bg-white/80 p-6 shadow-lg"
         >
           <div>
-            <h3 className="text-lg font-semibold text-[#102C57]">Academic Snapshot</h3>
+            <h3 className="text-lg font-semibold text-[#102C57]">{copy.academicSnapshot}</h3>
             <div className="mt-3 space-y-2 text-sm text-[#102C57]/75">
               <p>Completed credits: <span className="font-semibold text-[#102C57]">{academic?.completedCredits ?? 0}</span></p>
               <p>Required credits: <span className="font-semibold text-[#102C57]">{academic?.requiredCredits ?? 0}</span></p>
@@ -577,7 +581,7 @@ export default function GpaPage() {
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold text-[#102C57]">Recent Completed Courses</h3>
+            <h3 className="text-lg font-semibold text-[#102C57]">{copy.recentCompletedCourses}</h3>
             <div className="mt-3 space-y-3">
               {(data?.recentCompletedCourses ?? []).length === 0 ? (
                 <p className="text-sm text-[#102C57]/60">No completed courses found yet.</p>

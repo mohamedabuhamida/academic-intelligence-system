@@ -12,10 +12,11 @@ import {
   Trash2,
   UserRound,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 import { fadeInScale, listItemVariants, staggerContainer } from "@/components/animations";
 import Loading from "@/components/Loading";
+import { useLocale, useLocaleRouter } from "@/components/providers/LocaleProvider";
+import { getMessages } from "@/lib/i18n/messages";
 
 type University = { id: string; name: string };
 type Semester = { id: string; name: string | null; term: string | null; academic_year: string | null };
@@ -51,12 +52,6 @@ type OnboardingData = {
   gradeScale: Array<{ grade: string; points: number }>;
 };
 
-const steps = [
-  { id: 0, title: "Personal Info", icon: UserRound },
-  { id: 1, title: "Academic Setup", icon: GraduationCap },
-  { id: 2, title: "Course History", icon: BookOpen },
-];
-
 function createHistoryRow(): HistoryRow {
   return {
     id: crypto.randomUUID(),
@@ -76,7 +71,9 @@ type AcademicProfileEditorProps = {
 };
 
 export default function AcademicProfileEditor({ mode }: AcademicProfileEditorProps) {
-  const router = useRouter();
+  const { locale } = useLocale();
+  const copy = getMessages(locale).profile;
+  const router = useLocaleRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState(0);
@@ -91,6 +88,12 @@ export default function AcademicProfileEditor({ mode }: AcademicProfileEditorPro
   const [historyRows, setHistoryRows] = useState<HistoryRow[]>([]);
   const [pendingHistoryRow, setPendingHistoryRow] = useState<HistoryRow>(createHistoryRow());
 
+  const steps = [
+    { id: 0, title: copy.personalInfo, icon: UserRound },
+    { id: 1, title: copy.academicSetup, icon: GraduationCap },
+    { id: 2, title: copy.courseHistory, icon: BookOpen },
+  ];
+
   useEffect(() => {
     async function loadOnboarding() {
       try {
@@ -98,7 +101,7 @@ export default function AcademicProfileEditor({ mode }: AcademicProfileEditorPro
         const json = (await res.json()) as OnboardingData;
 
         if (!res.ok) {
-          throw new Error("Failed to load profile data.");
+          throw new Error(copy.loadError);
         }
 
         setData(json);
@@ -119,7 +122,7 @@ export default function AcademicProfileEditor({ mode }: AcademicProfileEditorPro
           );
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load profile data.");
+        setError(err instanceof Error ? err.message : copy.loadError);
       } finally {
         setLoading(false);
       }
@@ -135,13 +138,13 @@ export default function AcademicProfileEditor({ mode }: AcademicProfileEditorPro
   );
 
   const sectionTitle =
-    mode === "onboarding" ? "Complete Your Profile" : "Manage Academic Profile";
+    mode === "onboarding" ? copy.completeProfile : copy.manageProfile;
   const sectionDescription =
     mode === "onboarding"
-      ? "Set up your student profile step by step, then add your academic history from the semester you started studying until now."
-      : "Update your personal info, add new semester records, and keep your academic history current whenever a new term starts.";
+      ? copy.onboardingDescription
+      : copy.manageDescription;
 
-  const submitLabel = mode === "onboarding" ? "Finish Setup" : "Save Changes";
+  const submitLabel = mode === "onboarding" ? copy.finishSetup : copy.saveChanges;
 
   const addHistoryRow = () => {
     const needsGrade =
@@ -152,7 +155,7 @@ export default function AcademicProfileEditor({ mode }: AcademicProfileEditorPro
       !pendingHistoryRow.courseId ||
       (needsGrade && !pendingHistoryRow.grade)
     ) {
-      setError("Please complete the history entry before adding it to the table.");
+      setError(copy.pleaseCompleteEntry);
       return;
     }
 
@@ -163,7 +166,7 @@ export default function AcademicProfileEditor({ mode }: AcademicProfileEditorPro
     );
 
     if (duplicateExists) {
-      setError("This course is already added for the selected semester.");
+      setError(copy.duplicateCourse);
       return;
     }
 
@@ -229,7 +232,7 @@ export default function AcademicProfileEditor({ mode }: AcademicProfileEditorPro
         historyRows.length;
 
       if (hasDuplicates) {
-        throw new Error("You have duplicate course entries in the same semester. Please keep only one row per course per semester.");
+        throw new Error(copy.duplicateCourseSave);
       }
 
       const payload = {
@@ -257,17 +260,17 @@ export default function AcademicProfileEditor({ mode }: AcademicProfileEditorPro
 
       const json = await res.json();
       if (!res.ok) {
-        throw new Error(json?.error || "Failed to save profile.");
+        throw new Error(json?.error || copy.saveError);
       }
 
       if (mode === "onboarding") {
         router.push("/dashboard");
       } else {
-        setSuccess("Your academic profile has been updated successfully.");
+        setSuccess(copy.saveSuccess);
         router.refresh();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save profile.");
+      setError(err instanceof Error ? err.message : copy.saveError);
     } finally {
       setSaving(false);
     }
@@ -313,7 +316,7 @@ export default function AcademicProfileEditor({ mode }: AcademicProfileEditorPro
                       {completed ? <CheckCircle2 className="h-5 w-5" /> : <item.icon className="h-5 w-5" />}
                     </div>
                     <div>
-                      <div className="text-xs uppercase tracking-[0.16em] opacity-70">Step {item.id + 1}</div>
+                      <div className="text-xs uppercase tracking-[0.16em] opacity-70">{copy.step} {item.id + 1}</div>
                       <div className="text-sm font-semibold">{item.title}</div>
                     </div>
                   </div>
@@ -330,13 +333,13 @@ export default function AcademicProfileEditor({ mode }: AcademicProfileEditorPro
           {step === 0 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-semibold text-[#102C57]">Personal Information</h2>
-                <p className="mt-1 text-sm text-[#102C57]/60">Keep your name and department updated for a personalized dashboard.</p>
+                <h2 className="text-xl font-semibold text-[#102C57]">{copy.personalInformation}</h2>
+                <p className="mt-1 text-sm text-[#102C57]/60">{copy.personalInformationDescription}</p>
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <label className="space-y-2">
-                  <span className="text-sm font-medium text-[#102C57]/70">Full name</span>
+                  <span className="text-sm font-medium text-[#102C57]/70">{copy.fullName}</span>
                   <input
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
@@ -345,7 +348,7 @@ export default function AcademicProfileEditor({ mode }: AcademicProfileEditorPro
                 </label>
 
                 <label className="space-y-2">
-                  <span className="text-sm font-medium text-[#102C57]/70">Department</span>
+                  <span className="text-sm font-medium text-[#102C57]/70">{copy.department}</span>
                   <input
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
@@ -359,19 +362,19 @@ export default function AcademicProfileEditor({ mode }: AcademicProfileEditorPro
           {step === 1 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-semibold text-[#102C57]">Academic Setup</h2>
-                <p className="mt-1 text-sm text-[#102C57]/60">Review your university and degree-hour target when your plan changes.</p>
+                <h2 className="text-xl font-semibold text-[#102C57]">{copy.academicSetup}</h2>
+                <p className="mt-1 text-sm text-[#102C57]/60">{copy.academicSetupDescription}</p>
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <label className="space-y-2">
-                  <span className="text-sm font-medium text-[#102C57]/70">University</span>
+                  <span className="text-sm font-medium text-[#102C57]/70">{copy.university}</span>
                   <select
                     value={universityId}
                     onChange={(e) => setUniversityId(e.target.value)}
                     className="w-full rounded-xl border border-[#DAC0A3]/35 bg-[#F8F0E5] px-4 py-3 text-[#102C57] outline-none focus:border-[#102C57]/35"
                   >
-                    <option value="">Select a university</option>
+                    <option value="">{copy.selectUniversity}</option>
                     {(data?.universities ?? []).map((university) => (
                       <option key={university.id} value={university.id}>
                         {university.name}
@@ -381,7 +384,7 @@ export default function AcademicProfileEditor({ mode }: AcademicProfileEditorPro
                 </label>
 
                 <label className="space-y-2">
-                  <span className="text-sm font-medium text-[#102C57]/70">Total required hours</span>
+                  <span className="text-sm font-medium text-[#102C57]/70">{copy.totalRequiredHours}</span>
                   <input
                     type="number"
                     min="1"
@@ -398,10 +401,8 @@ export default function AcademicProfileEditor({ mode }: AcademicProfileEditorPro
             <div className="space-y-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-[#102C57]">Academic History</h2>
-                  <p className="mt-1 text-sm text-[#102C57]/60">
-                    Add new semester records and edit existing rows when a new term starts or your course statuses change.
-                  </p>
+                  <h2 className="text-xl font-semibold text-[#102C57]">{copy.academicHistory}</h2>
+                  <p className="mt-1 text-sm text-[#102C57]/60">{copy.academicHistoryDescription}</p>
                 </div>
 
                 <button
@@ -409,7 +410,7 @@ export default function AcademicProfileEditor({ mode }: AcademicProfileEditorPro
                   className="inline-flex items-center gap-2 rounded-xl bg-[#102C57] px-4 py-2.5 text-sm font-medium text-[#F8F0E5]"
                 >
                   <Plus className="h-4 w-4" />
-                  Add Row
+                  {copy.addRow}
                 </button>
               </div>
 
@@ -501,7 +502,7 @@ export default function AcademicProfileEditor({ mode }: AcademicProfileEditorPro
 
               {historyRows.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-[#DAC0A3]/35 bg-white/70 px-4 py-8 text-center text-sm text-[#102C57]/60">
-                  No academic history added yet. Use the form above to add rows to the table.
+                  {copy.noHistory}
                 </div>
               ) : (
                 <div className="overflow-x-auto rounded-2xl border border-[#DAC0A3]/20 bg-white">
@@ -612,14 +613,14 @@ export default function AcademicProfileEditor({ mode }: AcademicProfileEditorPro
               disabled={step === 0}
               className="rounded-xl border border-[#DAC0A3]/25 bg-white px-4 py-3 text-sm font-medium text-[#102C57] disabled:opacity-40"
             >
-              Back
+              {copy.back}
             </button>
 
             {step < steps.length - 1 ? (
               <button
                 onClick={() => {
                   if (!validateCurrentStep()) {
-                    setError("Please complete the current step before continuing.");
+                    setError(copy.currentStepError);
                     return;
                   }
                   setError("");
@@ -627,7 +628,7 @@ export default function AcademicProfileEditor({ mode }: AcademicProfileEditorPro
                 }}
                 className="inline-flex items-center gap-2 rounded-xl bg-[#102C57] px-5 py-3 text-sm font-medium text-[#F8F0E5]"
               >
-                Continue
+                {copy.continue}
                 <ArrowRight className="h-4 w-4" />
               </button>
             ) : (
@@ -636,7 +637,7 @@ export default function AcademicProfileEditor({ mode }: AcademicProfileEditorPro
                 disabled={saving || !validateCurrentStep()}
                 className="inline-flex items-center gap-2 rounded-xl bg-[#102C57] px-5 py-3 text-sm font-medium text-[#F8F0E5] disabled:opacity-50"
               >
-                {saving ? "Saving..." : submitLabel}
+                {saving ? copy.saving : submitLabel}
                 {mode === "onboarding" ? <ArrowRight className="h-4 w-4" /> : <Save className="h-4 w-4" />}
               </button>
             )}

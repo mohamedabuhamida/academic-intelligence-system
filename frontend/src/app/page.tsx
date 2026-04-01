@@ -3,6 +3,9 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useLocale } from "@/components/providers/LocaleProvider";
+import { getMessages } from "@/lib/i18n/messages";
 import {
   ArrowRight,
   Brain,
@@ -28,6 +31,9 @@ const staggerContainer = {
 };
 
 export default function LandingPage() {
+  const { locale, localizePath } = useLocale();
+  const copy = getMessages(locale).landing;
+
   return (
     <div className="min-h-screen bg-[#F8F0E5]">
       {/* Header */}
@@ -52,7 +58,7 @@ export default function LandingPage() {
             </motion.div>
 
             <div className="hidden md:flex items-center gap-8">
-              {["Features", "Solutions", "Pricing"].map((item) => (
+              {[copy.features, copy.solutions, copy.pricing].map((item) => (
                 <motion.a
                   key={item}
                   href="#"
@@ -65,17 +71,18 @@ export default function LandingPage() {
             </div>
 
             <div className="flex items-center gap-4">
+              <LanguageSwitcher className="hidden sm:inline-flex" />
               <Link
-                href="/login"
+                href={localizePath('/login')}
                 className="px-5 py-2 text-sm font-medium text-[#102C57] hover:text-[#102C57]/80 transition-colors"
               >
-                Sign In
+                {copy.signIn}
               </Link>
               <Link
-                href="/login"
+                href={localizePath('/login')}
                 className="px-5 py-2 bg-[#102C57] text-[#F8F0E5] rounded-xl text-sm font-medium flex items-center gap-2 shadow-lg shadow-[#102C57]/20"
               >
-                Get Started
+                {copy.getStarted}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -95,7 +102,7 @@ export default function LandingPage() {
             <motion.div variants={fadeInUp} className="mb-6">
               <span className="px-4 py-2 bg-[#DAC0A3]/20 rounded-full text-sm font-medium text-[#102C57] inline-flex items-center gap-2">
                 <Sparkles className="w-4 h-4" />
-                AI-Powered Academic Intelligence
+                {copy.badge}
               </span>
             </motion.div>
 
@@ -103,16 +110,15 @@ export default function LandingPage() {
               variants={fadeInUp}
               className="text-6xl md:text-7xl font-bold text-[#102C57] mb-6 leading-tight"
             >
-              Transform Your
-              <span className="text-[#DAC0A3] block">Learning Journey</span>
+              {copy.heroTitleLine1}
+              <span className="text-[#DAC0A3] block">{copy.heroTitleLine2}</span>
             </motion.h1>
 
             <motion.p
               variants={fadeInUp}
               className="text-xl text-[#102C57]/70 mb-12 max-w-2xl mx-auto"
             >
-              Experience the future of education with AI-powered analytics,
-              personalized study plans, and intelligent insights.
+              {copy.heroDescription}
             </motion.p>
 
             <motion.div
@@ -127,7 +133,7 @@ export default function LandingPage() {
                 whileTap={{ scale: 0.98 }}
                 className="px-8 py-4 bg-[#102C57] text-[#F8F0E5] rounded-2xl text-lg font-semibold flex items-center gap-2 group w-full sm:w-auto justify-center"
               >
-                Start Your Free Trial
+                {copy.startTrial}
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </motion.button>
               <motion.button
@@ -135,7 +141,7 @@ export default function LandingPage() {
                 whileTap={{ scale: 0.98 }}
                 className="px-8 py-4 border-2 border-[#DAC0A3] text-[#102C57] rounded-2xl text-lg font-semibold w-full sm:w-auto"
               >
-                Watch Demo
+                {copy.watchDemo}
               </motion.button>
             </motion.div>
           </motion.div>
@@ -175,13 +181,13 @@ export default function LandingPage() {
               variants={fadeInUp}
               className="text-4xl font-bold text-[#102C57] mb-4"
             >
-              Intelligence That Adapts to You
+              {copy.intelligenceTitle}
             </motion.h2>
             <motion.p
               variants={fadeInUp}
               className="text-xl text-[#102C57]/60 max-w-2xl mx-auto"
             >
-              Powered by advanced AI to understand your learning patterns
+              {copy.intelligenceDescription}
             </motion.p>
           </motion.div>
 
@@ -287,18 +293,17 @@ export default function LandingPage() {
           className="max-w-4xl mx-auto text-center"
         >
           <h2 className="text-4xl md:text-5xl font-bold text-[#F8F0E5] mb-6">
-            Ready to Transform Your Academic Journey?
+            {copy.ctaTitle}
           </h2>
           <p className="text-xl text-[#F8F0E5]/80 mb-10">
-            Join thousands of students who have already elevated their learning
-            experience
+            {copy.ctaDescription}
           </p>
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className="px-8 py-4 bg-[#DAC0A3] text-[#102C57] rounded-2xl text-lg font-semibold inline-flex items-center gap-2 group"
           >
-            Get Started Now
+            {copy.getStartedNow}
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </motion.button>
         </motion.div>
@@ -317,7 +322,7 @@ export default function LandingPage() {
               </span>
             </div>
             <div className="flex gap-8">
-              {["Terms", "Privacy", "Contact"].map((item) => (
+              {[copy.terms, copy.privacy, copy.contact].map((item) => (
                 <motion.a
                   key={item}
                   href="#"

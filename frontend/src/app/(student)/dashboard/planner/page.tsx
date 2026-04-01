@@ -18,6 +18,8 @@ import remarkGfm from "remark-gfm";
 
 import { createClient } from "@/lib/supabase/client";
 import { getBackendUrl } from "@/lib/backend";
+import { useLocale } from "@/components/providers/LocaleProvider";
+import { getMessages } from "@/lib/i18n/messages";
 import { fadeInScale, listItemVariants, staggerContainer } from "@/components/animations";
 
 const BACKEND_URL = getBackendUrl();
@@ -97,6 +99,8 @@ function formatPlannerQuestion(params: {
 }
 
 export default function PlannerPage() {
+  const { locale } = useLocale();
+  const copy = getMessages(locale).planner;
   const supabase = useMemo(() => createClient(), []);
 
   const [targetCgpa, setTargetCgpa] = useState("");
@@ -254,9 +258,9 @@ export default function PlannerPage() {
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-[#102C57]">Semester Planner</h1>
+            <h1 className="text-3xl font-bold text-[#102C57]">{copy.title}</h1>
             <p className="mt-2 text-[#102C57]/65">
-              Select eligible courses, then get a GPA strategy based on real prerequisites and credit hours.
+              {copy.description}
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-xl border border-[#DAC0A3]/30 bg-white/80 px-4 py-2">
@@ -323,7 +327,7 @@ export default function PlannerPage() {
 
           <div className="mb-4 rounded-xl border border-[#DAC0A3]/25 bg-[#F8F0E5]/70 p-4">
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-sm font-medium text-[#102C57]">Eligible Courses</p>
+              <p className="text-sm font-medium text-[#102C57]">{copy.eligibleCourses}</p>
               <span className="text-xs text-[#102C57]/65">
                 Selected: {selectedCourses.length} course(s), {selectedCredits} credits
               </span>

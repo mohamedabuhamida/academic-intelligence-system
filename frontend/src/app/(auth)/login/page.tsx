@@ -4,9 +4,11 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Brain, Mail, Lock, ArrowRight, Sparkles, Github, Chrome } from 'lucide-react';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useLocale, useLocaleRouter } from '@/components/providers/LocaleProvider';
+import { getMessages } from '@/lib/i18n/messages';
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -20,7 +22,9 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const router = useRouter();
+  const { locale, localizePath } = useLocale();
+  const copy = getMessages(locale).auth;
+  const router = useLocaleRouter();
   const supabase = createClient();
 
   const formatAuthError = (message: string) => {
@@ -42,7 +46,7 @@ export default function SignIn() {
           email,
           password,
           options: {
-            emailRedirectTo: `${location.origin}/auth/callback`,
+            emailRedirectTo: `${location.origin}${localizePath('/auth/callback')}`,
           },
         });
         if (error) throw error;
@@ -70,7 +74,7 @@ export default function SignIn() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${location.origin}/auth/callback`,
+          redirectTo: `${location.origin}${localizePath('/auth/callback')}`,
         },
       });
       if (error) throw error;
@@ -81,6 +85,10 @@ export default function SignIn() {
 
   return (
     <div className="min-h-screen bg-[#F8F0E5] flex">
+      <div className="absolute right-6 top-6 z-20">
+        <LanguageSwitcher />
+      </div>
+
       {/* Left Side - Branding */}
       <motion.div 
         initial={{ opacity: 0, x: -50 }}
@@ -114,7 +122,7 @@ export default function SignIn() {
             transition={{ delay: 0.3 }}
             className="text-5xl font-bold leading-tight mb-6"
           >
-            Welcome to the<br />Future of Learning
+            {copy.welcomeTitle.split("\n")[0]}<br />{copy.welcomeTitle.split("\n")[1]}
           </motion.h1>
 
           <motion.p 
@@ -123,7 +131,7 @@ export default function SignIn() {
             transition={{ delay: 0.4 }}
             className="text-xl text-[#EADBC8] mb-12"
           >
-            Experience AI-powered academic intelligence that adapts to your unique learning style.
+            {copy.welcomeDescription}
           </motion.p>
 
           <motion.div 
@@ -133,10 +141,10 @@ export default function SignIn() {
             className="space-y-6"
           >
             {[
-              'Personalized study plans powered by AI',
-              'Real-time academic performance analytics',
-              '24/7 intelligent tutoring assistance',
-              'Collaborative learning environment'
+              copy.featureStudyPlans,
+              copy.featureAnalytics,
+              copy.featureTutoring,
+              copy.featureCollaborative
             ].map((feature, index) => (
               <motion.div 
                 key={index}
@@ -171,12 +179,12 @@ export default function SignIn() {
             className="text-center mb-10"
           >
             <h2 className="text-3xl font-bold text-[#102C57] mb-2">
-              {isSignUp ? 'Create Account' : 'Welcome Back'}
+              {isSignUp ? copy.createAccount : copy.welcomeBack}
             </h2>
             <p className="text-[#102C57]/60">
               {isSignUp 
-                ? 'Start your journey with AI-powered learning' 
-                : 'Continue your academic journey'}
+                ? copy.startJourney
+                : copy.continueJourney}
             </p>
           </motion.div>
 
@@ -218,7 +226,7 @@ export default function SignIn() {
               <div className="w-full border-t border-[#DAC0A3]/20"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-[#F8F0E5] text-[#102C57]/40">or continue with email</span>
+              <span className="px-4 bg-[#F8F0E5] text-[#102C57]/40">{copy.continueWithEmail}</span>
             </div>
           </motion.div>
 
@@ -238,7 +246,7 @@ export default function SignIn() {
 
             <div>
               <label className="block text-sm font-medium text-[#102C57]/70 mb-2">
-                Email Address
+                {copy.emailAddress}
               </label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#102C57]/40" />
@@ -255,7 +263,7 @@ export default function SignIn() {
 
             <div>
               <label className="block text-sm font-medium text-[#102C57]/70 mb-2">
-                Password
+                {copy.password}
               </label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#102C57]/40" />
@@ -278,10 +286,10 @@ export default function SignIn() {
                 className="text-right"
               >
                 <Link 
-                  href="/auth/reset-password"
+                  href={localizePath('/auth/reset-password')}
                   className="text-sm text-[#102C57]/60 hover:text-[#102C57] transition-colors"
                 >
-                  Forgot password?
+                  {copy.forgotPassword}
                 </Link>
               </motion.div>
             )}
@@ -294,7 +302,7 @@ export default function SignIn() {
               className="w-full py-4 bg-[#102C57] text-[#F8F0E5] rounded-xl font-semibold flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
             >
               <span className="relative z-10">
-                {loading ? 'Processing...' : (isSignUp ? 'Create Account' : 'Sign In')}
+                {loading ? copy.processing : (isSignUp ? copy.createAccount : copy.signIn)}
               </span>
               {!loading && <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />}
               
@@ -320,12 +328,12 @@ export default function SignIn() {
             animate="animate"
             className="mt-8 text-center text-[#102C57]/60"
           >
-            {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+            {isSignUp ? copy.alreadyHaveAccount : copy.dontHaveAccount}{' '}
             <button
               onClick={() => setIsSignUp(!isSignUp)}
               className="text-[#102C57] font-semibold hover:underline"
             >
-              {isSignUp ? 'Sign In' : 'Sign Up'}
+              {isSignUp ? copy.signIn : copy.signUp}
             </button>
           </motion.p>
 
@@ -336,8 +344,8 @@ export default function SignIn() {
             animate="animate"
             className="mt-6 text-xs text-center text-[#102C57]/40"
           >
-            By continuing, you agree to our Terms of Service and Privacy Policy.<br/>
-            Academic email recommended for full features.
+            {copy.termsNote}<br/>
+            {copy.academicEmailNote}
           </motion.p>
         </div>
       </motion.div>

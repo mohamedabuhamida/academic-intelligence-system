@@ -1,11 +1,7 @@
-// app/page.tsx
 "use client";
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
-import { useLocale } from "@/components/providers/LocaleProvider";
-import { getMessages } from "@/lib/i18n/messages";
 import {
   ArrowRight,
   Brain,
@@ -15,6 +11,10 @@ import {
   TrendingUp,
   Shield,
 } from "lucide-react";
+
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useLocale } from "@/components/providers/LocaleProvider";
+import { getMessages } from "@/lib/i18n/messages";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 30 },
@@ -34,22 +34,59 @@ export default function LandingPage() {
   const { locale, localizePath } = useLocale();
   const copy = getMessages(locale).landing;
 
+  const features = [
+    {
+      icon: <Brain className="w-8 h-8" />,
+      title: copy.featureAssistantTitle,
+      description: copy.featureAssistantDescription,
+    },
+    {
+      icon: <Target className="w-8 h-8" />,
+      title: copy.featurePlanningTitle,
+      description: copy.featurePlanningDescription,
+    },
+    {
+      icon: <TrendingUp className="w-8 h-8" />,
+      title: copy.featureAnalyticsTitle,
+      description: copy.featureAnalyticsDescription,
+    },
+  ];
+
+  const stats = [
+    {
+      value: "98%",
+      label: copy.statAccuracy,
+      icon: <Shield className="w-6 h-6" />,
+    },
+    {
+      value: "50K+",
+      label: copy.statStudents,
+      icon: <BookOpen className="w-6 h-6" />,
+    },
+    {
+      value: "24/7",
+      label: copy.statSupport,
+      icon: <Brain className="w-6 h-6" />,
+    },
+    {
+      value: "15min",
+      label: copy.statResponse,
+      icon: <Sparkles className="w-6 h-6" />,
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-[#F8F0E5]">
-      {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="fixed top-0 left-0 right-0 z-50 bg-[#F8F0E5]/80 backdrop-blur-xl border-b border-[#DAC0A3]/20"
+        className="fixed top-0 left-0 right-0 z-50 border-b border-[#DAC0A3]/20 bg-[#F8F0E5]/80 backdrop-blur-xl"
       >
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="mx-auto max-w-7xl px-6 py-4">
           <nav className="flex items-center justify-between">
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              className="flex items-center gap-2"
-            >
-              <div className="w-8 h-8 rounded-xl bg-[#102C57] flex items-center justify-center">
+            <motion.div whileHover={{ scale: 1.02 }} className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#102C57]">
                 <Brain className="w-5 h-5 text-[#F8F0E5]" />
               </div>
               <span className="text-xl font-semibold text-[#102C57]">
@@ -57,13 +94,13 @@ export default function LandingPage() {
               </span>
             </motion.div>
 
-            <div className="hidden md:flex items-center gap-8">
+            <div className="hidden items-center gap-8 md:flex">
               {[copy.features, copy.solutions, copy.pricing].map((item) => (
                 <motion.a
                   key={item}
                   href="#"
                   whileHover={{ y: -2 }}
-                  className="text-[#102C57]/70 hover:text-[#102C57] transition-colors text-sm font-medium"
+                  className="text-sm font-medium text-[#102C57]/70 transition-colors hover:text-[#102C57]"
                 >
                   {item}
                 </motion.a>
@@ -73,14 +110,14 @@ export default function LandingPage() {
             <div className="flex items-center gap-4">
               <LanguageSwitcher className="hidden sm:inline-flex" />
               <Link
-                href={localizePath('/login')}
-                className="px-5 py-2 text-sm font-medium text-[#102C57] hover:text-[#102C57]/80 transition-colors"
+                href={localizePath("/login")}
+                className="px-5 py-2 text-sm font-medium text-[#102C57] transition-colors hover:text-[#102C57]/80"
               >
                 {copy.signIn}
               </Link>
               <Link
-                href={localizePath('/login')}
-                className="px-5 py-2 bg-[#102C57] text-[#F8F0E5] rounded-xl text-sm font-medium flex items-center gap-2 shadow-lg shadow-[#102C57]/20"
+                href={localizePath("/login")}
+                className="flex items-center gap-2 rounded-xl bg-[#102C57] px-5 py-2 text-sm font-medium text-[#F8F0E5] shadow-lg shadow-[#102C57]/20"
               >
                 {copy.getStarted}
                 <ArrowRight className="w-4 h-4" />
@@ -90,17 +127,16 @@ export default function LandingPage() {
         </div>
       </motion.header>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6">
-        <div className="max-w-7xl mx-auto">
+      <section className="px-6 pb-20 pt-32">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial="initial"
             animate="animate"
             variants={staggerContainer}
-            className="text-center max-w-4xl mx-auto"
+            className="mx-auto max-w-4xl text-center"
           >
             <motion.div variants={fadeInUp} className="mb-6">
-              <span className="px-4 py-2 bg-[#DAC0A3]/20 rounded-full text-sm font-medium text-[#102C57] inline-flex items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full bg-[#DAC0A3]/20 px-4 py-2 text-sm font-medium text-[#102C57]">
                 <Sparkles className="w-4 h-4" />
                 {copy.badge}
               </span>
@@ -108,22 +144,22 @@ export default function LandingPage() {
 
             <motion.h1
               variants={fadeInUp}
-              className="text-6xl md:text-7xl font-bold text-[#102C57] mb-6 leading-tight"
+              className="mb-6 text-6xl font-bold leading-tight text-[#102C57] md:text-7xl"
             >
               {copy.heroTitleLine1}
-              <span className="text-[#DAC0A3] block">{copy.heroTitleLine2}</span>
+              <span className="block text-[#DAC0A3]">{copy.heroTitleLine2}</span>
             </motion.h1>
 
             <motion.p
               variants={fadeInUp}
-              className="text-xl text-[#102C57]/70 mb-12 max-w-2xl mx-auto"
+              className="mx-auto mb-12 max-w-2xl text-xl text-[#102C57]/70"
             >
               {copy.heroDescription}
             </motion.p>
 
             <motion.div
               variants={fadeInUp}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4"
+              className="flex flex-col items-center justify-center gap-4 sm:flex-row"
             >
               <motion.button
                 whileHover={{
@@ -131,87 +167,62 @@ export default function LandingPage() {
                   boxShadow: "0 20px 30px -10px rgba(16,44,87,0.3)",
                 }}
                 whileTap={{ scale: 0.98 }}
-                className="px-8 py-4 bg-[#102C57] text-[#F8F0E5] rounded-2xl text-lg font-semibold flex items-center gap-2 group w-full sm:w-auto justify-center"
+                className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-[#102C57] px-8 py-4 text-lg font-semibold text-[#F8F0E5] sm:w-auto"
               >
                 {copy.startTrial}
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
               </motion.button>
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="px-8 py-4 border-2 border-[#DAC0A3] text-[#102C57] rounded-2xl text-lg font-semibold w-full sm:w-auto"
+                className="w-full rounded-2xl border-2 border-[#DAC0A3] px-8 py-4 text-lg font-semibold text-[#102C57] sm:w-auto"
               >
                 {copy.watchDemo}
               </motion.button>
             </motion.div>
           </motion.div>
 
-          {/* Dashboard Preview */}
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.8 }}
-            className="mt-20 relative"
+            className="relative mt-20"
           >
-            <div className="absolute inset-0 bg-gradient-to-t from-[#F8F0E5] via-transparent to-transparent z-10" />
-            <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-[#DAC0A3]/20">
+            <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#F8F0E5] via-transparent to-transparent" />
+            <div className="relative overflow-hidden rounded-3xl border border-[#DAC0A3]/20 shadow-2xl">
               <img
                 src="/api/placeholder/1200/600"
-                alt="Dashboard Preview"
-                className="w-full h-auto"
+                alt={copy.dashboardPreviewAlt}
+                className="h-auto w-full"
               />
-              {/* Glass overlay effect */}
-              <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#F8F0E5]/20 to-transparent" />
+              <div className="absolute left-0 right-0 top-0 h-32 bg-gradient-to-b from-[#F8F0E5]/20 to-transparent" />
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section className="py-20 px-6 bg-[#EADBC8]">
-        <div className="max-w-7xl mx-auto">
+      <section className="bg-[#EADBC8] px-6 py-20">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial="initial"
             whileInView="animate"
             viewport={{ once: true }}
             variants={staggerContainer}
-            className="text-center mb-16"
+            className="mb-16 text-center"
           >
-            <motion.h2
-              variants={fadeInUp}
-              className="text-4xl font-bold text-[#102C57] mb-4"
-            >
+            <motion.h2 variants={fadeInUp} className="mb-4 text-4xl font-bold text-[#102C57]">
               {copy.intelligenceTitle}
             </motion.h2>
             <motion.p
               variants={fadeInUp}
-              className="text-xl text-[#102C57]/60 max-w-2xl mx-auto"
+              className="mx-auto max-w-2xl text-xl text-[#102C57]/60"
             >
               {copy.intelligenceDescription}
             </motion.p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                icon: <Brain className="w-8 h-8" />,
-                title: "AI Study Assistant",
-                description:
-                  "24/7 intelligent support for your academic questions",
-              },
-              {
-                icon: <Target className="w-8 h-8" />,
-                title: "Smart Planning",
-                description:
-                  "Personalized study schedules that adapt to your progress",
-              },
-              {
-                icon: <TrendingUp className="w-8 h-8" />,
-                title: "Predictive Analytics",
-                description:
-                  "Forecast your academic performance with precision",
-              },
-            ].map((feature, index) => (
+          <div className="grid gap-8 md:grid-cols-3">
+            {features.map((feature, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 30 }}
@@ -221,14 +232,12 @@ export default function LandingPage() {
                 whileHover={{ y: -5 }}
                 className="group relative"
               >
-                <div className="absolute inset-0 bg-[#DAC0A3] rounded-3xl opacity-0 group-hover:opacity-10 transition-opacity" />
-                <div className="relative p-8 bg-[#F8F0E5] rounded-3xl border border-[#DAC0A3]/20">
-                  <div className="w-16 h-16 rounded-2xl bg-[#102C57] text-[#F8F0E5] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <div className="absolute inset-0 rounded-3xl bg-[#DAC0A3] opacity-0 transition-opacity group-hover:opacity-10" />
+                <div className="relative rounded-3xl border border-[#DAC0A3]/20 bg-[#F8F0E5] p-8">
+                  <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#102C57] text-[#F8F0E5] transition-transform group-hover:scale-110">
                     {feature.icon}
                   </div>
-                  <h3 className="text-2xl font-semibold text-[#102C57] mb-3">
-                    {feature.title}
-                  </h3>
+                  <h3 className="mb-3 text-2xl font-semibold text-[#102C57]">{feature.title}</h3>
                   <p className="text-[#102C57]/70">{feature.description}</p>
                 </div>
               </motion.div>
@@ -237,32 +246,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-20 px-6 bg-[#F8F0E5]">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8">
-            {[
-              {
-                value: "98%",
-                label: "Accuracy Rate",
-                icon: <Shield className="w-6 h-6" />,
-              },
-              {
-                value: "50K+",
-                label: "Active Students",
-                icon: <BookOpen className="w-6 h-6" />,
-              },
-              {
-                value: "24/7",
-                label: "AI Support",
-                icon: <Brain className="w-6 h-6" />,
-              },
-              {
-                value: "15min",
-                label: "Avg. Response",
-                icon: <Sparkles className="w-6 h-6" />,
-              },
-            ].map((stat, index) => (
+      <section className="bg-[#F8F0E5] px-6 py-20">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-8 md:grid-cols-4">
+            {stats.map((stat, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -271,12 +258,10 @@ export default function LandingPage() {
                 transition={{ delay: index * 0.1 }}
                 className="text-center"
               >
-                <div className="w-12 h-12 rounded-xl bg-[#102C57]/10 text-[#102C57] flex items-center justify-center mx-auto mb-4">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#102C57]/10 text-[#102C57]">
                   {stat.icon}
                 </div>
-                <div className="text-3xl font-bold text-[#102C57] mb-2">
-                  {stat.value}
-                </div>
+                <div className="mb-2 text-3xl font-bold text-[#102C57]">{stat.value}</div>
                 <div className="text-[#102C57]/60">{stat.label}</div>
               </motion.div>
             ))}
@@ -284,42 +269,34 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-6 bg-[#102C57]">
+      <section className="bg-[#102C57] px-6 py-20">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="max-w-4xl mx-auto text-center"
+          className="mx-auto max-w-4xl text-center"
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-[#F8F0E5] mb-6">
-            {copy.ctaTitle}
-          </h2>
-          <p className="text-xl text-[#F8F0E5]/80 mb-10">
-            {copy.ctaDescription}
-          </p>
+          <h2 className="mb-6 text-4xl font-bold text-[#F8F0E5] md:text-5xl">{copy.ctaTitle}</h2>
+          <p className="mb-10 text-xl text-[#F8F0E5]/80">{copy.ctaDescription}</p>
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="px-8 py-4 bg-[#DAC0A3] text-[#102C57] rounded-2xl text-lg font-semibold inline-flex items-center gap-2 group"
+            className="group inline-flex items-center gap-2 rounded-2xl bg-[#DAC0A3] px-8 py-4 text-lg font-semibold text-[#102C57]"
           >
             {copy.getStartedNow}
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
           </motion.button>
         </motion.div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 px-6 bg-[#102C57] border-t border-[#DAC0A3]/20">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+      <footer className="border-t border-[#DAC0A3]/20 bg-[#102C57] px-6 py-12">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-[#DAC0A3] flex items-center justify-center">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#DAC0A3]">
                 <Brain className="w-5 h-5 text-[#102C57]" />
               </div>
-              <span className="text-xl font-semibold text-[#F8F0E5]">
-                AetherAcademy
-              </span>
+              <span className="text-xl font-semibold text-[#F8F0E5]">AetherAcademy</span>
             </div>
             <div className="flex gap-8">
               {[copy.terms, copy.privacy, copy.contact].map((item) => (
@@ -327,15 +304,13 @@ export default function LandingPage() {
                   key={item}
                   href="#"
                   whileHover={{ y: -2 }}
-                  className="text-[#F8F0E5]/60 hover:text-[#F8F0E5] transition-colors text-sm"
+                  className="text-sm text-[#F8F0E5]/60 transition-colors hover:text-[#F8F0E5]"
                 >
                   {item}
                 </motion.a>
               ))}
             </div>
-            <div className="text-sm text-[#F8F0E5]/40">
-              © 2024 AetherAcademy. All rights reserved.
-            </div>
+            <div className="text-sm text-[#F8F0E5]/40">{copy.footerCopyright}</div>
           </div>
         </div>
       </footer>

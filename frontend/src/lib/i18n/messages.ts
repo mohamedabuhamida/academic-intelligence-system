@@ -41,6 +41,17 @@ type Messages = {
     watchDemo: string;
     intelligenceTitle: string;
     intelligenceDescription: string;
+    featureAssistantTitle: string;
+    featureAssistantDescription: string;
+    featurePlanningTitle: string;
+    featurePlanningDescription: string;
+    featureAnalyticsTitle: string;
+    featureAnalyticsDescription: string;
+    statAccuracy: string;
+    statStudents: string;
+    statSupport: string;
+    statResponse: string;
+    dashboardPreviewAlt: string;
     ctaTitle: string;
     ctaDescription: string;
     getStartedNow: string;
@@ -116,9 +127,13 @@ type Messages = {
   gpa: {
     title: string;
     description: string;
+    modelDescription: string;
+    student: string;
     semesterProjection: string;
     semesterProjectionDescription: string;
+    semester: string;
     addSemester: string;
+    currentCgpa: string;
     coursesCount: string;
     credits: string;
     deleteSemester: string;
@@ -134,6 +149,9 @@ type Messages = {
     totalPlannedGpa: string;
     projectedCgpa: string;
     totalPlannedCredits: string;
+    gradedCredits: string;
+    activeSemesterCredits: string;
+    plannedCreditsAcrossSemesters: string;
     targetCgpaCheck: string;
     requiredSemesterGpa: string;
     enterTargetAndCourses: string;
@@ -146,6 +164,7 @@ type Messages = {
     recentCompletedCourses: string;
     noCompletedCourses: string;
     basedOnCredits: string;
+    points: string;
   };
   planner: {
     title: string;
@@ -281,6 +300,17 @@ export const messages: Record<AppLocale, Messages> = {
       watchDemo: "Watch Demo",
       intelligenceTitle: "Intelligence That Adapts to You",
       intelligenceDescription: "Powered by advanced AI to understand your learning patterns",
+      featureAssistantTitle: "AI Study Assistant",
+      featureAssistantDescription: "24/7 intelligent support for your academic questions",
+      featurePlanningTitle: "Smart Planning",
+      featurePlanningDescription: "Personalized study schedules that adapt to your progress",
+      featureAnalyticsTitle: "Predictive Analytics",
+      featureAnalyticsDescription: "Forecast your academic performance with precision",
+      statAccuracy: "Accuracy Rate",
+      statStudents: "Active Students",
+      statSupport: "AI Support",
+      statResponse: "Avg. Response",
+      dashboardPreviewAlt: "Dashboard Preview",
       ctaTitle: "Ready to Transform Your Academic Journey?",
       ctaDescription: "Join thousands of students who have already elevated their learning experience",
       getStartedNow: "Get Started Now",
@@ -356,9 +386,13 @@ export const messages: Record<AppLocale, Messages> = {
     gpa: {
       title: "GPA Calculator",
       description: "Model different semester plans, compare grade scenarios, and see how each course affects your cumulative GPA.",
+      modelDescription: "Model your semester, project your cumulative GPA, and check what it takes to reach a target.",
+      student: "Student",
       semesterProjection: "Semester Projection",
       semesterProjectionDescription: "Build multiple semesters, then project your total GPA plan across all of them.",
+      semester: "Semester",
       addSemester: "Add Semester",
+      currentCgpa: "Current CGPA",
       coursesCount: "course(s)",
       credits: "credits",
       deleteSemester: "Delete",
@@ -374,6 +408,9 @@ export const messages: Record<AppLocale, Messages> = {
       totalPlannedGpa: "Total planned GPA",
       projectedCgpa: "Projected CGPA",
       totalPlannedCredits: "Total planned credits",
+      gradedCredits: "graded credits",
+      activeSemesterCredits: "active semester credits",
+      plannedCreditsAcrossSemesters: "planned credits across",
       targetCgpaCheck: "Target CGPA Check",
       requiredSemesterGpa: "Required semester GPA",
       enterTargetAndCourses: "Enter a target and courses",
@@ -386,6 +423,7 @@ export const messages: Record<AppLocale, Messages> = {
       recentCompletedCourses: "Recent Completed Courses",
       noCompletedCourses: "No completed courses found yet.",
       basedOnCredits: "Based on",
+      points: "points",
     },
     planner: {
       title: "Semester Planner",
@@ -519,6 +557,17 @@ export const messages: Record<AppLocale, Messages> = {
       watchDemo: "شاهد العرض",
       intelligenceTitle: "ذكاء يتكيف معك",
       intelligenceDescription: "مدعوم بذكاء اصطناعي متقدم لفهم أسلوب تعلمك",
+      featureAssistantTitle: "مساعد الدراسة الذكي",
+      featureAssistantDescription: "دعم ذكي على مدار الساعة لأسئلتك الأكاديمية",
+      featurePlanningTitle: "تخطيط ذكي",
+      featurePlanningDescription: "جداول دراسية مخصصة تتكيف مع تقدمك",
+      featureAnalyticsTitle: "تحليلات تنبؤية",
+      featureAnalyticsDescription: "توقع أدائك الأكاديمي بدقة",
+      statAccuracy: "معدل الدقة",
+      statStudents: "الطلاب النشطون",
+      statSupport: "دعم الذكاء",
+      statResponse: "متوسط الاستجابة",
+      dashboardPreviewAlt: "معاينة لوحة التحكم",
       ctaTitle: "هل أنت جاهز لتطوير رحلتك الأكاديمية؟",
       ctaDescription: "انضم إلى آلاف الطلاب الذين طوّروا تجربتهم التعليمية بالفعل",
       getStartedNow: "ابدأ الآن",
@@ -594,9 +643,13 @@ export const messages: Record<AppLocale, Messages> = {
     gpa: {
       title: "حاسبة المعدل",
       description: "أنشئ عدة خطط فصلية وقارن بين سيناريوهات الدرجات لمعرفة تأثير كل مقرر على معدلك التراكمي.",
+      modelDescription: "خطط لفصلك، واحسب معدلك التراكمي المتوقع، واعرف ما المطلوب للوصول إلى الهدف.",
+      student: "الطالب",
       semesterProjection: "توقعات الفصول",
       semesterProjectionDescription: "أنشئ عدة فصول ثم احسب تأثيرها على خطة المعدل بالكامل.",
+      semester: "الفصل",
       addSemester: "إضافة فصل",
+      currentCgpa: "المعدل التراكمي الحالي",
       coursesCount: "مقرر",
       credits: "ساعة",
       deleteSemester: "حذف",
@@ -612,6 +665,9 @@ export const messages: Record<AppLocale, Messages> = {
       totalPlannedGpa: "معدل الخطة",
       projectedCgpa: "المعدل التراكمي المتوقع",
       totalPlannedCredits: "إجمالي الساعات المخططة",
+      gradedCredits: "الساعات المحتسبة",
+      activeSemesterCredits: "ساعات الفصل الحالي",
+      plannedCreditsAcrossSemesters: "ساعات مخططة عبر",
       targetCgpaCheck: "فحص المعدل المستهدف",
       requiredSemesterGpa: "معدل الفصل المطلوب",
       enterTargetAndCourses: "أدخل المعدل المستهدف والمقررات",
@@ -624,6 +680,7 @@ export const messages: Record<AppLocale, Messages> = {
       recentCompletedCourses: "أحدث المقررات المكتملة",
       noCompletedCourses: "لا توجد مقررات مكتملة بعد.",
       basedOnCredits: "بناءً على",
+      points: "نقاط",
     },
     planner: {
       title: "مخطط الفصل",

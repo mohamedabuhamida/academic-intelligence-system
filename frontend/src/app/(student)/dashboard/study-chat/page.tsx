@@ -15,6 +15,7 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { useLocale } from "@/components/providers/LocaleProvider";
 import { createClient } from "@/lib/supabase/client";
 import { getBackendUrl } from "@/lib/backend";
 
@@ -73,11 +74,11 @@ type Message = {
   sources?: StudySource[];
 };
 
-function termLabel(term: string | null | undefined) {
-  if (term === "fall") return "Fall";
-  if (term === "spring") return "Spring";
-  if (term === "summer") return "Summer";
-  return term ?? "Current semester";
+function termLabel(term: string | null | undefined, locale: "en" | "ar") {
+  if (term === "fall") return locale === "ar" ? "الخريف" : "Fall";
+  if (term === "spring") return locale === "ar" ? "الربيع" : "Spring";
+  if (term === "summer") return locale === "ar" ? "الصيف" : "Summer";
+  return term ?? (locale === "ar" ? "الفصل الحالي" : "Current semester");
 }
 
 function detectTextDirection(text: string): "rtl" | "ltr" {
@@ -98,13 +99,13 @@ function extractSourceNames(content: string): string[] {
     .filter(Boolean);
 }
 
-function sourceTypeLabel(sourceType: string | null | undefined) {
-  if (sourceType === "lecture") return "Lecture";
-  if (sourceType === "section") return "Section";
-  if (sourceType === "notes") return "Notes";
-  if (sourceType === "assignment") return "Assignment";
-  if (sourceType === "exam") return "Exam";
-  return "Source";
+function sourceTypeLabel(sourceType: string | null | undefined, locale: "en" | "ar") {
+  if (sourceType === "lecture") return locale === "ar" ? "محاضرة" : "Lecture";
+  if (sourceType === "section") return locale === "ar" ? "سكشن" : "Section";
+  if (sourceType === "notes") return locale === "ar" ? "ملاحظات" : "Notes";
+  if (sourceType === "assignment") return locale === "ar" ? "واجب" : "Assignment";
+  if (sourceType === "exam") return locale === "ar" ? "اختبار" : "Exam";
+  return locale === "ar" ? "مصدر" : "Source";
 }
 
 function buildMessageSources(message: Message, documents: StudyDocument[]): Array<StudySource & { signed_url?: string | null }> {
@@ -141,13 +142,15 @@ function buildStudyConversationTitle(course: StudyCourse, title: string) {
   return `${buildStudyConversationPrefix(course.id)}${course.code}::${title}`;
 }
 
-function displayStudyConversationTitle(rawTitle: string, fallbackCourseCode?: string) {
+function displayStudyConversationTitle(rawTitle: string, fallbackCourseCode?: string, locale: "en" | "ar" = "en") {
   if (!rawTitle.startsWith("study::")) return rawTitle;
   const parts = rawTitle.split("::");
-  return parts[3] || parts[2] || fallbackCourseCode || "Study session";
+  return parts[3] || parts[2] || fallbackCourseCode || (locale === "ar" ? "جلسة مذاكرة" : "Study session");
 }
 
 export default function StudyChatPage() {
+  const { locale } = useLocale();
+  const isArabic = locale === "ar";
   const supabase = createClient();
   const backendUrl = getBackendUrl();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -182,6 +185,40 @@ export default function StudyChatPage() {
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const copy = {
+    title: isArabic ? "دردشة الدراسة" : "Study Chat",
+    failedLoadCourses: isArabic ? "فشل في تحميل مقررات الفصل الحالي" : "Failed to load current semester courses",
+    failedLoadStudyCourses: isArabic ? "فشل في تحميل مقررات الدراسة" : "Failed to load study courses",
+    failedLoadMaterials: isArabic ? "فشل في تحميل مواد الدراسة" : "Failed to load study materials",
+    chatMode: isArabic ? "دردشة" : "Chat",
+    summaryMode: isArabic ? "تلخيص" : "Summary",
+    quizMode: isArabic ? "اختبار" : "Quiz",
+    flashcardsMode: isArabic ? "بطاقات" : "Flashcards",
+    expectedQuestionsMode: isArabic ? "أسئلة متوقعة" : "Expected Questions",
+    studyPlanMode: isArabic ? "خطة مذاكرة" : "Study Plan",
+    deleteSessionConfirm: isArabic ? "هل تريد حذف جلسة المذاكرة لهذه المادة؟" : "Delete this study session for the selected course?",
+    deleteSourceConfirm: isArabic ? "هل تريد حذف هذا الملف من مكتبة المادة؟" : "Delete this study material from the selected course library?",
+    sourceType: isArabic ? "نوع المصدر" : "Source type",
+    lectureNumber: isArabic ? "رقم المحاضرة" : "Lecture no.",
+    uploading: isArabic ? "جارٍ الرفع..." : "Uploading...",
+    uploadButton: isArabic ? "رفع محاضرة أو ملاحظات" : "Upload lecture or notes",
+    selectAll: isArabic ? "تحديد الكل" : "Select all",
+    clear: isArabic ? "مسح" : "Clear",
+    selected: isArabic ? "محدد" : "selected",
+    untitledFile: isArabic ? "ملف بدون عنوان" : "Untitled file",
+    recentlyUploaded: isArabic ? "تم رفعه مؤخراً" : "Recently uploaded",
+    openSource: isArabic ? "فتح المصدر" : "Open source",
+    deleteSession: isArabic ? "حذف الجلسة" : "Delete session",
+    deleteSource: isArabic ? "حذف المصدر" : "Delete source",
+    readySources: isArabic ? "مصدر جاهز" : "source(s) ready",
+    noSourcesYet: isArabic ? "لا توجد مصادر بعد" : "No sources yet",
+    sources: isArabic ? "المصادر" : "Sources",
+    send: isArabic ? "إرسال" : "Send",
+    chooseCourseFirst: isArabic ? "اختر مادة أولاً" : "Choose a course first",
+    currentSemester: isArabic ? "الفصل الحالي" : "Current Semester",
+    currentSemesterHint: isArabic ? "ستظهر مقررات فصلك الحالي هنا." : "Your current-semester courses will appear here.",
+  } as const;
+
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
@@ -200,7 +237,7 @@ export default function StudyChatPage() {
         const json = await response.json();
 
         if (!response.ok) {
-          throw new Error(json?.error || "Failed to load current semester courses");
+          throw new Error(json?.error || copy.failedLoadCourses);
         }
 
         setCourses(json.courses ?? []);
@@ -210,7 +247,7 @@ export default function StudyChatPage() {
           setSelectedCourseId(json.courses[0].id);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load study courses");
+        setError(err instanceof Error ? err.message : copy.failedLoadStudyCourses);
       } finally {
         setIsLoadingCourses(false);
       }
@@ -226,14 +263,14 @@ export default function StudyChatPage() {
 
   const studyModes = useMemo(
     () => [
-      { id: "chat", label: "Chat" },
-      { id: "summary", label: "Summary" },
-      { id: "quiz", label: "Quiz" },
-      { id: "flashcards", label: "Flashcards" },
-      { id: "expected_questions", label: "Expected Questions" },
-      { id: "study_plan", label: "Study Plan" },
+      { id: "chat", label: copy.chatMode },
+      { id: "summary", label: copy.summaryMode },
+      { id: "quiz", label: copy.quizMode },
+      { id: "flashcards", label: copy.flashcardsMode },
+      { id: "expected_questions", label: copy.expectedQuestionsMode },
+      { id: "study_plan", label: copy.studyPlanMode },
     ] as const,
-    [],
+    [copy.chatMode, copy.expectedQuestionsMode, copy.flashcardsMode, copy.quizMode, copy.studyPlanMode, copy.summaryMode],
   );
 
   const welcomeMessage = useMemo(
@@ -241,11 +278,11 @@ export default function StudyChatPage() {
       id: `welcome-${selectedCourseId || "study"}`,
       type: "ai" as const,
       content: selectedCourse
-        ? `## ${selectedCourse.code}\nهذه جلسة مذاكرة مستقلة للمادة **${selectedCourse.name}**. اختر المصادر التي تريد الاعتماد عليها ثم ابدأ بالسؤال أو اختر mode جاهز.`
-        : "## Study Chat\nاختر مادة أولًا لبدء جلسة مذاكرة مستقلة.",
+        ? `## ${selectedCourse.code}\nهذه جلسة مذاكرة مستقلة للمادة **${selectedCourse.name}**. اختر المصادر التي تريد الاعتماد عليها ثم ابدأ بالسؤال أو اختر وضعًا جاهزًا.`
+        : `## ${copy.title}\n${isArabic ? "اختر مادة أولًا لبدء جلسة مذاكرة مستقلة." : "Choose a course first to start an independent study session."}`,
       timestamp: new Date().toLocaleTimeString(),
     }),
-    [selectedCourse, selectedCourseId],
+    [copy.title, isArabic, selectedCourse, selectedCourseId],
   );
 
   useEffect(() => {
@@ -266,13 +303,13 @@ export default function StudyChatPage() {
 
         const payload = await response.json();
         if (!response.ok) {
-          throw new Error(payload?.detail || "Failed to load study materials");
+          throw new Error(payload?.detail || copy.failedLoadMaterials);
         }
 
         setDocuments(payload.documents ?? []);
         setSelectedDocumentIds((payload.documents ?? []).map((item: StudyDocument) => item.id));
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load study materials");
+        setError(err instanceof Error ? err.message : copy.failedLoadMaterials);
       } finally {
         setIsLoadingDocuments(false);
       }
@@ -336,7 +373,7 @@ export default function StudyChatPage() {
     return [
       `لخصلي أهم الأفكار في محاضرات ${selectedCourse.code}`,
       `اشرحلي أبسط شرح للنقاط الأساسية في ${selectedCourse.name}`,
-      `اعمللي quiz قصير من الملفات المرفوعة في ${selectedCourse.code}`,
+      `اعمللي اختبارًا قصيرًا من الملفات المرفوعة في ${selectedCourse.code}`,
       `استخرج أهم الأسئلة المتوقعة من محاضرات ${selectedCourse.name}`,
     ];
   }, [selectedCourse]);
@@ -483,7 +520,7 @@ export default function StudyChatPage() {
   }
 
   async function handleDeleteConversation(convId: string) {
-    if (!confirm("Delete this study session for the selected course?")) {
+    if (!confirm(copy.deleteSessionConfirm)) {
       return;
     }
 
@@ -581,7 +618,7 @@ export default function StudyChatPage() {
   }
 
   async function handleDeleteDocument(documentId: string) {
-    if (!confirm("Delete this study material from the selected course library?")) {
+    if (!confirm(copy.deleteSourceConfirm)) {
       return;
     }
 
@@ -745,7 +782,7 @@ export default function StudyChatPage() {
               <Sparkles className="h-3.5 w-3.5" />
               Notebook-style study workspace
             </div>
-            <h1 className="text-3xl font-bold text-[#102C57]">Study Chat</h1>
+            <h1 className="text-3xl font-bold text-[#102C57]">{copy.title}</h1>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-[#102C57]/70">
               اختر مادة من مواد السمستر الحالي، ارفع المحاضرات أو ملفات المراجعة الخاصة بها،
               ثم اسأل الشات ليشرح أو يلخص أو يختبرك اعتمادًا على تلك الملفات فقط.
@@ -755,12 +792,12 @@ export default function StudyChatPage() {
           <div className="rounded-2xl border border-[#DAC0A3]/25 bg-[#F8F0E5] px-4 py-3 text-sm text-[#102C57]">
             <div className="flex items-center gap-2 font-semibold">
               <BookOpen className="h-4 w-4" />
-              <span>{currentSemester?.name ?? "Current Semester"}</span>
+              <span>{currentSemester?.name ?? copy.currentSemester}</span>
             </div>
             <p className="mt-1 text-xs text-[#102C57]/60">
               {currentSemester
-                ? `${termLabel(currentSemester.term)} ${currentSemester.academic_year ?? ""}`.trim()
-                : "Your current-semester courses will appear here."}
+                ? `${termLabel(currentSemester.term, locale)} ${currentSemester.academic_year ?? ""}`.trim()
+                : copy.currentSemesterHint}
             </p>
           </div>
         </div>
@@ -807,7 +844,7 @@ export default function StudyChatPage() {
                         className="min-w-0 flex-1 text-right"
                       >
                         <div className="truncate text-sm font-medium">
-                          {displayStudyConversationTitle(conv.title, selectedCourse?.code)}
+                          {displayStudyConversationTitle(conv.title, selectedCourse?.code, locale)}
                         </div>
                         <div className={`mt-1 text-[11px] ${active ? "text-[#F8F0E5]/70" : "text-[#102C57]/45"}`}>
                           {new Date(conv.created_at).toLocaleDateString()} {conv.message_count ? `• ${conv.message_count} msgs` : ""}
@@ -821,7 +858,7 @@ export default function StudyChatPage() {
                             ? "border-white/20 bg-white/10 text-white"
                             : "border-red-200 bg-white text-red-500"
                         }`}
-                        title="Delete session"
+                        title={copy.deleteSession}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -910,17 +947,17 @@ export default function StudyChatPage() {
 
             <div className="mb-4 grid gap-3 md:grid-cols-2">
               <label className="space-y-1">
-                <span className="text-[11px] font-medium text-[#102C57]/60">Source type</span>
+                <span className="text-[11px] font-medium text-[#102C57]/60">{copy.sourceType}</span>
                 <select
                   value={uploadSourceType}
                   onChange={(event) => setUploadSourceType(event.target.value)}
                   className="w-full rounded-2xl border border-[#DAC0A3]/30 bg-[#FCFAF7] px-3 py-2 text-sm text-[#102C57] outline-none"
                 >
-                  <option value="lecture">Lecture</option>
-                  <option value="section">Section</option>
-                  <option value="notes">Notes</option>
-                  <option value="assignment">Assignment</option>
-                  <option value="exam">Exam</option>
+                  <option value="lecture">{sourceTypeLabel("lecture", locale)}</option>
+                  <option value="section">{sourceTypeLabel("section", locale)}</option>
+                  <option value="notes">{sourceTypeLabel("notes", locale)}</option>
+                  <option value="assignment">{sourceTypeLabel("assignment", locale)}</option>
+                  <option value="exam">{sourceTypeLabel("exam", locale)}</option>
                 </select>
               </label>
               <label className="space-y-1">
@@ -944,7 +981,7 @@ export default function StudyChatPage() {
                 />
               </label>
               <label className="space-y-1">
-                <span className="text-[11px] font-medium text-[#102C57]/60">Lecture no.</span>
+                <span className="text-[11px] font-medium text-[#102C57]/60">{copy.lectureNumber}</span>
                 <input
                   type="text"
                   value={uploadLectureNumber}
@@ -962,7 +999,7 @@ export default function StudyChatPage() {
               className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[#102C57]/30 bg-[#F8F0E5] px-4 py-3 text-sm font-medium text-[#102C57] transition hover:bg-[#efe3d2] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-              <span>{isUploading ? "Uploading..." : "Upload lecture or notes"}</span>
+              <span>{isUploading ? copy.uploading : copy.uploadButton}</span>
             </button>
 
             {documents.length > 0 ? (
@@ -972,17 +1009,17 @@ export default function StudyChatPage() {
                   onClick={selectAllDocuments}
                   className="rounded-full bg-[#F8F0E5] px-3 py-1 text-[11px] font-medium text-[#102C57]"
                 >
-                  Select all
+                  {copy.selectAll}
                 </button>
                 <button
                   type="button"
                   onClick={clearDocumentSelection}
                   className="rounded-full bg-[#F8F0E5] px-3 py-1 text-[11px] font-medium text-[#102C57]"
                 >
-                  Clear
+                  {copy.clear}
                 </button>
                 <span className="text-[11px] text-[#102C57]/45">
-                  {selectedDocumentIds.length} selected
+                  {selectedDocumentIds.length} {copy.selected}
                 </span>
               </div>
             ) : null}
@@ -1012,20 +1049,20 @@ export default function StudyChatPage() {
                           className="h-4 w-4 rounded border-[#DAC0A3]"
                         />
                         <FileText className="h-4 w-4 shrink-0" />
-                        <span className="truncate">{document.title ?? "Untitled file"}</span>
+                        <span className="truncate">{document.title ?? copy.untitledFile}</span>
                       </div>
                       <p className="mt-1 text-[11px] text-[#102C57]/45">
                         {document.uploaded_at
                           ? new Date(document.uploaded_at).toLocaleString()
-                          : "Recently uploaded"}
+                          : copy.recentlyUploaded}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-2">
                         <span className="rounded-full bg-[#F8F0E5] px-2.5 py-1 text-[10px] font-medium text-[#102C57]">
-                          {sourceTypeLabel(document.metadata?.source_type)}
+                          {sourceTypeLabel(document.metadata?.source_type, locale)}
                         </span>
                         {document.metadata?.lecture_number ? (
                           <span className="rounded-full bg-[#F8F0E5] px-2.5 py-1 text-[10px] font-medium text-[#102C57]">
-                            Lecture {document.metadata.lecture_number}
+                            {copy.lectureNumber} {document.metadata.lecture_number}
                           </span>
                         ) : null}
                         {document.metadata?.week ? (
@@ -1047,7 +1084,7 @@ export default function StudyChatPage() {
                           className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-[#102C57] underline underline-offset-2"
                         >
                           <FileText className="h-3 w-3" />
-                          <span>Open source</span>
+                          <span>{copy.openSource}</span>
                         </a>
                       ) : null}
                     </div>
@@ -1055,7 +1092,7 @@ export default function StudyChatPage() {
                       type="button"
                       onClick={() => void handleDeleteDocument(document.id)}
                       className="rounded-lg border border-red-200 bg-white p-2 text-red-500 transition hover:bg-red-50"
-                      title="Delete source"
+                      title={copy.deleteSource}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -1080,7 +1117,7 @@ export default function StudyChatPage() {
               {selectedCourse ? (
                 <div className="inline-flex items-center gap-2 self-start rounded-full bg-[#F8F0E5] px-3 py-1 text-xs font-medium text-[#102C57]">
                   <Brain className="h-3.5 w-3.5" />
-                  {documents.length > 0 ? `${documents.length} source(s) ready` : "No sources yet"}
+                  {documents.length > 0 ? `${documents.length} ${copy.readySources}` : copy.noSourcesYet}
                 </div>
               ) : null}
             </div>
@@ -1143,7 +1180,7 @@ export default function StudyChatPage() {
                         </div>
                         {linkedSources.length > 0 ? (
                           <div className="space-y-2 border-t border-[#DAC0A3]/20 pt-3">
-                            <div className="text-xs font-semibold text-[#102C57]/65">Sources</div>
+                            <div className="text-xs font-semibold text-[#102C57]/65">{copy.sources}</div>
                             <div className="space-y-2">
                               {linkedSources.map((source, index) => (
                                 <div
@@ -1169,12 +1206,12 @@ export default function StudyChatPage() {
                                     )}
                                     {source.source_type ? (
                                       <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-medium">
-                                        {sourceTypeLabel(source.source_type)}
+                                        {sourceTypeLabel(source.source_type, locale)}
                                       </span>
                                     ) : null}
                                     {source.lecture_number ? (
                                       <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-medium">
-                                        Lecture {source.lecture_number}
+                                        {copy.lectureNumber} {source.lecture_number}
                                       </span>
                                     ) : null}
                                     {source.week ? (
@@ -1253,7 +1290,7 @@ export default function StudyChatPage() {
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#102C57] px-5 py-3 text-sm font-semibold text-[#F8F0E5] transition hover:bg-[#0d2447] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                <span>Send</span>
+                <span>{copy.send}</span>
               </button>
             </div>
           </div>

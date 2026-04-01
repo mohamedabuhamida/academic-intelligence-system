@@ -61,47 +61,104 @@ function detectTextDirection(text: string): "rtl" | "ltr" {
 }
 
 function formatPlannerQuestion(params: {
+  locale: "en" | "ar";
   targetCgpa: string;
   plannedCredits: string;
   customText: string;
   selectedCourses: EligibleCourse[];
 }) {
-  const { targetCgpa, plannedCredits, customText, selectedCourses } = params;
+  const { locale, targetCgpa, plannedCredits, customText, selectedCourses } = params;
+  const isArabic = locale === "ar";
 
   const parts: string[] = [];
-  if (targetCgpa.trim()) parts.push(`Target CGPA: ${targetCgpa.trim()}`);
+  if (targetCgpa.trim()) {
+    parts.push(
+      isArabic ? `المعدل التراكمي المستهدف: ${targetCgpa.trim()}` : `Target CGPA: ${targetCgpa.trim()}`
+    );
+  }
 
   const selectedCredits = selectedCourses.reduce((sum, c) => sum + (c.credit_hours || 0), 0);
   const creditsToUse = plannedCredits.trim() || (selectedCredits > 0 ? String(selectedCredits) : "");
   if (creditsToUse) {
-    parts.push(`Planned credits this semester: ${creditsToUse}`);
+    parts.push(
+      isArabic
+        ? `الساعات المخططة لهذا الفصل: ${creditsToUse}`
+        : `Planned credits this semester: ${creditsToUse}`
+    );
   }
 
   if (selectedCourses.length > 0) {
     const lines = selectedCourses.map(
-      (c) => `- ${c.code} (${c.credit_hours} credits)`
+      (c) => isArabic ? `- ${c.code} (${c.credit_hours} ساعات)` : `- ${c.code} (${c.credit_hours} credits)`
     );
-    parts.push(`Selected courses for registration:\n${lines.join("\n")}`);
+    parts.push(
+      isArabic
+        ? `المقررات المختارة للتسجيل:\n${lines.join("\n")}`
+        : `Selected courses for registration:\n${lines.join("\n")}`
+    );
   }
 
-  if (customText.trim()) parts.push(`Additional request: ${customText.trim()}`);
+  if (customText.trim()) {
+    parts.push(isArabic ? `طلب إضافي: ${customText.trim()}` : `Additional request: ${customText.trim()}`);
+  }
 
   if (parts.length === 0) {
-    return "Help me raise my GPA this semester. How many A or A+ grades do I need?";
+    return isArabic
+      ? "ساعدني على رفع معدلي هذا الفصل. كم درجة A أو A+ أحتاج؟"
+      : "Help me raise my GPA this semester. How many A or A+ grades do I need?";
   }
 
-  return [
-    "Build a practical plan to increase my cumulative GPA this semester.",
-    ...parts,
-    "Use the selected courses and their real credit hours in your calculations.",
-    "Calculate what I need and explain clearly with realistic scenarios.",
-  ].join("\n");
+  return isArabic
+    ? [
+        "ابنِ لي خطة عملية لرفع المعدل التراكمي هذا الفصل.",
+        ...parts,
+        "استخدم المقررات المختارة وساعاتها الفعلية في الحسابات.",
+        "احسب المطلوب مني واشرحه بوضوح مع سيناريوهات واقعية.",
+      ].join("\n")
+    : [
+        "Build a practical plan to increase my cumulative GPA this semester.",
+        ...parts,
+        "Use the selected courses and their real credit hours in your calculations.",
+        "Calculate what I need and explain clearly with realistic scenarios.",
+      ].join("\n");
 }
 
 export default function PlannerPage() {
   const { locale } = useLocale();
   const copy = getMessages(locale).planner;
+  const isArabic = locale === "ar";
   const supabase = useMemo(() => createClient(), []);
+  const ui = {
+    aiReady: isArabic ? "المخطط الذكي جاهز" : "Planner AI Ready",
+    plannerInput: isArabic ? "مدخلات المخطط" : "Planner Input",
+    selectedSummary: isArabic ? "المحدد" : "Selected",
+    coursesCount: isArabic ? "مقرر" : "course(s)",
+    creditsShort: isArabic ? "ساعة" : "credits",
+    loadingAvailableCourses: isArabic ? "جاري تحميل المقررات المتاحة..." : "Loading available courses...",
+    noEligibleCourses: isArabic ? "لا توجد مقررات متاحة." : "No eligible courses found.",
+    creditShort: isArabic ? "س.م" : "cr",
+    notEligibleCourses: isArabic ? "المقررات غير المتاحة" : "Not eligible courses",
+    missingPrerequisites: isArabic ? "المتطلبات الناقصة" : "Missing prerequisites",
+    requiresCompletedCredits: isArabic ? "يتطلب على الأقل" : "Requires at least",
+    completedCreditsHave: isArabic ? "ساعة مكتملة (لديك" : "completed credits (you have",
+    recommendationSummary: isArabic ? "ملخص التوصية" : "Recommendation Summary",
+    requiredSemesterGpa: isArabic ? "معدل الفصل المطلوب" : "Required semester GPA",
+    notAvailable: isArabic ? "غير متاح" : "N/A",
+    recommending: isArabic ? "جارٍ الاقتراح..." : "Recommending...",
+    generating: isArabic ? "جارٍ الإنشاء..." : "Generating...",
+    guidance: isArabic ? "إرشادات" : "Guidance",
+    guidance1: isArabic ? "اختر المقررات من قائمة المقررات المتاحة فقط." : "Choose courses from eligible list only.",
+    guidance2: isArabic ? "يعتمد المخطط على المقررات المختارة والساعات الحقيقية لكل مقرر." : "Planner uses selected courses and real credit hours.",
+    guidance3: isArabic ? "استخدم اقتراح أفضل المقررات للحصول على مزيج محسن من 18 ساعة." : 'Use "Suggest Best Courses" for an optimized 18-credit mix.',
+    questionSent: isArabic ? "الطلب المرسل" : "Question Sent",
+    plannerResponse: isArabic ? "رد المخطط" : "Planner Response",
+    noAnswerReturned: isArabic ? "لم يتم إرجاع إجابة." : "No answer returned.",
+    unexpectedError: isArabic ? "حدث خطأ غير متوقع." : "Unexpected error.",
+    targetAndCreditsFirst: isArabic ? "أدخل المعدل المستهدف والساعات المخططة أولاً." : "Please enter target CGPA and planned credits first.",
+    recommendationFailed: isArabic ? "فشل في توليد التوصية." : "Recommendation failed.",
+    signInAgain: isArabic ? "يرجى تسجيل الدخول مرة أخرى للمتابعة." : "Please sign in again to continue.",
+    requestFailed: isArabic ? "فشل الطلب." : "Request failed.",
+  } as const;
 
   const [targetCgpa, setTargetCgpa] = useState("");
   const [plannedCredits, setPlannedCredits] = useState("");
@@ -141,14 +198,14 @@ export default function PlannerPage() {
         const json = await res.json();
 
         if (!res.ok) {
-          throw new Error(json?.error || "Failed to load eligible courses");
+          throw new Error(json?.error || copy.noEligibleCourses);
         }
 
         setEligibleCourses((json?.eligible || []) as EligibleCourse[]);
         setNotEligibleCourses((json?.notEligible || []) as NotEligibleCourse[]);
       } catch (err) {
         console.error(err);
-        setError(err instanceof Error ? err.message : "Failed to load courses");
+        setError(err instanceof Error ? err.message : copy.noEligibleCourses);
       } finally {
         setCoursesLoading(false);
       }
@@ -158,9 +215,9 @@ export default function PlannerPage() {
   }, []);
 
   const quickPrompts = [
-    "How many A+ do I need this term?",
-    "Can I reach 3.7 with this selected load?",
-    "Give me a low-risk GPA improvement plan",
+    isArabic ? "كم درجة A+ أحتاج هذا الفصل؟" : "How many A+ do I need this term?",
+    isArabic ? "هل يمكنني الوصول إلى 3.7 بهذا العبء؟" : "Can I reach 3.7 with this selected load?",
+    isArabic ? "أعطني خطة آمنة لرفع المعدل" : "Give me a low-risk GPA improvement plan",
   ];
 
   const toggleCourse = (courseId: string) => {
@@ -177,17 +234,17 @@ export default function PlannerPage() {
       const target = Number(targetCgpa);
       const planned = Number(plannedCredits || selectedCredits || 0);
       if (!target || !planned) {
-        throw new Error("Please enter target CGPA and planned credits first.");
+        throw new Error(ui.targetAndCreditsFirst);
       }
 
       const res = await fetch("/api/planner/recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetCgpa: target, plannedCredits: planned }),
+        body: JSON.stringify({ targetCgpa: target, plannedCredits: planned, locale }),
       });
       const json = await res.json();
       if (!res.ok) {
-        throw new Error(json?.error || "Failed to generate recommendation.");
+        throw new Error(json?.error || ui.recommendationFailed);
       }
 
       const rec = json as RecommendationResult;
@@ -197,7 +254,7 @@ export default function PlannerPage() {
         setPlannedCredits(String(rec.recommendedCredits));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Recommendation failed.");
+      setError(err instanceof Error ? err.message : ui.recommendationFailed);
     } finally {
       setRecommending(false);
     }
@@ -215,10 +272,11 @@ export default function PlannerPage() {
 
       const token = session?.access_token;
       if (!token) {
-        throw new Error("Please sign in again to continue.");
+        throw new Error(ui.signInAgain);
       }
 
       const question = formatPlannerQuestion({
+        locale,
         targetCgpa,
         plannedCredits,
         customText,
@@ -237,27 +295,27 @@ export default function PlannerPage() {
 
       const payload = await res.json();
       if (!res.ok) {
-        const detail = payload?.detail || payload?.answer || "Request failed.";
+        const detail = payload?.detail || payload?.answer || ui.requestFailed;
         throw new Error(String(detail));
       }
 
-      const responseText = payload?.answer ? String(payload.answer) : "No answer returned.";
+      const responseText = payload?.answer ? String(payload.answer) : ui.noAnswerReturned;
       setAnswer(responseText);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unexpected error.");
+      setError(err instanceof Error ? err.message : ui.unexpectedError);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <motion.div initial="initial" animate="animate" className="space-y-6">
+    <motion.div initial="initial" animate="animate" className="space-y-6" dir={isArabic ? "rtl" : "ltr"}>
       <motion.div
         variants={fadeInScale}
-        className="rounded-3xl border border-[#DAC0A3]/25 bg-gradient-to-br from-white to-[#F8F0E5] p-6 shadow-lg"
+        className={`rounded-3xl border border-[#DAC0A3]/25 bg-gradient-to-br from-white to-[#F8F0E5] p-6 shadow-lg ${isArabic ? "text-right" : "text-left"}`}
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
+          <div className={isArabic ? "text-right" : "text-left"}>
             <h1 className="text-3xl font-bold text-[#102C57]">{copy.title}</h1>
             <p className="mt-2 text-[#102C57]/65">
               {copy.description}
@@ -265,7 +323,7 @@ export default function PlannerPage() {
           </div>
           <div className="flex items-center gap-2 rounded-xl border border-[#DAC0A3]/30 bg-white/80 px-4 py-2">
             <Sparkles className="h-4 w-4 text-[#102C57]" />
-            <span className="text-sm font-medium text-[#102C57]">Planner AI Ready</span>
+            <span className="text-sm font-medium text-[#102C57]">{ui.aiReady}</span>
           </div>
         </div>
 
@@ -285,16 +343,16 @@ export default function PlannerPage() {
       <motion.div variants={staggerContainer} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <motion.section
           variants={listItemVariants}
-          className="lg:col-span-2 rounded-2xl border border-[#DAC0A3]/25 bg-white/75 p-6 shadow-lg"
+          className={`lg:col-span-2 rounded-2xl border border-[#DAC0A3]/25 bg-white/75 p-6 shadow-lg ${isArabic ? "text-right" : "text-left"}`}
         >
-          <div className="mb-5 flex items-center gap-2">
+          <div className={`mb-5 flex items-center gap-2 ${isArabic ? "justify-end" : "justify-start"}`}>
             <SlidersHorizontal className="h-5 w-5 text-[#102C57]" />
-            <h2 className="text-lg font-semibold text-[#102C57]">Planner Input</h2>
+            <h2 className="text-lg font-semibold text-[#102C57]">{ui.plannerInput}</h2>
           </div>
 
           <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="space-y-2">
-              <span className="text-sm text-[#102C57]/70">Target CGPA</span>
+              <span className="text-sm text-[#102C57]/70">{copy.targetCgpa}</span>
               <input
                 value={targetCgpa}
                 onChange={(e) => setTargetCgpa(e.target.value)}
@@ -303,7 +361,7 @@ export default function PlannerPage() {
               />
             </label>
             <label className="space-y-2">
-              <span className="text-sm text-[#102C57]/70">Planned Credits (optional)</span>
+              <span className="text-sm text-[#102C57]/70">{copy.plannedCredits} {isArabic ? "(اختياري)" : "(optional)"}</span>
               <input
                 value={plannedCredits}
                 onChange={(e) => setPlannedCredits(e.target.value)}
@@ -314,12 +372,12 @@ export default function PlannerPage() {
           </div>
 
           <label className="mb-4 block space-y-2">
-            <span className="text-sm text-[#102C57]/70">What do you want from the planner?</span>
+            <span className="text-sm text-[#102C57]/70">{copy.yourRequest}</span>
             <textarea
               value={customText}
               onChange={(e) => setCustomText(e.target.value)}
               rows={4}
-              placeholder="Example: How many A or A+ grades do I need this term?"
+              placeholder={copy.yourRequestPlaceholder}
               dir={customTextDir}
               className="w-full resize-y rounded-xl border border-[#DAC0A3]/35 bg-[#F8F0E5] px-4 py-3 text-[#102C57] outline-none focus:border-[#102C57]/40"
             />
@@ -329,14 +387,14 @@ export default function PlannerPage() {
             <div className="mb-2 flex items-center justify-between">
               <p className="text-sm font-medium text-[#102C57]">{copy.eligibleCourses}</p>
               <span className="text-xs text-[#102C57]/65">
-                Selected: {selectedCourses.length} course(s), {selectedCredits} credits
+                {ui.selectedSummary}: {selectedCourses.length} {ui.coursesCount}, {selectedCredits} {ui.creditsShort}
               </span>
             </div>
 
             {coursesLoading ? (
-              <p className="text-sm text-[#102C57]/60">Loading available courses...</p>
+              <p className="text-sm text-[#102C57]/60">{ui.loadingAvailableCourses}</p>
             ) : eligibleCourses.length === 0 ? (
-              <p className="text-sm text-[#102C57]/60">No eligible courses found.</p>
+              <p className="text-sm text-[#102C57]/60">{ui.noEligibleCourses}</p>
             ) : (
               <div className="max-h-64 space-y-2 overflow-auto pr-1">
                 {eligibleCourses.map((course) => {
@@ -345,19 +403,19 @@ export default function PlannerPage() {
                     <button
                       key={course.id}
                       onClick={() => toggleCourse(course.id)}
-                      className={`w-full rounded-lg border px-3 py-2 text-left transition ${
+                      className={`w-full rounded-lg border px-3 py-2 ${isArabic ? "text-right" : "text-left"} transition ${
                         selected
                           ? "border-[#102C57]/40 bg-white"
                           : "border-[#DAC0A3]/35 bg-[#F8F0E5] hover:bg-white"
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2 text-[#102C57]">
+                      <div className={`flex items-center justify-between gap-3 ${isArabic ? "flex-row-reverse" : ""}`}>
+                        <div className={`flex items-center gap-2 text-[#102C57] ${isArabic ? "flex-row-reverse" : ""}`}>
                           {selected ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
                           <span className="text-sm font-medium">{course.code}</span>
                           <span className="text-sm text-[#102C57]/80">{course.name}</span>
                         </div>
-                        <span className="text-xs text-[#102C57]/70">{course.credit_hours} cr</span>
+                        <span className="text-xs text-[#102C57]/70">{course.credit_hours} {ui.creditShort}</span>
                       </div>
                     </button>
                   );
@@ -369,21 +427,21 @@ export default function PlannerPage() {
           {notEligibleCourses.length > 0 && (
             <details className="mb-4 rounded-xl border border-[#DAC0A3]/25 bg-white/80 p-3">
               <summary className="cursor-pointer text-sm font-medium text-[#102C57]">
-                Not eligible courses ({notEligibleCourses.length})
+                {ui.notEligibleCourses} ({notEligibleCourses.length})
               </summary>
               <div className="mt-3 space-y-2">
                 {notEligibleCourses.map((course) => (
                   <div key={course.id} className="rounded-lg border border-[#DAC0A3]/25 bg-[#F8F0E5] p-2.5">
                     <p className="text-sm font-medium text-[#102C57]">
-                      {course.code} - {course.name} ({course.credit_hours} cr)
+                      {course.code} - {course.name} ({course.credit_hours} {ui.creditShort})
                     </p>
                     {course.reason === "missing_prerequisites" ? (
                       <p className="text-xs text-[#102C57]/70">
-                        Missing prerequisites: {course.missing_prerequisites.join(", ")}
+                        {ui.missingPrerequisites}: {course.missing_prerequisites.join(", ")}
                       </p>
                     ) : (
                       <p className="text-xs text-[#102C57]/70">
-                        Requires at least {course.required_credits} completed credits (you have {course.current_completed_credits}).
+                        {ui.requiresCompletedCredits} {course.required_credits} {isArabic ? "ساعة مكتملة" : "completed credits"} ({isArabic ? `لديك ${course.current_completed_credits}` : `you have ${course.current_completed_credits}`})
                       </p>
                     )}
                   </div>
@@ -394,18 +452,18 @@ export default function PlannerPage() {
 
           {recommendation && (
             <div className="mb-4 rounded-xl border border-[#DAC0A3]/25 bg-white p-3">
-              <p className="text-sm font-medium text-[#102C57]">Recommendation Summary</p>
+              <p className="text-sm font-medium text-[#102C57]">{ui.recommendationSummary}</p>
               <p className="mt-1 text-xs text-[#102C57]/70">
-                Required semester GPA: <span className="font-semibold">{recommendation.requiredSemesterGpa ?? "N/A"}</span>
+                {ui.requiredSemesterGpa}: <span className="font-semibold">{recommendation.requiredSemesterGpa ?? ui.notAvailable}</span>
               </p>
               <p className="text-xs text-[#102C57]/70">
-                Recommended credits: <span className="font-semibold">{recommendation.recommendedCredits}</span>
+                {copy.recommendedCredits}: <span className="font-semibold">{recommendation.recommendedCredits}</span>
               </p>
               <p className="mt-1 text-xs text-[#102C57]/65">{recommendation.note}</p>
             </div>
           )}
 
-          <div className="flex flex-wrap gap-2">
+          <div className={`flex flex-wrap gap-2 ${isArabic ? "justify-end" : "justify-start"}`}>
             <motion.button
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
@@ -414,7 +472,7 @@ export default function PlannerPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-[#102C57]/20 bg-white px-4 py-2.5 text-[#102C57] disabled:opacity-60"
             >
               <WandSparkles className={`h-4 w-4 ${recommending ? "animate-pulse" : ""}`} />
-              {recommending ? "Recommending..." : "Suggest Best Courses"}
+              {recommending ? ui.recommending : copy.suggestBestCourses}
             </motion.button>
 
             <motion.button
@@ -425,23 +483,23 @@ export default function PlannerPage() {
               className="inline-flex items-center gap-2 rounded-xl bg-[#102C57] px-5 py-2.5 text-[#F8F0E5] disabled:opacity-60"
             >
               {loading ? <Calculator className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              {loading ? "Generating..." : "Generate Plan"}
+              {loading ? ui.generating : copy.askPlanner}
             </motion.button>
           </div>
         </motion.section>
 
         <motion.aside
           variants={listItemVariants}
-          className="rounded-2xl border border-[#DAC0A3]/25 bg-white/75 p-6 shadow-lg"
+          className={`rounded-2xl border border-[#DAC0A3]/25 bg-white/75 p-6 shadow-lg ${isArabic ? "text-right" : "text-left"}`}
         >
-          <div className="mb-4 flex items-center gap-2">
+          <div className={`mb-4 flex items-center gap-2 ${isArabic ? "justify-end" : "justify-start"}`}>
             <BookOpen className="h-5 w-5 text-[#102C57]" />
-            <h3 className="text-lg font-semibold text-[#102C57]">Guidance</h3>
+            <h3 className="text-lg font-semibold text-[#102C57]">{ui.guidance}</h3>
           </div>
-          <ul className="list-disc space-y-2 pl-5 text-sm text-[#102C57]/75">
-            <li>Choose courses from eligible list only.</li>
-            <li>Planner uses selected courses and real credit hours.</li>
-            <li>Use "Suggest Best Courses" for an optimized 18-credit mix.</li>
+          <ul className={`list-disc space-y-2 text-sm text-[#102C57]/75 ${isArabic ? "pr-5" : "pl-5"}`}>
+            <li>{ui.guidance1}</li>
+            <li>{ui.guidance2}</li>
+            <li>{ui.guidance3}</li>
           </ul>
         </motion.aside>
       </motion.div>
@@ -455,7 +513,7 @@ export default function PlannerPage() {
         >
           {questionUsed && (
             <div className="mb-4">
-              <p className="mb-1 text-xs uppercase tracking-wide text-[#102C57]/50">Question Sent</p>
+              <p className="mb-1 text-xs uppercase tracking-wide text-[#102C57]/50">{ui.questionSent}</p>
               <pre className="whitespace-pre-wrap rounded-xl border border-[#DAC0A3]/20 bg-[#F8F0E5] p-3 text-sm text-[#102C57]">
                 <span dir={questionDir} className="block text-start">{questionUsed}</span>
               </pre>
@@ -471,7 +529,7 @@ export default function PlannerPage() {
 
           {answer && (
             <div>
-              <p className="mb-2 text-xs uppercase tracking-wide text-[#102C57]/50">Planner Response</p>
+              <p className="mb-2 text-xs uppercase tracking-wide text-[#102C57]/50">{ui.plannerResponse}</p>
               <div dir={answerDir} className="ai-markdown rounded-xl border border-[#DAC0A3]/20 bg-[#F8F0E5] p-4 text-[#102C57]">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{answer}</ReactMarkdown>
               </div>

@@ -25,6 +25,7 @@ import {
   fadeInScale,
   staggerContainer,
 } from "@/components/animations";
+import { useLocale } from "@/components/providers/LocaleProvider";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -48,6 +49,8 @@ interface Conversation {
   last_message?: string;
   message_count?: number;
 }
+
+const STUDY_CONVERSATION_PREFIX = "study::";
 
 function detectTextDirection(text: string): "rtl" | "ltr" {
   const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;
@@ -98,6 +101,8 @@ function extractAssistantAnswer(raw: string): string {
 }
 
 export default function ChatPage() {
+  const { locale } = useLocale();
+  const isArabic = locale === "ar";
   const backendUrl = getBackendUrl();
   const supabase = createClient();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -111,6 +116,59 @@ export default function ChatPage() {
   const [showConversations, setShowConversations] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const ui = {
+    pageTitle: isArabic ? "المساعد الدراسي الذكي" : "AI Study Assistant",
+    pageDescription: isArabic
+      ? "اسأل عن أي شيء يتعلق بدراستك، المقررات، أو الخطط الدراسية"
+      : "Ask about your studies, courses, or academic plans",
+    conversations: isArabic ? "المحادثات" : "Conversations",
+    searchConversations: isArabic ? "بحث في المحادثات..." : "Search conversations...",
+    newChat: isArabic ? "محادثة جديدة" : "New chat",
+    exportChat: isArabic ? "تصدير المحادثة" : "Export conversation",
+    confirmDelete: isArabic ? "هل أنت متأكد من حذف هذه المحادثة؟" : "Are you sure you want to delete this conversation?",
+    thinking: isArabic ? "جاري التفكير..." : "Thinking...",
+    quickActions: isArabic ? "إجراءات سريعة:" : "Quick actions:",
+    quickActionItems: isArabic
+      ? ["متطلبات التخرج", "المقررات", "الخطة الدراسية", "المعدل", "المشاريع"]
+      : ["Graduation requirements", "Courses", "Study plan", "GPA", "Projects"],
+    send: isArabic ? "إرسال" : "Send",
+    typeQuestion: isArabic ? "اكتب سؤالك هنا..." : "Type your question here...",
+    contextLabel: isArabic ? "السياق: برنامج بكالوريوس علوم الحاسب" : "Context: Bachelor of Computer Science program",
+    sources: isArabic ? "المصادر:" : "Sources:",
+    messagesLabel: isArabic ? "رسائل" : "messages",
+    welcome: isArabic
+      ? `# مرحباً! 👋
+
+أنا مساعدك الدراسي الذكي. كيف يمكنني مساعدتك اليوم؟
+
+**يمكنني مساعدتك في:**
+- تحليل أدائك الأكاديمي
+- التخطيط للفصول الدراسية
+- الإجابة عن أسئلة المقررات
+
+**معدلك التراكمي الحالي:** 3.56
+**المقررات المكتملة:** 18 مقرر
+**الخطة الدراسية:** بكالوريوس علوم الحاسب
+
+اطرح سؤالك وسأبذل قصارى جهدي لمساعدتك!`
+      : `# Hello! 👋
+
+I am your AI study assistant. How can I help you today?
+
+**I can help with:**
+- Analyze your academic performance
+- Plan your semesters
+- Answer course-related questions
+
+**Current CGPA:** 3.56
+**Completed courses:** 18 courses
+**Program:** Bachelor of Computer Science
+
+Ask your question and I will do my best to help!`,
+    connectionError: isArabic
+      ? "عذرًا، حدث خطأ في الاتصال. يُرجى المحاولة مرة أخرى."
+      : "Sorry, a connection error occurred. Please try again.",
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -142,6 +200,7 @@ export default function ChatPage() {
         messages(count)
       `)
       .eq("user_id", user.id)
+      .not("title", "like", `${STUDY_CONVERSATION_PREFIX}%`)
       .order("created_at", { ascending: false });
 
     if (convs) {
@@ -152,21 +211,8 @@ export default function ChatPage() {
   const welcomeMessage = (): Message => ({
     id: `welcome-${Date.now()}`,
     type: "ai",
-    content: `# مرحباً! 👋
-
-أنا مساعدك الدراسي الذكي. كيف يمكنني مساعدتك اليوم؟
-
-**يمكنني مساعدتك في:**
-- 📊 تحليل أدائك الأكاديمي
-- 🎯 التخطيط للفصول الدراسية
-- 📝 الإجابة عن أسئلة المقررات
-
-**معدلك التراكمي الحالي:** 3.56
-**المقررات المكتملة:** 18 مقرر
-**الخطة الدراسية:** بكالوريوس علوم الحاسب
-
-اطرح سؤالك وسأبذل قصارى جهدي لمساعدتك!`,
-    timestamp: new Date().toLocaleTimeString("ar-SA", {
+    content: ui.welcome,
+    timestamp: new Date().toLocaleTimeString(isArabic ? "ar-SA" : "en-US", {
       hour: "2-digit",
       minute: "2-digit",
     }),
@@ -188,6 +234,7 @@ export default function ChatPage() {
         .from("conversations")
         .select("id")
         .eq("user_id", user.id)
+        .not("title", "like", `${STUDY_CONVERSATION_PREFIX}%`)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -201,7 +248,7 @@ export default function ChatPage() {
           .from("conversations")
           .insert([{ 
             user_id: user.id, 
-            title: "محادثة جديدة",
+            title: ui.newChat,
             created_at: new Date().toISOString()
           }])
           .select("id")
@@ -233,7 +280,7 @@ export default function ChatPage() {
             msg.role === "ai"
               ? extractAssistantAnswer(String(msg.content ?? ""))
               : String(msg.content ?? ""),
-          timestamp: new Date(msg.created_at).toLocaleTimeString("ar-SA", {
+          timestamp: new Date(msg.created_at).toLocaleTimeString(isArabic ? "ar-SA" : "en-US", {
             hour: "2-digit",
             minute: "2-digit",
           }),
@@ -252,7 +299,7 @@ export default function ChatPage() {
       .from("conversations")
       .insert([{ 
         user_id: user.id, 
-        title: "محادثة جديدة",
+        title: ui.newChat,
         created_at: new Date().toISOString()
       }])
       .select("id")
@@ -274,7 +321,7 @@ export default function ChatPage() {
   const handleDeleteConversation = async (convId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     
-    if (!confirm("هل أنت متأكد من حذف هذه المحادثة؟")) return;
+    if (!confirm(ui.confirmDelete)) return;
 
     await supabase
       .from("messages")
@@ -323,7 +370,7 @@ export default function ChatPage() {
         id: userMessageId,
         type: "user",
         content: question,
-        timestamp: new Date().toLocaleTimeString("ar-SA", {
+        timestamp: new Date().toLocaleTimeString(isArabic ? "ar-SA" : "en-US", {
           hour: "2-digit",
           minute: "2-digit",
         }),
@@ -356,7 +403,7 @@ export default function ChatPage() {
         id: aiMessageId,
         type: "ai",
         content: "",
-        timestamp: new Date().toLocaleTimeString("ar-SA", {
+        timestamp: new Date().toLocaleTimeString(isArabic ? "ar-SA" : "en-US", {
           hour: "2-digit",
           minute: "2-digit",
         }),
@@ -459,11 +506,12 @@ export default function ChatPage() {
         id: `error-${Date.now()}`,
         type: "ai",
         content: "عذراً، حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.",
-        timestamp: new Date().toLocaleTimeString("ar-SA", {
+        timestamp: new Date().toLocaleTimeString(isArabic ? "ar-SA" : "en-US", {
           hour: "2-digit",
           minute: "2-digit",
         }),
       };
+      errorMessage.content = ui.connectionError;
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
@@ -516,7 +564,7 @@ export default function ChatPage() {
   );
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] gap-4 relative" dir="rtl">
+    <div className="flex h-[calc(100vh-8rem)] gap-4 relative" dir={isArabic ? "rtl" : "ltr"}>
       {/* Sidebar Toggle for Mobile */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -535,7 +583,7 @@ export default function ChatPage() {
         {/* Sidebar Header */}
         <div className="p-4 border-b border-[#DAC0A3]/20">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-[#102C57]">المحادثات</h2>
+            <h2 className="font-semibold text-[#102C57]">{ui.conversations}</h2>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -553,7 +601,7 @@ export default function ChatPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="بحث في المحادثات..."
+              placeholder={ui.searchConversations}
               className="w-full pr-10 pl-3 py-2 bg-[#F8F0E5] rounded-xl text-sm text-[#102C57] placeholder-[#102C57]/40 border border-[#DAC0A3]/20 focus:outline-none focus:ring-2 focus:ring-[#102C57]/20"
             />
           </div>
@@ -586,11 +634,11 @@ export default function ChatPage() {
                       conv.id === conversationId ? 'text-white/60' : 'text-[#102C57]/40'
                     }`}>
                       <Clock className="w-3 h-3" />
-                      <span>{new Date(conv.created_at).toLocaleDateString('ar-SA')}</span>
+                      <span>{new Date(conv.created_at).toLocaleDateString(isArabic ? 'ar-SA' : 'en-US')}</span>
                       {conv.message_count && (
                         <>
                           <span>•</span>
-                          <span>{conv.message_count} رسائل</span>
+                          <span>{conv.message_count} {ui.messagesLabel}</span>
                         </>
                       )}
                     </div>
@@ -628,10 +676,10 @@ export default function ChatPage() {
         >
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold text-[#102C57] mb-2">
-              المساعد الدراسي الذكي
+              {ui.pageTitle}
             </h1>
             <p className="text-sm text-[#102C57]/60">
-              اسأل عن أي شيء يتعلق بدراستك، المقررات، أو الخطط الدراسية
+              {ui.pageDescription}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -640,7 +688,7 @@ export default function ChatPage() {
               whileTap={{ scale: 0.98 }}
               onClick={handleExportConversation}
               className="hidden lg:flex items-center gap-2 px-4 py-2 bg-[#102C57]/5 rounded-xl text-[#102C57] text-sm font-medium border border-[#DAC0A3]/20"
-              title="تصدير المحادثة"
+              title={ui.exportChat}
             >
               <Download className="w-4 h-4" />
             </motion.button>
@@ -651,7 +699,7 @@ export default function ChatPage() {
               className="flex items-center gap-2 px-4 py-2 bg-[#102C57]/5 rounded-xl text-[#102C57] text-sm font-medium border border-[#DAC0A3]/20"
             >
               <Sparkles className="w-4 h-4" />
-              <span className="hidden lg:inline">محادثة جديدة</span>
+              <span className="hidden lg:inline">{ui.newChat}</span>
             </motion.button>
           </div>
         </motion.div>
@@ -811,7 +859,7 @@ export default function ChatPage() {
                     {message.sources && message.sources.length > 0 && (
                       <div className="mt-2 lg:mt-3 pt-2 lg:pt-3 border-t border-[#DAC0A3]/20">
                         <p className="text-xs font-medium text-[#102C57]/60 mb-2">
-                          المصادر:
+                          {ui.sources}
                         </p>
                         <div className="flex gap-2 flex-wrap">
                           {message.sources.map((source, i) => (
@@ -893,7 +941,7 @@ export default function ChatPage() {
                   <div className="flex items-center gap-2">
                     <Loader2 className="w-3 h-3 lg:w-4 lg:h-4 animate-spin text-[#102C57]" />
                     <span className="text-xs lg:text-sm text-[#102C57]/60">
-                      جاري التفكير...
+                      {ui.thinking}
                     </span>
                   </div>
                 </div>
@@ -910,9 +958,9 @@ export default function ChatPage() {
             {/* Quick Actions */}
             <div className="px-3 lg:px-4 py-2 border-b border-[#DAC0A3]/10 flex items-center gap-2 overflow-x-auto">
               <span className="text-xs font-medium text-[#102C57]/60 whitespace-nowrap">
-                إجراءات سريعة:
+                {ui.quickActions}
               </span>
-              {["متطلبات التخرج", "المقررات", "الخطة الدراسية", "المعدل", "المشاريع"].map(
+              {ui.quickActionItems.map(
                 (action) => (
                   <motion.button
                     key={action}
@@ -937,7 +985,7 @@ export default function ChatPage() {
                 className="px-3 lg:px-4 py-2 bg-[#102C57] text-[#F8F0E5] rounded-xl text-xs lg:text-sm font-medium flex items-center gap-1 lg:gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="w-3 h-3 lg:w-4 lg:h-4" />
-                <span className="hidden lg:inline">إرسال</span>
+                <span className="hidden lg:inline">{ui.send}</span>
               </motion.button>
               <input
                 ref={inputRef}
@@ -945,7 +993,7 @@ export default function ChatPage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="اكتب سؤالك هنا..."
+                placeholder={ui.typeQuestion}
                 className={`flex-1 px-3 lg:px-4 py-2 bg-transparent border-none outline-none text-xs lg:text-sm text-[#102C57] placeholder-[#102C57]/40 ${
                   detectTextDirection(input) === "rtl" ? "text-right" : "text-left"
                 }`}
@@ -958,7 +1006,7 @@ export default function ChatPage() {
           {/* Context Info */}
           <div className="mt-2 flex items-center justify-end gap-2 text-[10px] lg:text-xs text-[#102C57]/40">
             <BookOpen className="w-2 h-2 lg:w-3 lg:h-3" />
-            <span>السياق: برنامج بكالوريوس علوم الحاسب</span>
+            <span>{ui.contextLabel}</span>
           </div>
         </motion.div>
       </motion.div>

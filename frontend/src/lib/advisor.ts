@@ -46,6 +46,7 @@ export type BuildAdvisorInsightsParams = {
   studentCourses: AdvisorStudentCourse[];
   riskItems: AdvisorRiskItem[];
   latestPlan: AdvisorLatestPlan;
+  locale?: "en" | "ar";
 };
 
 function getCourseDetails(courseRelation: AdvisorCourse | AdvisorCourse[] | null | undefined) {
@@ -114,6 +115,7 @@ export function buildAdvisorInsights({
   studentCourses,
   riskItems,
   latestPlan,
+  locale = "en",
 }: BuildAdvisorInsightsParams) {
   const completedCourses = studentCourses.filter((course) => course.status === "completed");
   const activeCourses = studentCourses.filter((course) => course.status === "current");
@@ -144,28 +146,37 @@ export function buildAdvisorInsights({
       : 0;
 
   const insights: AdvisorInsight[] = [];
-  const firstName = fullName?.split(" ")[0] || "Student";
+  const firstName = fullName?.split(" ")[0] || (locale === "ar" ? "الطالب" : "Student");
 
   if (resolvedCgpa >= 3.5) {
     insights.push({
       id: "performance-strong",
       tone: "success",
-      title: "Strong academic standing",
-      message: `${firstName}, your current CGPA is ${resolvedCgpa.toFixed(3)}. You are in a strong position to take on strategic electives and protect your momentum.`,
+      title: locale === "ar" ? "أداء أكاديمي قوي" : "Strong academic standing",
+      message:
+        locale === "ar"
+          ? `${firstName}، معدلك التراكمي الحالي هو ${resolvedCgpa.toFixed(3)}. أنت في وضع قوي يسمح لك باختيار مقررات اختيارية استراتيجية والحفاظ على تقدمك.`
+          : `${firstName}, your current CGPA is ${resolvedCgpa.toFixed(3)}. You are in a strong position to take on strategic electives and protect your momentum.`,
     });
   } else if (resolvedCgpa > 0 && resolvedCgpa < 2) {
     insights.push({
       id: "performance-warning",
       tone: "warning",
-      title: "Academic warning risk",
-      message: `Your current CGPA is ${resolvedCgpa.toFixed(3)}, which suggests a recovery semester is the safest next move. Focus on a lighter load and avoid stacking difficult courses together.`,
+      title: locale === "ar" ? "خطر إنذار أكاديمي" : "Academic warning risk",
+      message:
+        locale === "ar"
+          ? `معدلك التراكمي الحالي هو ${resolvedCgpa.toFixed(3)}، وهذا يشير إلى أن فصلًا للتعافي هو الخطوة الأكثر أمانًا الآن. ركز على عبء أخف وتجنب جمع المقررات الصعبة معًا.`
+          : `Your current CGPA is ${resolvedCgpa.toFixed(3)}, which suggests a recovery semester is the safest next move. Focus on a lighter load and avoid stacking difficult courses together.`,
     });
   } else {
     insights.push({
       id: "performance-steady",
       tone: "info",
-      title: "Stable performance trend",
-      message: `Your current CGPA is ${resolvedCgpa.toFixed(3)}. A balanced semester with carefully chosen courses can still improve your cumulative result without taking unnecessary risk.`,
+      title: locale === "ar" ? "أداء مستقر" : "Stable performance trend",
+      message:
+        locale === "ar"
+          ? `معدلك التراكمي الحالي هو ${resolvedCgpa.toFixed(3)}. يمكن لفصل متوازن مع مقررات مختارة بعناية أن يحسن نتيجتك التراكمية دون مخاطرة غير ضرورية.`
+          : `Your current CGPA is ${resolvedCgpa.toFixed(3)}. A balanced semester with carefully chosen courses can still improve your cumulative result without taking unnecessary risk.`,
     });
   }
 
@@ -180,8 +191,11 @@ export function buildAdvisorInsights({
       insights.push({
         id: "load-over-limit",
         tone: "warning",
-        title: "Upcoming load looks too heavy",
-        message: `You currently have ${upcomingCredits} upcoming credits across active and planned courses, while your CGPA band suggests a safer maximum of ${maxAllowedCredits} credits.`,
+        title: locale === "ar" ? "العبء القادم يبدو مرتفعًا" : "Upcoming load looks too heavy",
+        message:
+          locale === "ar"
+            ? `لديك حاليًا ${upcomingCredits} ساعة قادمة بين المقررات الحالية والمخططة، بينما يشير نطاق معدلك إلى أن الحد الآمن هو ${maxAllowedCredits} ساعة.`
+            : `You currently have ${upcomingCredits} upcoming credits across active and planned courses, while your CGPA band suggests a safer maximum of ${maxAllowedCredits} credits.`,
       });
     } else if (hardUpcomingCourses.length >= 2) {
       const highlightedCourses = hardUpcomingCourses
@@ -192,23 +206,32 @@ export function buildAdvisorInsights({
       insights.push({
         id: "load-difficulty",
         tone: "warning",
-        title: "Watch course difficulty balance",
-        message: `Your upcoming schedule includes multiple high-difficulty courses such as ${highlightedCourses}. Pairing them in one term may increase workload pressure even if the credit count is allowed.`,
+        title: locale === "ar" ? "انتبه لتوازن صعوبة المقررات" : "Watch course difficulty balance",
+        message:
+          locale === "ar"
+            ? `يتضمن جدولك القادم عدة مقررات عالية الصعوبة مثل ${highlightedCourses}. جمعها في فصل واحد قد يزيد ضغط الدراسة حتى لو كان عدد الساعات مسموحًا.`
+            : `Your upcoming schedule includes multiple high-difficulty courses such as ${highlightedCourses}. Pairing them in one term may increase workload pressure even if the credit count is allowed.`,
       });
     } else {
       insights.push({
         id: "load-manageable",
         tone: "success",
-        title: "Upcoming load looks manageable",
-        message: `Your current and planned registration totals ${upcomingCredits} credits, which fits within the typical limit for your current CGPA band.`,
+        title: locale === "ar" ? "العبء القادم مناسب" : "Upcoming load looks manageable",
+        message:
+          locale === "ar"
+            ? `إجمالي تسجيلك الحالي والمخطط هو ${upcomingCredits} ساعة، وهو ضمن الحد المعتاد المناسب لنطاق معدلك الحالي.`
+            : `Your current and planned registration totals ${upcomingCredits} credits, which fits within the typical limit for your current CGPA band.`,
       });
     }
   } else {
     insights.push({
       id: "load-empty",
       tone: "info",
-      title: "No semester load selected yet",
-      message: "You do not have active or planned courses in the system yet. The next best step is to build a semester plan so the advisor can evaluate workload and graduation pace.",
+      title: locale === "ar" ? "لم يتم تحديد عبء فصلي بعد" : "No semester load selected yet",
+      message:
+        locale === "ar"
+          ? "لا توجد لديك مقررات حالية أو مخططة في النظام بعد. الخطوة الأفضل التالية هي بناء خطة فصل حتى يتمكن المرشد من تقييم العبء وسرعة التخرج."
+          : "You do not have active or planned courses in the system yet. The next best step is to build a semester plan so the advisor can evaluate workload and graduation pace.",
     });
   }
 
@@ -216,16 +239,22 @@ export function buildAdvisorInsights({
     insights.push({
       id: "graduation-ready",
       tone: "success",
-      title: "Graduation requirement complete",
-      message: `You have completed ${completedCredits} of ${requiredCredits} required credits. Your record appears academically ready for graduation review.`,
+      title: locale === "ar" ? "متطلبات التخرج مكتملة" : "Graduation requirement complete",
+      message:
+        locale === "ar"
+          ? `أكملت ${completedCredits} من أصل ${requiredCredits} ساعة مطلوبة. يبدو سجلك جاهزًا أكاديميًا لمراجعة التخرج.`
+          : `You have completed ${completedCredits} of ${requiredCredits} required credits. Your record appears academically ready for graduation review.`,
     });
   } else {
     const estimatedSemesters = Math.ceil(remainingCredits / 15);
     insights.push({
       id: "graduation-progress",
       tone: progress >= 75 ? "success" : "info",
-      title: "Graduation progress snapshot",
-      message: `You have completed ${completedCredits} of ${requiredCredits} required credits (${progress}%). At a steady pace of 15 credits per semester, you are roughly ${estimatedSemesters} semester(s) away from completion.`,
+      title: locale === "ar" ? "ملخص التقدم نحو التخرج" : "Graduation progress snapshot",
+      message:
+        locale === "ar"
+          ? `أكملت ${completedCredits} من أصل ${requiredCredits} ساعة مطلوبة (${progress}%). ومع وتيرة ثابتة تبلغ 15 ساعة لكل فصل، فأنت على بُعد نحو ${estimatedSemesters} فصل من الإكمال.`
+          : `You have completed ${completedCredits} of ${requiredCredits} required credits (${progress}%). At a steady pace of 15 credits per semester, you are roughly ${estimatedSemesters} semester(s) away from completion.`,
     });
   }
 
@@ -238,16 +267,22 @@ export function buildAdvisorInsights({
     insights.push({
       id: "risk-analysis",
       tone: "warning",
-      title: "Recorded risk signal",
-      message: `${formatCourseLabel(getRiskCourseDetails(highestRisk.courses))} has a recorded ${String(highestRisk.risk_level ?? "elevated")} risk profile in your recent analysis data.`,
+      title: locale === "ar" ? "إشارة مخاطرة مسجلة" : "Recorded risk signal",
+      message:
+        locale === "ar"
+          ? `${formatCourseLabel(getRiskCourseDetails(highestRisk.courses))} لديه مستوى مخاطرة مسجل ${String(highestRisk.risk_level ?? "مرتفع")} في أحدث بيانات التحليل.`
+          : `${formatCourseLabel(getRiskCourseDetails(highestRisk.courses))} has a recorded ${String(highestRisk.risk_level ?? "elevated")} risk profile in your recent analysis data.`,
     });
   } else if (latestPlan?.overall_risk !== null && latestPlan?.overall_risk !== undefined) {
     const riskValue = Number(latestPlan.overall_risk);
     insights.push({
       id: "latest-plan-risk",
       tone: riskValue >= 70 ? "warning" : "info",
-      title: "Latest semester plan review",
-      message: `Your latest saved plan${latestPlan.semester_name ? ` for ${latestPlan.semester_name}` : ""} has an overall risk score of ${riskValue}. ${riskValue >= 70 ? "Consider reducing workload intensity before locking that plan." : "The plan looks reasonably balanced so far."}`,
+      title: locale === "ar" ? "مراجعة آخر خطة فصل" : "Latest semester plan review",
+      message:
+        locale === "ar"
+          ? `آخر خطة محفوظة لديك${latestPlan.semester_name ? ` للفصل ${latestPlan.semester_name}` : ""} تحمل درجة مخاطرة عامة قدرها ${riskValue}. ${riskValue >= 70 ? "فكر في تقليل شدة العبء قبل اعتماد الخطة." : "تبدو الخطة متوازنة بشكل معقول حتى الآن."}`
+          : `Your latest saved plan${latestPlan.semester_name ? ` for ${latestPlan.semester_name}` : ""} has an overall risk score of ${riskValue}. ${riskValue >= 70 ? "Consider reducing workload intensity before locking that plan." : "The plan looks reasonably balanced so far."}`,
     });
   }
 

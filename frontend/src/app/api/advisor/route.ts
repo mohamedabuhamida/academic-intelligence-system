@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildAdvisorInsights } from "@/lib/advisor";
+import { defaultLocale, isSupportedLocale } from "@/lib/i18n/config";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const localeParam = searchParams.get("locale");
+    const locale = isSupportedLocale(localeParam) ? localeParam : defaultLocale;
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -82,6 +87,7 @@ export async function GET() {
       studentCourses: courses,
       riskItems,
       latestPlan,
+      locale,
     });
 
     return NextResponse.json({

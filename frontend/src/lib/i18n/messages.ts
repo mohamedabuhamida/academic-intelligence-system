@@ -256,6 +256,46 @@ type Messages = {
     currentStepError: string;
     step: string;
   };
+  supportPage: {
+    title: string;
+    description: string;
+    contactTitle: string;
+    contactDescription: string;
+    emailLabel: string;
+    responseTimeLabel: string;
+    responseTimeValue: string;
+    faqTitle: string;
+    faq1Question: string;
+    faq1Answer: string;
+    faq2Question: string;
+    faq2Answer: string;
+    faq3Question: string;
+    faq3Answer: string;
+    quickLinksTitle: string;
+    openProfile: string;
+    planner: string;
+    studyChat: string;
+  };
+  settingsPage: {
+    title: string;
+    description: string;
+    preferencesTitle: string;
+    preferencesDescription: string;
+    languageTitle: string;
+    languageDescription: string;
+    currentLanguage: string;
+    interfaceTitle: string;
+    interfaceDescription: string;
+    headerSidebarNote: string;
+    accountTitle: string;
+    accountDescription: string;
+    manageProfile: string;
+    resetPassword: string;
+    notificationsTitle: string;
+    notificationsDescription: string;
+    notificationsState: string;
+    notificationsHint: string;
+  };
 };
 
 export const messages: Record<AppLocale, Messages> = {
@@ -515,6 +555,46 @@ export const messages: Record<AppLocale, Messages> = {
       currentStepError: "Please complete the current step before continuing.",
       step: "Step",
     },
+    supportPage: {
+      title: "Help & Support",
+      description: "Find guidance for the platform, common answers, and the best next step when you need help.",
+      contactTitle: "Contact support",
+      contactDescription: "Reach out when you hit an issue with your profile, planning tools, or AI features.",
+      emailLabel: "Support email",
+      responseTimeLabel: "Typical response time",
+      responseTimeValue: "Within 24 hours on business days",
+      faqTitle: "Frequently asked questions",
+      faq1Question: "Why are some course recommendations unavailable?",
+      faq1Answer: "Recommendations depend on your completed credits, prerequisites, and the current course data in your profile.",
+      faq2Question: "How can I improve the planner results?",
+      faq2Answer: "Keep your academic history up to date and make sure completed, current, and planned courses are recorded correctly.",
+      faq3Question: "What is the difference between AI Chat and Study Chat?",
+      faq3Answer: "AI Chat uses your broader academic profile, while Study Chat focuses on the selected course and uploaded materials.",
+      quickLinksTitle: "Quick links",
+      openProfile: "Open profile",
+      planner: "Open planner",
+      studyChat: "Open study chat",
+    },
+    settingsPage: {
+      title: "Settings",
+      description: "Review your current preferences and jump to the places where you manage your account experience.",
+      preferencesTitle: "Preferences overview",
+      preferencesDescription: "Your dashboard follows the selected locale and keeps the main navigation layout consistent.",
+      languageTitle: "Language",
+      languageDescription: "Switch between English and Arabic from the header language toggle at any time.",
+      currentLanguage: "Current language",
+      interfaceTitle: "Interface behavior",
+      interfaceDescription: "Arabic content is localized across pages, while the header and sidebar remain left-to-right for a stable layout.",
+      headerSidebarNote: "Header and sidebar stay LTR by design.",
+      accountTitle: "Account shortcuts",
+      accountDescription: "Use these shortcuts to manage your academic information and sign-in details.",
+      manageProfile: "Manage profile",
+      resetPassword: "Reset password",
+      notificationsTitle: "Notifications",
+      notificationsDescription: "Profile freshness reminders and dashboard alerts adapt to your selected language.",
+      notificationsState: "Notifications are enabled in the dashboard experience.",
+      notificationsHint: "More granular notification settings can be added here later.",
+    },
   },
   ar: {
     sidebar: {
@@ -771,6 +851,46 @@ export const messages: Record<AppLocale, Messages> = {
       loadError: "فشل في تحميل بيانات الملف.",
       currentStepError: "يرجى إكمال الخطوة الحالية قبل المتابعة.",
       step: "الخطوة",
+    },
+    supportPage: {
+      title: "المساعدة والدعم",
+      description: "اعثر على إرشادات المنصة والإجابات الشائعة وأفضل خطوة تالية عندما تحتاج إلى المساعدة.",
+      contactTitle: "تواصل مع الدعم",
+      contactDescription: "راسلنا عند مواجهة مشكلة في ملفك الأكاديمي أو أدوات التخطيط أو ميزات الذكاء الاصطناعي.",
+      emailLabel: "بريد الدعم",
+      responseTimeLabel: "مدة الرد المعتادة",
+      responseTimeValue: "خلال 24 ساعة في أيام العمل",
+      faqTitle: "الأسئلة الشائعة",
+      faq1Question: "لماذا بعض توصيات المقررات غير متاحة؟",
+      faq1Answer: "تعتمد التوصيات على الساعات المكتملة والمتطلبات السابقة وبيانات المقررات الحالية الموجودة في ملفك.",
+      faq2Question: "كيف أحسن نتائج المخطط؟",
+      faq2Answer: "حدّث سجلك الأكاديمي باستمرار وتأكد من تسجيل المقررات المكتملة والحالية والمخططة بشكل صحيح.",
+      faq3Question: "ما الفرق بين الدردشة الذكية ودردشة الدراسة؟",
+      faq3Answer: "الدردشة الذكية تعتمد على ملفك الأكاديمي بشكل أوسع، بينما تركز دردشة الدراسة على المقرر المحدد والملفات المرفوعة.",
+      quickLinksTitle: "روابط سريعة",
+      openProfile: "فتح الملف",
+      planner: "فتح المخطط",
+      studyChat: "فتح دردشة الدراسة",
+    },
+    settingsPage: {
+      title: "الإعدادات",
+      description: "راجع تفضيلاتك الحالية وانتقل بسرعة إلى الأماكن التي تدير منها تجربة حسابك.",
+      preferencesTitle: "نظرة على التفضيلات",
+      preferencesDescription: "تتبع لوحة التحكم اللغة المختارة وتحافظ على شكل التنقل الرئيسي بشكل ثابت.",
+      languageTitle: "اللغة",
+      languageDescription: "يمكنك التبديل بين العربية والإنجليزية في أي وقت من زر اللغة في الترويسة.",
+      currentLanguage: "اللغة الحالية",
+      interfaceTitle: "سلوك الواجهة",
+      interfaceDescription: "يتم تعريب المحتوى عبر الصفحات، بينما تبقى الترويسة والشريط الجانبي باتجاه يسار إلى يمين للحفاظ على الثبات.",
+      headerSidebarNote: "الترويسة والشريط الجانبي يبقيان LTR حسب التصميم.",
+      accountTitle: "اختصارات الحساب",
+      accountDescription: "استخدم هذه الاختصارات لإدارة معلوماتك الأكاديمية وبيانات تسجيل الدخول.",
+      manageProfile: "إدارة الملف",
+      resetPassword: "إعادة تعيين كلمة المرور",
+      notificationsTitle: "الإشعارات",
+      notificationsDescription: "تنبيهات تحديث الملف وإشعارات لوحة التحكم تتكيف مع اللغة المختارة.",
+      notificationsState: "الإشعارات مفعلة داخل تجربة لوحة التحكم.",
+      notificationsHint: "يمكن إضافة إعدادات إشعارات أكثر تفصيلاً هنا لاحقًا.",
     },
   },
 };

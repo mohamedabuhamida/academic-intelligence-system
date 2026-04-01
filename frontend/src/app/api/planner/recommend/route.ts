@@ -59,13 +59,15 @@ function pickBestCourses(eligible: EligibleCourse[], plannedCredits: number) {
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as { targetCgpa?: number; plannedCredits?: number };
+    const body = (await req.json()) as { targetCgpa?: number; plannedCredits?: number; locale?: "en" | "ar" };
     const targetCgpa = Number(body?.targetCgpa ?? 0);
     const plannedCredits = Number(body?.plannedCredits ?? 0);
+    const locale = body?.locale === "ar" ? "ar" : "en";
+    const isArabic = locale === "ar";
 
     if (!targetCgpa || !plannedCredits) {
       return NextResponse.json(
-        { error: "targetCgpa and plannedCredits are required." },
+        { error: isArabic ? "يجب إدخال المعدل المستهدف والساعات المخططة." : "targetCgpa and plannedCredits are required." },
         { status: 400 }
       );
     }
@@ -77,7 +79,7 @@ export async function POST(req: Request) {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: isArabic ? "غير مصرح." : "Unauthorized" }, { status: 401 });
     }
 
     const eligibility = await buildPlannerEligibility(user.id);
@@ -99,8 +101,12 @@ export async function POST(req: Request) {
       recommendedCredits: picked.selectedCredits,
       note:
         picked.selectedCredits < plannedCredits
-          ? "Could not exactly match requested credits with current eligible set."
-          : "Recommendation generated from eligible courses and difficulty weighting.",
+          ? isArabic
+            ? "تعذر مطابقة عدد الساعات المطلوبة بالكامل مع مجموعة المقررات المتاحة الحالية."
+            : "Could not exactly match requested credits with current eligible set."
+          : isArabic
+            ? "تم إنشاء التوصية اعتمادًا على المقررات المتاحة وترجيح مستوى الصعوبة."
+            : "Recommendation generated from eligible courses and difficulty weighting.",
     });
   } catch (error) {
     return NextResponse.json(

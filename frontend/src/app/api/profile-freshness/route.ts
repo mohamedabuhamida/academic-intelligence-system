@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { AppLocale, defaultLocale, isSupportedLocale } from "@/lib/i18n/config";
 
 type AlertTone = "warning" | "info" | "success";
 
@@ -39,8 +40,40 @@ function semesterLabel(semester: SemesterRecord | null) {
   return [semester.academic_year, semester.term, semester.name].filter(Boolean).join(" - ");
 }
 
-export async function GET() {
+function translateFieldName(field: string, locale: AppLocale) {
+  if (locale === "ar") {
+    switch (field) {
+      case "full name":
+        return "الاسم الكامل";
+      case "department":
+        return "القسم";
+      case "university":
+        return "الجامعة";
+      case "required hours":
+        return "الساعات المطلوبة";
+      default:
+        return field;
+    }
+  }
+
+  return field;
+}
+
+function localizeSemesterFallback(locale: AppLocale) {
+  return locale === "ar" ? "آخر فصل لديك" : "your latest semester";
+}
+
+function semesterLabelForLocale(semester: SemesterRecord | null, locale: AppLocale) {
+  if (!semester) return localizeSemesterFallback(locale);
+  return [semester.academic_year, semester.term, semester.name].filter(Boolean).join(" - ");
+}
+
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const localeParam = searchParams.get("locale");
+    const locale = isSupportedLocale(localeParam) ? localeParam : defaultLocale;
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -117,12 +150,16 @@ export async function GET() {
     }> = [];
 
     if (missingProfileFields.length > 0) {
+      const localizedMissingFields = missingProfileFields.map((field) => translateFieldName(field, locale));
       alerts.push({
         id: "profile-missing-fields",
         tone: "warning",
-        title: "Complete your academic profile",
-        message: `Your profile is still missing ${missingProfileFields.join(", ")}. Updating it keeps planning and dashboard insights accurate.`,
-        ctaLabel: "Update profile",
+        title: locale === "ar" ? "أكمل ملفك الأكاديمي" : "Complete your academic profile",
+        message:
+          locale === "ar"
+            ? `لا يزال ملفك ينقصه ${localizedMissingFields.join("، ")}. تحديثه يحافظ على دقة التخطيط ولوحة المعلومات.`
+            : `Your profile is still missing ${localizedMissingFields.join(", ")}. Updating it keeps planning and dashboard insights accurate.`,
+        ctaLabel: locale === "ar" ? "تحديث الملف" : "Update profile",
         ctaHref: "/dashboard/profile",
       });
     }
@@ -131,9 +168,12 @@ export async function GET() {
       alerts.push({
         id: "no-history",
         tone: "warning",
-        title: "Add your academic history",
-        message: "Your dashboard is active, but there are no semester records linked to your profile yet.",
-        ctaLabel: "Add courses",
+        title: locale === "ar" ? "أضف سجلك الأكاديمي" : "Add your academic history",
+        message:
+          locale === "ar"
+            ? "لوحة المعلومات تعمل، لكن لا توجد سجلات فصول مرتبطة بملفك حتى الآن."
+            : "Your dashboard is active, but there are no semester records linked to your profile yet.",
+        ctaLabel: locale === "ar" ? "إضافة المقررات" : "Add courses",
         ctaHref: "/dashboard/profile",
       });
     }
@@ -146,9 +186,12 @@ export async function GET() {
       alerts.push({
         id: "new-semester-available",
         tone: "info",
-        title: "A newer semester is available",
-        message: `The latest semester in the system is ${semesterLabel(latestSystemSemester)}, but your latest academic record is ${semesterLabel(latestUserSemester)}.`,
-        ctaLabel: "Refresh profile",
+        title: locale === "ar" ? "يوجد فصل أحدث متاح" : "A newer semester is available",
+        message:
+          locale === "ar"
+            ? `أحدث فصل في النظام هو ${semesterLabelForLocale(latestSystemSemester, locale)}، بينما آخر سجل أكاديمي لديك هو ${semesterLabelForLocale(latestUserSemester, locale)}.`
+            : `The latest semester in the system is ${semesterLabelForLocale(latestSystemSemester, locale)}, but your latest academic record is ${semesterLabelForLocale(latestUserSemester, locale)}.`,
+        ctaLabel: locale === "ar" ? "تحديث الملف" : "Refresh profile",
         ctaHref: "/dashboard/profile",
       });
     }
@@ -157,9 +200,12 @@ export async function GET() {
       alerts.push({
         id: "no-current-courses",
         tone: "info",
-        title: "No current courses listed",
-        message: "Add this term's current courses so Study Chat, planning, and progress tracking stay in sync.",
-        ctaLabel: "Add current courses",
+        title: locale === "ar" ? "لا توجد مقررات حالية مسجلة" : "No current courses listed",
+        message:
+          locale === "ar"
+            ? "أضف مقررات هذا الفصل الحالية حتى تبقى دردشة الدراسة والتخطيط وتتبع التقدم متوافقة."
+            : "Add this term's current courses so Study Chat, planning, and progress tracking stay in sync.",
+        ctaLabel: locale === "ar" ? "إضافة المقررات الحالية" : "Add current courses",
         ctaHref: "/dashboard/profile",
       });
     }
@@ -168,9 +214,12 @@ export async function GET() {
       alerts.push({
         id: "heavy-load",
         tone: "warning",
-        title: "Heavy current load detected",
-        message: `You currently have ${currentCredits} credit hours marked as current. Consider reviewing your semester plan and study priorities.`,
-        ctaLabel: "Review planner",
+        title: locale === "ar" ? "تم رصد عبء دراسي مرتفع" : "Heavy current load detected",
+        message:
+          locale === "ar"
+            ? `لديك حاليًا ${currentCredits} ساعة معتمدة مسجلة كمقررات حالية. راجع خطة فصلك وأولويات الدراسة.`
+            : `You currently have ${currentCredits} credit hours marked as current. Consider reviewing your semester plan and study priorities.`,
+        ctaLabel: locale === "ar" ? "مراجعة المخطط" : "Review planner",
         ctaHref: "/dashboard/planner",
       });
     }
@@ -179,9 +228,12 @@ export async function GET() {
       alerts.push({
         id: "no-planned-courses",
         tone: "success",
-        title: "Good time to plan ahead",
-        message: "Your current semester is recorded. Add a few planned courses for upcoming terms to improve recommendations.",
-        ctaLabel: "Plan next term",
+        title: locale === "ar" ? "وقت مناسب للتخطيط مبكرًا" : "Good time to plan ahead",
+        message:
+          locale === "ar"
+            ? "تم تسجيل فصلك الحالي. أضف بعض المقررات المخططة للفصول القادمة لتحسين التوصيات."
+            : "Your current semester is recorded. Add a few planned courses for upcoming terms to improve recommendations.",
+        ctaLabel: locale === "ar" ? "خطط للفصل القادم" : "Plan next term",
         ctaHref: "/dashboard/planner",
       });
     }

@@ -1,9 +1,22 @@
 // app/api/dashboard/route.ts
 import { NextResponse } from "next/server";
+
+import { defaultLocale, isSupportedLocale } from "@/lib/i18n/config";
 import { createClient } from "@/lib/supabase/server";
 
-export async function GET() {
+function localizeTerm(term: string | null | undefined, locale: "en" | "ar") {
+  if (term === "fall") return locale === "ar" ? "خريف" : "Fall";
+  if (term === "spring") return locale === "ar" ? "ربيع" : "Spring";
+  if (term === "summer") return locale === "ar" ? "صيف" : "Summer";
+  return locale === "ar" ? "الفصل الحالي" : "Current semester";
+}
+
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const localeParam = searchParams.get("locale");
+    const locale = isSupportedLocale(localeParam) ? localeParam : defaultLocale;
+
     const supabase = await createClient();
 
     const {
@@ -17,23 +30,17 @@ export async function GET() {
 
     const userId = user.id;
 
-    // Run queries in parallel for better performance
     const [profileResult, cgpaResult, coursesResult] = await Promise.all([
-      // Get profile
       supabase
         .from("profiles")
         .select("full_name, total_required_hours")
         .eq("id", userId)
         .maybeSingle(),
-      
-      // Get CGPA from student_cgpa table (now using the new table)
       supabase
         .from("student_cgpa")
         .select("cgpa, total_credits, updated_at")
         .eq("user_id", userId)
         .maybeSingle(),
-      
-      // Get all courses with their details
       supabase
         .from("student_courses")
         .select(`
@@ -48,7 +55,7 @@ export async function GET() {
           )
         `)
         .eq("user_id", userId)
-        .order("created_at", { ascending: false })
+        .order("created_at", { ascending: false }),
     ]);
 
     const profile = profileResult.data;
@@ -59,7 +66,6 @@ export async function GET() {
       console.error("Courses error:", coursesError);
     }
 
-    // Helper function to safely get credit hours
     const getCourseDetails = (
       courseRelation:
         | {
@@ -92,50 +98,48 @@ export async function GET() {
       return Number(course?.credit_hours ?? 0);
     };
 
-    // Calculate metrics
-    const activeCourses = courses?.filter(c => c.status === "current").length || 0;
-    
-    // Calculate completed credits
-    const completedCredits = courses
-      ?.filter(c => c.status === "completed")
-      .reduce((sum, c) => sum + getCreditHours(c.courses), 0) || 0;
+    const activeCourses = courses?.filter((course) => course.status === "current").length || 0;
 
-    // Get completed courses with grades
-    const completedWithGrades = courses?.filter(c => 
-      c.status === "completed" && c.grade_points && getCreditHours(c.courses) > 0
-    ) || [];
+    const completedCredits =
+      courses
+        ?.filter((course) => course.status === "completed")
+        .reduce((sum, course) => sum + getCreditHours(course.courses), 0) || 0;
 
-    // Use CGPA from student_cgpa table if available, otherwise calculate
+    const completedWithGrades =
+      courses?.filter(
+        (course) =>
+          course.status === "completed" && course.grade_points && getCreditHours(course.courses) > 0,
+      ) || [];
+
     let cgpa = 0;
     let totalPoints = 0;
     let totalCreditsFromCourses = 0;
-    
+
     if (cgpaData?.cgpa) {
       cgpa = Number(cgpaData.cgpa);
       totalCreditsFromCourses = cgpaData.total_credits || 0;
     } else {
-      // Fallback calculation if student_cgpa table doesn't have data
-      completedWithGrades.forEach(c => {
-        const credits = getCreditHours(c.courses);
-        const gradePoints = Number(c.grade_points) || 0;
+      completedWithGrades.forEach((course) => {
+        const credits = getCreditHours(course.courses);
+        const gradePoints = Number(course.grade_points) || 0;
         totalPoints += gradePoints * credits;
         totalCreditsFromCourses += credits;
       });
-      
+
       if (totalCreditsFromCourses > 0) {
         cgpa = Number((totalPoints / totalCreditsFromCourses).toFixed(3));
       }
     }
 
     const requiredCredits = profile?.total_required_hours ?? 142;
-    const progress = requiredCredits > 0 
-      ? Math.min(Math.round((completedCredits / requiredCredits) * 100), 100) 
-      : 0;
+    const progress =
+      requiredCredits > 0
+        ? Math.min(Math.round((completedCredits / requiredCredits) * 100), 100)
+        : 0;
 
-    // Get current semester info (if any active courses)
-    let currentSemester = null;
+    let currentSemester: { name?: string | null; term?: string | null; academic_year?: string | null } | null = null;
     if (activeCourses > 0 && courses) {
-      const currentSemesterId = courses.find(c => c.status === "current")?.semester_id;
+      const currentSemesterId = courses.find((course) => course.status === "current")?.semester_id;
       if (currentSemesterId) {
         const { data: semester } = await supabase
           .from("semesters")
@@ -146,66 +150,81 @@ export async function GET() {
       }
     }
 
-    // Get course distribution by difficulty
     const courseDistribution = {
-      easy: completedWithGrades.filter(c => {
-        const difficultyLevel = getCourseDetails(c.courses)?.difficulty_level;
+      easy: completedWithGrades.filter((course) => {
+        const difficultyLevel = getCourseDetails(course.courses)?.difficulty_level;
         return difficultyLevel !== null && difficultyLevel !== undefined && difficultyLevel <= 2;
       }).length,
-      medium: completedWithGrades.filter(c => getCourseDetails(c.courses)?.difficulty_level === 3).length,
-      hard: completedWithGrades.filter(c => {
-        const difficultyLevel = getCourseDetails(c.courses)?.difficulty_level;
+      medium: completedWithGrades.filter(
+        (course) => getCourseDetails(course.courses)?.difficulty_level === 3,
+      ).length,
+      hard: completedWithGrades.filter((course) => {
+        const difficultyLevel = getCourseDetails(course.courses)?.difficulty_level;
         return difficultyLevel !== null && difficultyLevel !== undefined && difficultyLevel >= 4;
       }).length,
     };
 
-    // Create recent activity based on actual data
+    const currentLabel = locale === "ar" ? "الحالي" : "Current";
+    const currentSemesterLabel = locale === "ar" ? "الفصل الحالي" : "Current semester";
+    const creditsLabel = locale === "ar" ? "ساعة" : "credits";
+    const coursesLabel = locale === "ar" ? "مقررات" : "courses";
+
     const recentActivity = [
       {
-        action: "Cumulative GPA",
+        action: locale === "ar" ? "المعدل التراكمي" : "Cumulative GPA",
         detail: cgpa.toFixed(3),
-        time: cgpaData?.updated_at 
-          ? new Date(cgpaData.updated_at).toLocaleDateString('ar-SA')
-          : "Current",
+        time: cgpaData?.updated_at
+          ? new Date(cgpaData.updated_at).toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US")
+          : currentLabel,
         icon: "graduation",
       },
       {
-        action: "Credit Completion",
-        detail: `${completedCredits} of ${requiredCredits} credits`,
-        time: `${progress}% complete`,
+        action: locale === "ar" ? "إنجاز الساعات" : "Credit Completion",
+        detail:
+          locale === "ar"
+            ? `${completedCredits} من ${requiredCredits} ${creditsLabel}`
+            : `${completedCredits} of ${requiredCredits} ${creditsLabel}`,
+        time: locale === "ar" ? `%${progress} مكتمل` : `${progress}% complete`,
         icon: "credits",
       },
       {
-        action: "Courses Completed",
-        detail: `${completedWithGrades.length} courses`,
-        time: `${courseDistribution.easy + courseDistribution.medium + courseDistribution.hard} total`,
+        action: locale === "ar" ? "المقررات المكتملة" : "Courses Completed",
+        detail: `${completedWithGrades.length} ${coursesLabel}`,
+        time:
+          locale === "ar"
+            ? `${courseDistribution.easy + courseDistribution.medium + courseDistribution.hard} إجمالي`
+            : `${courseDistribution.easy + courseDistribution.medium + courseDistribution.hard} total`,
         icon: "courses",
-      }
+      },
     ];
 
     if (activeCourses > 0) {
       recentActivity.unshift({
-        action: "Currently Enrolled",
-        detail: `${activeCourses} active courses`,
-        time: currentSemester 
-          ? `${currentSemester.term === 'fall' ? 'خريف' : currentSemester.term === 'spring' ? 'ربيع' : 'صيف'} ${currentSemester.academic_year}`
-          : "Current semester",
+        action: locale === "ar" ? "المسجل حاليًا" : "Currently Enrolled",
+        detail: locale === "ar" ? `${activeCourses} مقررات حالية` : `${activeCourses} active courses`,
+        time: currentSemester
+          ? `${localizeTerm(currentSemester.term, locale)} ${currentSemester.academic_year ?? ""}`.trim()
+          : currentSemesterLabel,
         icon: "active",
       });
     }
 
-    // Calculate estimated graduation
-    const creditsPerSemester = 15; // Average credits per semester
+    const creditsPerSemester = 15;
     const remainingCredits = Math.max(0, requiredCredits - completedCredits);
     const estimatedSemestersRemaining = Math.ceil(remainingCredits / creditsPerSemester);
-    const estimatedGraduation = estimatedSemestersRemaining > 0 
-      ? `${estimatedSemestersRemaining} فصول دراسية` 
-      : "مؤهل للتخرج";
+    const estimatedGraduation =
+      estimatedSemestersRemaining > 0
+        ? locale === "ar"
+          ? `${estimatedSemestersRemaining} فصول دراسية`
+          : `${estimatedSemestersRemaining} semesters`
+        : locale === "ar"
+          ? "مؤهل للتخرج"
+          : "Eligible for graduation";
 
-    const response = {
+    return NextResponse.json({
       user: {
         id: userId,
-        name: profile?.full_name ?? "Student",
+        name: profile?.full_name ?? (locale === "ar" ? "الطالب" : "Student"),
         email: user.email,
       },
       academic: {
@@ -222,9 +241,7 @@ export async function GET() {
       courseDistribution,
       recentActivity,
       timestamp: new Date().toISOString(),
-    };
-
-    return NextResponse.json(response);
+    });
   } catch (error) {
     console.error("Dashboard API error:", error);
     return NextResponse.json(

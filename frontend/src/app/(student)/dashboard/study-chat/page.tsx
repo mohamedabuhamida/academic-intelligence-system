@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BookOpen,
   Brain,
-  CheckCircle2,
   FileText,
   Loader2,
   Send,
@@ -173,9 +172,8 @@ export default function StudyChatPage() {
     {
       id: "welcome",
       type: "ai",
-      content:
-        "## Study Chat\nارفع محاضرات المادة أو ملفات المراجعة، ثم اسألني عنها مثل NotebookLM بشكل مبسط داخل نفس المقرر.",
-      timestamp: new Date().toLocaleTimeString(),
+      content: "",
+      timestamp: new Date().toLocaleTimeString(isArabic ? "ar-SA" : "en-US"),
     },
   ]);
   const [input, setInput] = useState("");
@@ -187,9 +185,17 @@ export default function StudyChatPage() {
 
   const copy = {
     title: isArabic ? "دردشة الدراسة" : "Study Chat",
+    subtitle: isArabic
+      ? "اختر مادة من مواد السمستر الحالي، ارفع المحاضرات أو ملفات المراجعة الخاصة بها، ثم اسأل الشات ليشرح أو يلخص أو يختبرك اعتمادًا على تلك الملفات فقط."
+      : "Choose a course from your current semester, upload lectures or review files, then ask the chat to explain, summarize, or quiz you using only those materials.",
+    workspaceBadge: isArabic ? "مساحة مذاكرة بأسلوب الدفاتر" : "Notebook-style study workspace",
     failedLoadCourses: isArabic ? "فشل في تحميل مقررات الفصل الحالي" : "Failed to load current semester courses",
     failedLoadStudyCourses: isArabic ? "فشل في تحميل مقررات الدراسة" : "Failed to load study courses",
     failedLoadMaterials: isArabic ? "فشل في تحميل مواد الدراسة" : "Failed to load study materials",
+    failedUploadMaterial: isArabic ? "فشل في رفع ملف الدراسة" : "Failed to upload study material",
+    failedDeleteMaterial: isArabic ? "فشل في حذف ملف الدراسة" : "Failed to delete study material",
+    failedSendQuestion: isArabic ? "حدث خطأ أثناء إرسال السؤال." : "An error occurred while sending the question.",
+    failedPrepareAnswer: isArabic ? "حدث خطأ أثناء تجهيز الإجابة." : "An error occurred while preparing the answer.",
     chatMode: isArabic ? "دردشة" : "Chat",
     summaryMode: isArabic ? "تلخيص" : "Summary",
     quizMode: isArabic ? "اختبار" : "Quiz",
@@ -217,6 +223,46 @@ export default function StudyChatPage() {
     chooseCourseFirst: isArabic ? "اختر مادة أولاً" : "Choose a course first",
     currentSemester: isArabic ? "الفصل الحالي" : "Current Semester",
     currentSemesterHint: isArabic ? "ستظهر مقررات فصلك الحالي هنا." : "Your current-semester courses will appear here.",
+    sessionWelcome: isArabic
+      ? "هذه جلسة مذاكرة مستقلة للمادة"
+      : "This is an independent study session for",
+    sessionWelcomeSuffix: isArabic
+      ? "اختر المصادر التي تريد الاعتماد عليها ثم ابدأ بالسؤال أو اختر وضعًا جاهزًا."
+      : "Choose the sources you want to rely on, then start asking questions or pick a ready-made mode.",
+    chooseCourseSession: isArabic
+      ? "اختر مادة أولًا لبدء جلسة مذاكرة مستقلة."
+      : "Choose a course first to start an independent study session.",
+    summarizePrompt: isArabic ? "لخصلي أهم الأفكار في محاضرات" : "Summarize the main ideas from",
+    explainPrompt: isArabic ? "اشرحلي أبسط شرح للنقاط الأساسية في" : "Explain the core concepts in",
+    quizPrompt: isArabic ? "اعمللي اختبارًا قصيرًا من الملفات المرفوعة في" : "Create a short quiz from the uploaded files for",
+    expectedPrompt: isArabic ? "استخرج أهم الأسئلة المتوقعة من محاضرات" : "Extract the most likely exam questions from",
+    uploadAddedPrefix: isArabic ? "تمت إضافة الملف" : "Added",
+    uploadAddedMiddle: isArabic ? "إلى مكتبة" : "to the library for",
+    askNow: isArabic ? "يمكنك الآن سؤالي عنه مباشرة." : "You can now ask me about it directly.",
+    courseSessions: isArabic ? "جلسات المادة" : "Course sessions",
+    courseSessionsHint: isArabic ? "كل مادة لها سجل مستقل وجلسات منفصلة." : "Each course has its own separate history and sessions.",
+    newSession: isArabic ? "جلسة جديدة" : "New Session",
+    noSessionsYet: isArabic ? "لا توجد جلسات لهذه المادة بعد." : "No sessions for this course yet.",
+    currentSemesterCourses: isArabic ? "مواد السمستر الحالي" : "Current semester courses",
+    currentSemesterCoursesHint: isArabic ? "اختر المادة التي تريد بناء مكتبة مذاكرة لها." : "Choose the course you want to build a study library for.",
+    currentSemesterCoursesSelect: isArabic ? "اختر مادة من القائمة" : "Select a course from the list",
+    loadingCurrentCourses: isArabic ? "جاري تحميل موادك الحالية..." : "Loading your current courses...",
+    noCurrentCourses: isArabic ? "لا توجد مواد بحالة current في بياناتك الآن." : "There are no courses with current status in your data right now.",
+    courseLibrary: isArabic ? "مكتبة المادة" : "Course library",
+    courseLibraryHint: isArabic ? "ارفع ملفات PDF أو Markdown أو TXT لتصبح مصدر الشرح داخل الشات." : "Upload PDF, Markdown, or TXT files to use as explanation sources inside the chat.",
+    topic: isArabic ? "الموضوع" : "Topic",
+    topicPlaceholder: isArabic ? "الشبكات العصبية، أساسيات قواعد البيانات..." : "Neural networks, DB basics...",
+    week: isArabic ? "الأسبوع" : "Week",
+    weekPlaceholder: isArabic ? "الأسبوع 3" : "Week 3",
+    loadingLibrary: isArabic ? "جاري تحميل مكتبة المادة..." : "Loading the course library...",
+    noUploadedFiles: isArabic ? "لا توجد ملفات مرفوعة لهذه المادة بعد. ارفع أول محاضرة لتبدأ تجربة الشرح والتلخيص." : "No files have been uploaded for this course yet. Upload the first lecture to start the explanation and summary experience.",
+    answersFromSelectedCourse: isArabic ? "هذا الشات يجيب من الملفات المرفوعة للمادة المختارة فقط، مع ذكر المصادر المستخدمة في نهاية الإجابة." : "This chat answers using only the uploaded files for the selected course and lists the sources used at the end of the response.",
+    loadingAnswer: isArabic ? "جاري تجهيز الإجابة من ملفات المادة..." : "Preparing the answer from the course files...",
+    askCoursePlaceholderPrefix: isArabic ? "اسأل عن" : "Ask about",
+    askCoursePlaceholderSuffix: isArabic ? "أو اطلب تلخيصًا من الملفات المرفوعة..." : "or ask for a summary from the uploaded files...",
+    chooseCourseToStartChat: isArabic ? "اختر مادة أولًا حتى تبدأ الشات" : "Choose a course first to start the chat",
+    creditHours: isArabic ? "ساعات معتمدة" : "credit hours",
+    messagesShort: isArabic ? "رسائل" : "msgs",
   } as const;
 
   useEffect(() => {
@@ -278,11 +324,11 @@ export default function StudyChatPage() {
       id: `welcome-${selectedCourseId || "study"}`,
       type: "ai" as const,
       content: selectedCourse
-        ? `## ${selectedCourse.code}\nهذه جلسة مذاكرة مستقلة للمادة **${selectedCourse.name}**. اختر المصادر التي تريد الاعتماد عليها ثم ابدأ بالسؤال أو اختر وضعًا جاهزًا.`
-        : `## ${copy.title}\n${isArabic ? "اختر مادة أولًا لبدء جلسة مذاكرة مستقلة." : "Choose a course first to start an independent study session."}`,
-      timestamp: new Date().toLocaleTimeString(),
+        ? `## ${selectedCourse.code}\n${copy.sessionWelcome} **${selectedCourse.name}**. ${copy.sessionWelcomeSuffix}`
+        : `## ${copy.title}\n${copy.chooseCourseSession}`,
+      timestamp: new Date().toLocaleTimeString(isArabic ? "ar-SA" : "en-US"),
     }),
-    [copy.title, isArabic, selectedCourse, selectedCourseId],
+    [copy.chooseCourseSession, copy.sessionWelcome, copy.sessionWelcomeSuffix, copy.title, isArabic, selectedCourse, selectedCourseId],
   );
 
   useEffect(() => {
@@ -371,12 +417,12 @@ export default function StudyChatPage() {
     if (!selectedCourse) return [];
 
     return [
-      `لخصلي أهم الأفكار في محاضرات ${selectedCourse.code}`,
-      `اشرحلي أبسط شرح للنقاط الأساسية في ${selectedCourse.name}`,
-      `اعمللي اختبارًا قصيرًا من الملفات المرفوعة في ${selectedCourse.code}`,
-      `استخرج أهم الأسئلة المتوقعة من محاضرات ${selectedCourse.name}`,
+      `${copy.summarizePrompt} ${selectedCourse.code}`,
+      `${copy.explainPrompt} ${selectedCourse.name}`,
+      `${copy.quizPrompt} ${selectedCourse.code}`,
+      `${copy.expectedPrompt} ${selectedCourse.name}`,
     ];
-  }, [selectedCourse]);
+  }, [copy.expectedPrompt, copy.explainPrompt, copy.quizPrompt, copy.summarizePrompt, selectedCourse]);
 
   async function createNewConversation(course: StudyCourse, userId: string) {
     const { data: newConv } = await supabase
@@ -495,7 +541,7 @@ export default function StudyChatPage() {
 
     const payload = await response.json();
     if (!response.ok) {
-      throw new Error(payload?.detail || "Failed to load study materials");
+      throw new Error(payload?.detail || copy.failedLoadMaterials);
     }
 
     setDocuments(payload.documents ?? []);
@@ -601,11 +647,11 @@ export default function StudyChatPage() {
         {
           id: `upload-${Date.now()}`,
           type: "ai",
-          content: `تمت إضافة الملف **${payload.title ?? file.name}** إلى مكتبة ${selectedCourse.code}. يمكنك الآن سؤالي عنه مباشرة.`,
+          content: `${copy.uploadAddedPrefix} **${payload.title ?? file.name}** ${copy.uploadAddedMiddle} ${selectedCourse.code}. ${copy.askNow}`,
         },
       ]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to upload file");
+      setError(err instanceof Error ? err.message : copy.failedUploadMaterial);
     } finally {
       setIsUploading(false);
       if (uploadInputRef.current) {
@@ -631,12 +677,12 @@ export default function StudyChatPage() {
 
       const payload = await response.json();
       if (!response.ok) {
-        throw new Error(payload?.detail || "Failed to delete study material");
+        throw new Error(payload?.detail || copy.failedDeleteMaterial);
       }
 
       await refreshDocuments();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete study material");
+      setError(err instanceof Error ? err.message : copy.failedDeleteMaterial);
     }
   }
 
@@ -757,14 +803,14 @@ export default function StudyChatPage() {
         );
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "حدث خطأ أثناء إرسال السؤال.";
+      const message = err instanceof Error ? err.message : copy.failedSendQuestion;
       setError(message);
       setMessages((prev) => [
         ...prev,
         {
           id: `err-${Date.now()}`,
           type: "ai",
-          content: `حدث خطأ أثناء تجهيز الإجابة.\n\n${message}`,
+          content: `${copy.failedPrepareAnswer}\n\n${message}`,
         },
       ]);
     } finally {
@@ -774,22 +820,21 @@ export default function StudyChatPage() {
   }
 
   return (
-    <div className="space-y-6" dir="rtl">
-      <section className="rounded-[28px] border border-[#DAC0A3]/30 bg-white/90 p-6 shadow-[0_20px_60px_rgba(16,44,87,0.08)]">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#102C57]/6 px-3 py-1 text-xs font-semibold text-[#102C57]">
+    <div className="space-y-4" dir={isArabic ? "rtl" : "ltr"}>
+      <section className="shrink-0 rounded-[28px] border border-[#DAC0A3]/25 bg-white/95 px-6 py-5 shadow-[0_18px_40px_rgba(16,44,87,0.06)]">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-4xl">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#102C57]/6 px-3 py-1 text-xs font-semibold text-[#102C57]">
               <Sparkles className="h-3.5 w-3.5" />
-              Notebook-style study workspace
+              {copy.workspaceBadge}
             </div>
-            <h1 className="text-3xl font-bold text-[#102C57]">{copy.title}</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-7 text-[#102C57]/70">
-              اختر مادة من مواد السمستر الحالي، ارفع المحاضرات أو ملفات المراجعة الخاصة بها،
-              ثم اسأل الشات ليشرح أو يلخص أو يختبرك اعتمادًا على تلك الملفات فقط.
+            <h1 className="text-2xl font-bold text-[#102C57] lg:text-3xl">{copy.title}</h1>
+            <p className="mt-2 max-w-3xl text-sm leading-7 text-[#102C57]/68">
+              {copy.subtitle}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-[#DAC0A3]/25 bg-[#F8F0E5] px-4 py-3 text-sm text-[#102C57]">
+          <div className="rounded-2xl border border-[#DAC0A3]/25 bg-[#F8F0E5] px-4 py-3 text-sm text-[#102C57] shadow-sm">
             <div className="flex items-center gap-2 font-semibold">
               <BookOpen className="h-4 w-4" />
               <span>{currentSemester?.name ?? copy.currentSemester}</span>
@@ -803,13 +848,13 @@ export default function StudyChatPage() {
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
-        <aside className="space-y-6">
-          <div className="rounded-[24px] border border-[#DAC0A3]/30 bg-white p-5 shadow-sm">
+      <section className="grid items-start gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
+        <aside className="flex max-h-[calc(100vh-8rem)] flex-col gap-4 overflow-y-auto pe-1">
+          <div className="rounded-[24px] border border-[#DAC0A3]/25 bg-white/95 p-4 shadow-sm">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-[#102C57]">جلسات المادة</h2>
-                <p className="text-xs text-[#102C57]/55">كل مادة لها history مستقل وجلسات منفصلة.</p>
+                <h2 className="text-lg font-semibold text-[#102C57]">{copy.courseSessions}</h2>
+                <p className="text-xs text-[#102C57]/55">{copy.courseSessionsHint}</p>
               </div>
               <button
                 type="button"
@@ -817,13 +862,13 @@ export default function StudyChatPage() {
                 disabled={!selectedCourse}
                 className="rounded-xl bg-[#102C57] px-3 py-2 text-xs font-semibold text-[#F8F0E5] disabled:opacity-50"
               >
-                New Session
+                {copy.newSession}
               </button>
             </div>
 
             {conversations.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-[#DAC0A3]/35 bg-[#FCFAF7] px-4 py-4 text-sm text-[#102C57]/60">
-                لا توجد جلسات لهذه المادة بعد.
+                {copy.noSessionsYet}
               </div>
             ) : (
               <div className="space-y-2">
@@ -832,11 +877,11 @@ export default function StudyChatPage() {
                   return (
                     <div
                       key={conv.id}
-                      className={`flex items-center justify-between gap-2 rounded-2xl border px-3 py-3 ${
-                        active
-                          ? "border-[#102C57] bg-[#102C57] text-[#F8F0E5]"
-                          : "border-[#DAC0A3]/25 bg-[#FCFAF7] text-[#102C57]"
-                      }`}
+                        className={`flex items-center justify-between gap-2 rounded-2xl border px-3 py-3 transition ${
+                          active
+                            ? "border-[#102C57] bg-[#102C57] text-[#F8F0E5] shadow-md shadow-[#102C57]/15"
+                            : "border-[#DAC0A3]/25 bg-[#FCFAF7] text-[#102C57] hover:bg-[#F8F0E5]"
+                        }`}
                     >
                       <button
                         type="button"
@@ -847,7 +892,7 @@ export default function StudyChatPage() {
                           {displayStudyConversationTitle(conv.title, selectedCourse?.code, locale)}
                         </div>
                         <div className={`mt-1 text-[11px] ${active ? "text-[#F8F0E5]/70" : "text-[#102C57]/45"}`}>
-                          {new Date(conv.created_at).toLocaleDateString()} {conv.message_count ? `• ${conv.message_count} msgs` : ""}
+                          {new Date(conv.created_at).toLocaleDateString(isArabic ? "ar-SA" : "en-US")} {conv.message_count ? `• ${conv.message_count} ${copy.messagesShort}` : ""}
                         </div>
                       </button>
                       <button
@@ -869,11 +914,11 @@ export default function StudyChatPage() {
             )}
           </div>
 
-          <div className="rounded-[24px] border border-[#DAC0A3]/30 bg-white p-5 shadow-sm">
+          <div className="shrink-0 rounded-[24px] border border-[#DAC0A3]/25 bg-white/95 p-4 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-[#102C57]">مواد السمستر الحالي</h2>
-                <p className="text-xs text-[#102C57]/55">اختر المادة التي تريد بناء مكتبة مذاكرة لها.</p>
+                <h2 className="text-lg font-semibold text-[#102C57]">{copy.currentSemesterCourses}</h2>
+                <p className="text-xs text-[#102C57]/55">{copy.currentSemesterCoursesHint}</p>
               </div>
               <span className="rounded-full bg-[#102C57]/6 px-2.5 py-1 text-xs font-semibold text-[#102C57]">
                 {courses.length}
@@ -883,53 +928,48 @@ export default function StudyChatPage() {
             {isLoadingCourses ? (
               <div className="flex items-center gap-2 rounded-2xl bg-[#F8F0E5] px-4 py-5 text-sm text-[#102C57]/70">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>جاري تحميل موادك الحالية...</span>
+                <span>{copy.loadingCurrentCourses}</span>
               </div>
             ) : courses.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-[#DAC0A3]/40 bg-[#F8F0E5]/70 px-4 py-5 text-sm text-[#102C57]/70">
-                لا توجد مواد بحالة <code>current</code> في بياناتك الآن.
+                {copy.noCurrentCourses}
               </div>
             ) : (
               <div className="space-y-3">
-                {courses.map((course) => {
-                  const active = course.id === selectedCourseId;
+                <select
+                  value={selectedCourseId}
+                  onChange={(event) => setSelectedCourseId(event.target.value)}
+                  className="w-full rounded-2xl border border-[#DAC0A3]/30 bg-[#FCFAF7] px-4 py-3 text-sm text-[#102C57] outline-none transition focus:border-[#102C57]/40"
+                >
+                  <option value="" disabled>
+                    {copy.currentSemesterCoursesSelect}
+                  </option>
+                  {courses.map((course) => (
+                    <option key={course.id} value={course.id}>
+                      {course.code} - {course.name} ({course.creditHours ?? "-"} {copy.creditHours})
+                    </option>
+                  ))}
+                </select>
 
-                  return (
-                    <button
-                      key={course.id}
-                      type="button"
-                      onClick={() => setSelectedCourseId(course.id)}
-                      className={`w-full rounded-2xl border px-4 py-4 text-right transition-all ${
-                        active
-                          ? "border-[#102C57] bg-[#102C57] text-[#F8F0E5] shadow-lg shadow-[#102C57]/20"
-                          : "border-[#DAC0A3]/30 bg-[#FCFAF7] text-[#102C57] hover:border-[#102C57]/35 hover:bg-[#F8F0E5]"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="text-sm font-semibold">{course.code}</div>
-                          <div className={`mt-1 text-xs leading-6 ${active ? "text-[#F8F0E5]/80" : "text-[#102C57]/65"}`}>
-                            {course.name}
-                          </div>
-                          <div className={`mt-3 text-[11px] ${active ? "text-[#F8F0E5]/70" : "text-[#102C57]/50"}`}>
-                            {course.creditHours ?? "-"} credit hours
-                          </div>
-                        </div>
-                        {active ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : null}
-                      </div>
-                    </button>
-                  );
-                })}
+                {selectedCourse ? (
+                  <div className="rounded-2xl border border-[#DAC0A3]/25 bg-[#FCFAF7] px-4 py-3 text-[#102C57]">
+                    <div className="text-sm font-semibold">{selectedCourse.code}</div>
+                    <div className="mt-1 text-xs text-[#102C57]/65">{selectedCourse.name}</div>
+                    <div className="mt-2 text-[11px] text-[#102C57]/50">
+                      {selectedCourse.creditHours ?? "-"} {copy.creditHours}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             )}
           </div>
 
-          <div className="rounded-[24px] border border-[#DAC0A3]/30 bg-white p-5 shadow-sm">
+          <div className="rounded-[24px] border border-[#DAC0A3]/25 bg-white/95 p-4 shadow-sm">
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-[#102C57]">مكتبة المادة</h2>
+                <h2 className="text-lg font-semibold text-[#102C57]">{copy.courseLibrary}</h2>
                 <p className="text-xs text-[#102C57]/55">
-                  ارفع ملفات PDF أو Markdown أو TXT لتصبح مصدر الشرح داخل الشات.
+                  {copy.courseLibraryHint}
                 </p>
               </div>
               <span className="rounded-full bg-[#102C57]/6 px-2.5 py-1 text-xs font-semibold text-[#102C57]">
@@ -961,22 +1001,22 @@ export default function StudyChatPage() {
                 </select>
               </label>
               <label className="space-y-1">
-                <span className="text-[11px] font-medium text-[#102C57]/60">Topic</span>
+                <span className="text-[11px] font-medium text-[#102C57]/60">{copy.topic}</span>
                 <input
                   type="text"
                   value={uploadTopic}
                   onChange={(event) => setUploadTopic(event.target.value)}
-                  placeholder="Neural networks, DB basics..."
+                  placeholder={copy.topicPlaceholder}
                   className="w-full rounded-2xl border border-[#DAC0A3]/30 bg-[#FCFAF7] px-3 py-2 text-sm text-[#102C57] outline-none"
                 />
               </label>
               <label className="space-y-1">
-                <span className="text-[11px] font-medium text-[#102C57]/60">Week</span>
+                <span className="text-[11px] font-medium text-[#102C57]/60">{copy.week}</span>
                 <input
                   type="text"
                   value={uploadWeek}
                   onChange={(event) => setUploadWeek(event.target.value)}
-                  placeholder="Week 3"
+                  placeholder={copy.weekPlaceholder}
                   className="w-full rounded-2xl border border-[#DAC0A3]/30 bg-[#FCFAF7] px-3 py-2 text-sm text-[#102C57] outline-none"
                 />
               </label>
@@ -1027,11 +1067,11 @@ export default function StudyChatPage() {
             {isLoadingDocuments ? (
               <div className="flex items-center gap-2 rounded-2xl bg-[#FCFAF7] px-4 py-4 text-sm text-[#102C57]/65">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>جاري تحميل مكتبة المادة...</span>
+                <span>{copy.loadingLibrary}</span>
               </div>
             ) : documents.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-[#DAC0A3]/35 bg-[#FCFAF7] px-4 py-5 text-sm text-[#102C57]/65">
-                لا توجد ملفات مرفوعة لهذه المادة بعد. ارفع أول محاضرة لتبدأ تجربة الشرح والتلخيص.
+                {copy.noUploadedFiles}
               </div>
             ) : (
               <div className="space-y-3">
@@ -1103,15 +1143,15 @@ export default function StudyChatPage() {
           </div>
         </aside>
 
-        <section className="flex min-h-[720px] flex-col rounded-[24px] border border-[#DAC0A3]/30 bg-white shadow-sm">
-          <div className="border-b border-[#DAC0A3]/20 px-5 py-4">
+        <section className="flex h-[calc(100vh-8rem)] min-h-0 flex-col overflow-hidden rounded-[28px] border border-[#DAC0A3]/25 bg-white/95 shadow-[0_18px_40px_rgba(16,44,87,0.06)]">
+          <div className="shrink-0 border-b border-[#DAC0A3]/18 px-5 py-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-[#102C57]">
-                  {selectedCourse ? `${selectedCourse.code} - ${selectedCourse.name}` : "اختر مادة أولًا"}
+                  {selectedCourse ? `${selectedCourse.code} - ${selectedCourse.name}` : copy.chooseCourseFirst}
                 </h2>
                 <p className="mt-1 text-xs text-[#102C57]/55">
-                  هذا الشات يجيب من الملفات المرفوعة للمادة المختارة فقط، مع ذكر المصادر المستخدمة في نهاية الإجابة.
+                  {copy.answersFromSelectedCourse}
                 </p>
               </div>
               {selectedCourse ? (
@@ -1123,13 +1163,13 @@ export default function StudyChatPage() {
             </div>
 
             {quickPrompts.length > 0 ? (
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="-mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1">
                 {quickPrompts.map((prompt) => (
                   <button
                     key={prompt}
                     type="button"
                     onClick={() => setInput(prompt)}
-                    className="rounded-full border border-[#DAC0A3]/30 bg-[#FCFAF7] px-3 py-1.5 text-xs text-[#102C57] transition hover:border-[#102C57]/30 hover:bg-[#F8F0E5]"
+                    className="shrink-0 rounded-full border border-[#DAC0A3]/30 bg-[#FCFAF7] px-3 py-1.5 text-xs text-[#102C57] transition hover:border-[#102C57]/30 hover:bg-[#F8F0E5]"
                   >
                     {prompt}
                   </button>
@@ -1137,7 +1177,7 @@ export default function StudyChatPage() {
               </div>
             ) : null}
 
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="-mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1">
               {studyModes.map((mode) => {
                 const active = studyMode === mode.id;
                 return (
@@ -1145,7 +1185,7 @@ export default function StudyChatPage() {
                     key={mode.id}
                     type="button"
                     onClick={() => setStudyMode(mode.id)}
-                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                    className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
                       active
                         ? "bg-[#102C57] text-[#F8F0E5]"
                         : "border border-[#DAC0A3]/30 bg-[#FCFAF7] text-[#102C57]"
@@ -1158,7 +1198,7 @@ export default function StudyChatPage() {
             </div>
           </div>
 
-          <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
+          <div className="flex-1 space-y-4 overflow-y-auto bg-[linear-gradient(180deg,#fffdf9_0%,#fff8ef_100%)] px-5 py-5 pb-28">
             {messages.map((message) => {
               const dir = detectTextDirection(message.content);
               const isAi = message.type === "ai";
@@ -1167,7 +1207,7 @@ export default function StudyChatPage() {
               return (
                 <div key={message.id} className={`flex ${isAi ? "justify-start" : "justify-end"}`}>
                   <div
-                    className={`max-w-3xl rounded-3xl px-4 py-3 ${
+                    className={`max-w-3xl rounded-3xl px-4 py-3 shadow-sm ${
                       isAi
                         ? "border border-[#DAC0A3]/25 bg-[#FCFAF7] text-[#102C57]"
                         : "bg-[#102C57] text-[#F8F0E5]"
@@ -1249,7 +1289,7 @@ export default function StudyChatPage() {
                 <div className="rounded-3xl border border-[#DAC0A3]/25 bg-[#FCFAF7] px-4 py-3 text-sm text-[#102C57]/70">
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>جاري تجهيز الإجابة من ملفات المادة...</span>
+                    <span>{copy.loadingAnswer}</span>
                   </div>
                 </div>
               </div>
@@ -1258,7 +1298,7 @@ export default function StudyChatPage() {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="border-t border-[#DAC0A3]/20 px-5 py-4">
+          <div className="sticky bottom-0 shrink-0 border-t border-[#DAC0A3]/18 bg-white/95 px-5 py-4 shadow-[0_-10px_24px_rgba(16,44,87,0.06)] backdrop-blur">
             {error ? (
               <p className="mb-3 rounded-2xl bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
             ) : null}
@@ -1278,8 +1318,8 @@ export default function StudyChatPage() {
                 disabled={!selectedCourse || isSending}
                 placeholder={
                   selectedCourse
-                    ? `اسأل عن ${selectedCourse.code} أو اطلب تلخيصًا من الملفات المرفوعة...`
-                    : "اختر مادة أولًا حتى تبدأ الشات"
+                    ? `${copy.askCoursePlaceholderPrefix} ${selectedCourse.code} ${copy.askCoursePlaceholderSuffix}`
+                    : copy.chooseCourseToStartChat
                 }
                 className="flex-1 rounded-2xl border border-[#DAC0A3]/30 bg-[#FCFAF7] px-4 py-3 text-sm text-[#102C57] outline-none transition focus:border-[#102C57]/40"
               />

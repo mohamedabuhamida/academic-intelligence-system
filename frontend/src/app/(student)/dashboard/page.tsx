@@ -82,9 +82,9 @@ export default function DashboardOverview() {
     async function loadDashboard() {
       try {
         const [dashboardRes, advisorRes, freshnessRes] = await Promise.all([
-          fetch("/api/dashboard", { cache: "no-store" }),
-          fetch("/api/advisor", { cache: "no-store" }),
-          fetch("/api/profile-freshness", { cache: "no-store" }),
+          fetch(`/api/dashboard?locale=${locale}`, { cache: "no-store" }),
+          fetch(`/api/advisor?locale=${locale}`, { cache: "no-store" }),
+          fetch(`/api/profile-freshness?locale=${locale}`, { cache: "no-store" }),
         ]);
 
         const dashboardJson = await dashboardRes.json();
@@ -106,7 +106,7 @@ export default function DashboardOverview() {
     }
 
     loadDashboard();
-  }, []);
+  }, [locale]);
 
   if (loading) {
     return <Loading />;
@@ -116,6 +116,18 @@ export default function DashboardOverview() {
   const advisorInsights = advisorData?.insights ?? [];
   const profileAlerts = freshnessData?.alerts ?? [];
   const primaryAlert = profileAlerts[0] ?? null;
+  const studyPrompts =
+    locale === "ar"
+      ? [
+          { question: "ابنِ خطتي للفصل القادم", time: "منذ دقيقتين" },
+          { question: "هل أنا معرض لتأخير التخرج؟", time: "منذ ساعة" },
+          { question: "ما المقررات التي ينبغي أن آخذها الفصل القادم؟", time: "منذ 3 ساعات" },
+        ]
+      : [
+          { question: "Build my next semester plan", time: "2 min ago" },
+          { question: "Am I at risk of delaying graduation?", time: "1 hour ago" },
+          { question: "What courses should I take next semester?", time: "3 hours ago" },
+        ];
 
   const stats = [
     {
@@ -293,17 +305,7 @@ export default function DashboardOverview() {
           </div>
 
           <div className="space-y-4">
-            {[
-              { question: "Build my next semester plan", time: "2 min ago" },
-              {
-                question: "Am I at risk of delaying graduation?",
-                time: "1 hour ago",
-              },
-              {
-                question: "What courses should I take next semester?",
-                time: "3 hours ago",
-              },
-            ].map((item, index) => (
+            {studyPrompts.map((item, index) => (
               <motion.div
                 key={index}
                 variants={listItemVariants}
